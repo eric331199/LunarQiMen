@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<script src="https://cdn.jsdelivr.net/npm/lunar-javascript/lunar.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>奇門遁甲盤面預覽</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #f5f0e8;
+    font-family: "Noto Serif TC", "SimSun", "STSong", serif;
+    padding: 0;
+    margin: 0;
+  }
+  .page {
+    max-width: 440px;
+    margin: 0 auto;
+    padding: 8px 12px 24px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .header {
+    display: flex;
+    align-items: stretch;
+    border: 2px solid #000;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fff;
+    margin: 0 0 28px 0;
+  }
+  .h-col { padding: 5px 6px; }
+  .h-col-left  { flex: 0 0 54%; border-right: 1px solid #ccc; padding-left: 6px; }
+  .h-col-mid   { flex: 0 0 23%; border-right: 1px solid #ccc; }
+  .h-col-right { flex: 0 0 23%; padding-right: 6px; }
+  .h-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+  .h-table tr { line-height: 1.8; }
+  .h-table td {
+    text-align: center;
+    font-size: 11px;
+    color: #333;
+    font-family: "Menlo", monospace;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .h-table td.hl {
+    font-family: "Noto Serif TC", serif;
+    color: #aaa;
+    text-align: right;
+    padding-right: 3px;
+    width: 2.2em;
+  }
+  .h-table td.hk {
+    font-size: 11px;
+  }
+
+  .outer {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1/1;
+    margin: 28px 0;
+  }
+  .yigan {
+    position: absolute;
+    font-size: 15px;
+    font-weight: normal;
+    color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+  .yigan-top    { top: -18px; left: 50%; transform: translateX(-50%); }
+  .yigan-bottom { bottom: -18px; left: 50%; transform: translateX(-50%); white-space: nowrap; }
+  .yigan-left   { left: -18px; top: 50%; transform: translateY(-50%); }
+  .yigan-right  { right: -18px; top: 50%; transform: translateY(-50%); }
+  .yigan-vertical {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.1;
+  }
+  .yigan-tl { top: -18px; left: -18px; }
+  .yigan-tr { top: -18px; right: -18px; }
+  .yigan-bl { bottom: -18px; left: -18px; }
+  .yigan-br { bottom: -18px; right: -18px; }
+
+  .grid {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 2px solid #000;
+    box-sizing: border-box;
+  }
+
+  .cell {
+    border: 1px solid #999;
+    display: grid;
+    grid-template-columns: 28px 1fr 38px;
+    grid-template-rows: repeat(3, 1fr);
+    background: #fff;
+  }
+  .cell.center { background: #eeebe3; }
+
+  /* 外框加粗：移除，改由 .grid border 統一處理 */
+  .grid .cell:nth-child(1),
+  .grid .cell:nth-child(2),
+  .grid .cell:nth-child(3) { border-top: none; }
+  .grid .cell:nth-child(7),
+  .grid .cell:nth-child(8),
+  .grid .cell:nth-child(9) { border-bottom: none; }
+  .grid .cell:nth-child(1),
+  .grid .cell:nth-child(4),
+  .grid .cell:nth-child(7) { border-left: none; }
+  .grid .cell:nth-child(3),
+  .grid .cell:nth-child(6),
+  .grid .cell:nth-child(9) { border-right: none; }
+
+  .cell-left {
+    grid-column: 1;
+    grid-row: 1 / 4;
+    border-right: 1px solid #ddd;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 2px 1px;
+    gap: 2px;
+  }
+  .palace-id {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+  }
+  .palace-num  { font-size: 14px; font-weight: bold; color: #333; line-height: 1.2; }
+  .palace-name { font-size: 14px; color: #555; line-height: 1.2; }
+
+  /* 八卦線條 */
+  .bagua {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    align-items: center;
+    margin-top: 1px;
+  }
+  .bline-full {
+    width: 16px; height: 2px;
+    background: var(--line-color, #444); border-radius: 1px;
+  }
+  .bline-broken {
+    display: flex; gap: 3px;
+  }
+  .bline-broken span {
+    width: 6px; height: 2px;
+    background: var(--line-color, #444); border-radius: 1px;
+    display: block;
+  }
+
+  /* 中欄 */
+  .cell-shen {
+    grid-column: 2; grid-row: 1;
+    border-bottom: 1px solid #ddd;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; color: #333;
+  }
+  .cell-star {
+    grid-column: 2; grid-row: 2;
+    border-bottom: 1px solid #ddd;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; color: #333; gap: 2px;
+  }
+  .cell-gate {
+    grid-column: 2; grid-row: 3;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; color: #333; flex-direction: column; gap: 1px;
+  }
+
+  /* 右欄 */
+  .cell-marks {
+    grid-column: 3; grid-row: 1;
+    border-left: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+    display: flex; flex-direction: row;
+    align-items: center; justify-content: center; gap: 1px;
+  }
+  .cell-tian {
+    grid-column: 3; grid-row: 2;
+    border-left: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    font-size: 14px; color: #333;
+  }
+  .cell-di {
+    grid-column: 3; grid-row: 3;
+    border-left: 1px solid #ddd;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    font-size: 14px; color: #333;
+  }
+
+  .tag { font-size: 11px; line-height: 1; margin-top: 1px; }
+  .tag.mu   { color: #8B6914; }
+  .tag.xing { color: #c0392b; }
+  .tag.po   { color: #c0392b; }
+  .tag.kong { color: #c0392b; font-size: 12px; line-height: 1; border: 1px solid #c0392b; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; }
+  .tag.ma   { color: #2471a3; font-size: 14px; }
+
+  .zhifu-badge {
+    font-size: 9px; color: #c0392b;
+    border: 1px solid #c0392b;
+    padding: 0 2px; border-radius: 2px;
+  }
+
+  /* 輸入區 */
+  hr.divider {
+    border: none;
+    border-top: 1px solid #ddd;
+    margin: 12px -16px;
+  }
+  .inner {
+    width: 100%;
+    padding: 0 48px;
+  }
+  .input-area {
+    width: 100%;
+    width: 100%;
+    background: #fff;
+    border: 1.5px solid #888;
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 6px;
+  }
+  .input-title {
+    font-size: 14px;
+    color: #888;
+    margin-bottom: 10px;
+    text-align: center;
+    letter-spacing: 1px;
+  }
+  .input-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .input-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .input-row label {
+    font-size: 12px;
+    color: #aaa;
+  }
+  .input-row input {
+    width: 100%;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 4px 2px;
+    font-size: 16px;
+    text-align: center;
+    font-family: Menlo, "Courier New", monospace;
+    color: #333;
+    -moz-appearance: textfield;
+  }
+  .input-row input::-webkit-outer-spin-button,
+  .input-row input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .input-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+  }
+  .btn-now {
+    background: #fff;
+    border: 1.5px solid #888;
+    border-radius: 4px;
+    padding: 8px;
+    font-size: 15px;
+    font-family: inherit;
+    color: #555;
+    cursor: pointer;
+  }
+  .btn-start {
+    background: #444;
+    border: none;
+    border-radius: 4px;
+    padding: 8px;
+    font-size: 15px;
+    font-family: inherit;
+    color: #fff;
+    cursor: pointer;
+  }
+
+</style>
+</head>
+<body>
+
+<div class="inner">
+<!-- 輸入區 -->
+<div class="input-area">
+  <div class="input-title">起盤時間</div>
+  <div class="input-grid">
+    <div class="input-row">
+      <label>年</label>
+      <input type="tel" id="year" value="2026" maxlength="4" inputmode="numeric">
+    </div>
+    <div class="input-row">
+      <label>月</label>
+      <input type="tel" id="month" value="5" maxlength="2" inputmode="numeric">
+    </div>
+    <div class="input-row">
+      <label>日</label>
+      <input type="tel" id="day" value="28" maxlength="2" inputmode="numeric">
+    </div>
+    <div class="input-row">
+      <label>時</label>
+      <input type="tel" id="hour" value="22" maxlength="2" inputmode="numeric">
+    </div>
+    <div class="input-row">
+      <label>分</label>
+      <input type="tel" id="minute" value="5" maxlength="2" inputmode="numeric">
+    </div>
+  </div>
+  <div class="input-buttons">
+    <button class="btn-now" onclick="setNow()">現時</button>
+    <button class="btn-now" onclick="resetPaipan()">重置</button>
+    <button class="btn-start" onclick="startPaipan()">排盤</button>
+  </div>
+</div>
+
+<hr class="divider">
+<!-- 盤面（預設隱藏）-->
+<div id="paipan-result" style="display:block;">
+
+<div class="header">
+  <div class="h-col h-col-left">
+    <table class="h-table">
+      <tr><td class="hl">西元</td><td id="sy">—</td><td id="sm">—</td><td id="sd">—</td><td id="st">—</td></tr>
+      <tr><td class="hl">農曆</td><td id="ly">—</td><td id="lm">—</td><td id="ld">—</td><td id="lt">—</td></tr>
+      <tr><td class="hl">天干</td><td class="hk" id="gz-y-gan">—</td><td class="hk" id="gz-m-gan">—</td><td class="hk" id="gz-d-gan">—</td><td class="hk" id="gz-h-gan">—</td></tr>
+      <tr><td class="hl">地支</td><td class="hk" id="gz-y-zhi">—</td><td class="hk" id="gz-m-zhi">—</td><td class="hk" id="gz-d-zhi">—</td><td class="hk" id="gz-h-zhi">—</td></tr>
+    </table>
+  </div>
+  <div class="h-col h-col-mid">
+    <table class="h-table">
+      <tr><td class="hl">起局</td><td id="hb-qiju">—</td></tr>
+      <tr><td class="hl">排盤</td><td>陰盤</td></tr>
+      <tr><td class="hl">旬首</td><td id="hb-xun">—</td></tr>
+      <tr><td class="hl">符頭</td><td id="hb-futou">—</td></tr>
+    </table>
+  </div>
+  <div class="h-col h-col-right">
+    <table class="h-table">
+      <tr><td class="hl">值符</td><td id="hb-zhifu">—</td></tr>
+      <tr><td class="hl">值使</td><td id="hb-zhishi">—</td></tr>
+      <tr><td class="hl">空亡</td><td id="hb-kongwang">—</td></tr>
+      <tr><td class="hl">驛馬</td><td id="hb-yima">—</td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="outer">
+
+  <div class="yigan yigan-top"    id="yin-9"></div>
+  <div class="yigan yigan-bottom" id="yin-1"></div>
+  <div class="yigan yigan-left"   id="yin-3"></div>
+  <div class="yigan yigan-right"  id="yin-7"></div>
+  <div class="yigan yigan-tl"     id="yin-4"></div>
+  <div class="yigan yigan-tr"     id="yin-2"></div>
+  <div class="yigan yigan-bl"     id="yin-8"></div>
+  <div class="yigan yigan-br"     id="yin-6"></div>
+
+  <div class="grid">
+
+    <!-- 4 巽：下斷（下斷，中實，上實） -->
+    <div class="cell">
+      <div class="cell-left">
+        <div class="palace-id"><span class="palace-num" style="color:#4caf50;">4</span><span class="palace-name" style="color:#4caf50;">巽</span></div>
+        <div class="bagua" style="--line-color:#4caf50;">
+          <div class="bline-full"></div>
+          <div class="bline-full"></div>
+          <div class="bline-broken"><span></span><span></span></div>
+        </div>
+      </div>
+      <div class="cell-shen" id="sh-4"></div>
+      <div class="cell-star" id="star-4"></div>
+      <div class="cell-gate" id="gate-4"></div>
+      <div class="cell-marks" id="marks-4"></div>
+      <div class="cell-tian" id="tian-4"></div>
+      <div class="cell-di" id="di-4"></div>
+    </div>
+
+    <!-- 9 離：中虛（下實，中斷，上實） -->
+    <div class="cell">
+      <div class="cell-left">
+        <div class="palace-id"><span class="palace-num" style="color:#c0392b;">9</span><span class="palace-name" style="color:#c0392b;">離</span></div>
+        <div class="bagua" style="--line-color:#c0392b;">
+          <div class="bline-full"></div>
+          <div class="bline-broken"><span></span><span></span></div>
+          <div class="bline-full"></div>
+        </div>
+      </div>
+      <div class="cell-shen" id="sh-9"></div>
+      <div class="cell-star" id="star-9"></div>
+      <div class="cell-gate" id="gate-9"></div>
+      <div class="cell-marks" id="marks-9"></div>
+      <div class="cell-tian" id="tian-9"></div>
+      <div class="cell-di" id="di-9"></div>
+    </div>
+
+    <!-- 2 坤：六斷（全斷） -->
+    <div class="cell">
+      <div class="cell-left">
+        <div class="palace-id"><span class="palace-num" style="color:#a0714f;">2</span><span class="palace-name" style="color:#a0714f;">坤</span></div>
+        <div class="bagua" style="--line-color:#a0714f;">
+          <div class="bline-broken"><span></span><span></span></div>
+          <div class="bline-broken"><span></span><span></span></div>
+          <div class="bline-broken"><span></span><span></span></div>
+        </div>
+      </div>
+      <div class="cell-shen" id="sh-2"></div>
+      <div class="cell-star" id="star-2"></div>
+      <div class="cell-gate" id="gate-2"></div>
+      <div class="cell-marks" id="marks-2"></div>
+      <div class="cell-tian" id="tian-2"></div>
+      <div class="cell-di" id="di-2"></div>
+    </div>
+
+    <!-- 3 震：仰盂（下實，中斷，上斷） -->
+    <div class="cell">
+      <div class="cell-left">
+        <div class="palace-id"><span class="palace-num" style="color:#1a7a1a;">3</span><span class="palace-name" style="color:#1a7a1a;">震</span></div>
+        <div class="bagua" style="--line-color:#1a7a1a;">
+          <div class="bline-broken"><span></span><span></span></div>
+          <div class="bline-broken"><span></span><span></span></div>
+          <div class="bline-full"></div>
+        </div>
+      </div>
+      <div class="cell-shen" id="sh-3"></div>
+      <div class="cell-star" id="star-3"></div>
+      <div class="cell-gate" id="gate-3"></div>
+      <div class="cell-marks" id="marks-3"></div>
+      <div class="cell-tian" id="tian-3"></div>
+      <div class="cell-di" id="di-3"></div>
+    </div>
+
+    <!-- 5 中宮 -->
+    <div class="cell center">
+      <div class="cell-left">
+        <div class="palace-id"><span class="palace-num">5</span><span class="palace-name">中</span></div>
+      </div>
+      <div class="cell-shen"></div>
+      <div class="cell-star"></div>
+      <div class="cell-gate"></div>
+      <div class="cell-marks"></div>
+      <div class="cell-tian"></div>
+      <div class="cell-di"></div>
+    </div>
+
+    <!-- 7 兌：上缺（下實，中實，上斷） -->
+    <div class="cell">
+      <div class="cell-left">
+        <div class="palace-id"><span class="palace-num" style="color:#999999;">7</span><span class="palace-name" style="color:#999999;">兌</span></div>
+        <div class="bagua" style="--line-color:#999999;">
+          <div class="bline-broken"><span></span><span></span></div>
+          <div class="bline-full"></div>
+          <div class="bline-full"></div>
+        </div>
+      </div>
+      <div class="cell-shen" id="sh-7"></div>
+      <div class="cell-star" id="star-7"></div>
+      <div class="cell-gate" id="gate-7"></div>
+      <div class="cell-marks" id="marks-7"></div>
+      <div class="cell-tian" id="tian-7"></div>
+      <div class="cell-di" id="di-7"></div>
+    </div>
+
+    <!-- 8 艮：覆碗（下斷，中斷，上實） -->
+    <div class="cell">
+      <div class="cell-left">
+        <div class="palace-id"><span class="palace-num" style="color:#6b4423;">8</span><span class="palace-name" style="color:#6b4423;">艮</span></div>
+        <div class="bagua" style="--line-color:#6b4423;">
+          <div class="bline-full"></div>
+          <div class="bline-broken"><span></span><span></span></div>
+          <div class="bline-broken"><span></span><span></span></div>
+        </div>
+      </div>
+      <div class="cell-shen" id="sh-8"></div>
+      <div class="cell-star" id="star-8"></div>
+      <div class="cell-gate" id="gate-8"></div>
+      <div class="cell-marks" id="marks-8"></div>
+      <div class="cell-tian" id="tian-8"></div>
+      <div class="cell-di" id="di-8"></div>
+    </div>
+
+    <!-- 1 坎：中滿（下斷，中實，上斷） -->
+    <div class="cell">
+      <div class="cell-left">
+        <div class="palace-id"><span class="palace-num" style="color:#2471a3;">1</span><span class="palace-name" style="color:#2471a3;">坎</span></div>
+        <div class="bagua" style="--line-color:#2471a3;">
+          <div class="bline-broken"><span></span><span></span></div>
+          <div class="bline-full"></div>
+          <div class="bline-broken"><span></span><span></span></div>
+        </div>
+      </div>
+      <div class="cell-shen" id="sh-1"></div>
+      <div class="cell-star" id="star-1"></div>
+      <div class="cell-gate" id="gate-1"></div>
+      <div class="cell-marks" id="marks-1"></div>
+      <div class="cell-tian" id="tian-1"></div>
+      <div class="cell-di" id="di-1"></div>
+    </div>
+
+    <!-- 6 乾：三連（全實） -->
+    <div class="cell">
+      <div class="cell-left">
+        <div class="palace-id"><span class="palace-num" style="color:#555555;">6</span><span class="palace-name" style="color:#555555;">乾</span></div>
+        <div class="bagua" style="--line-color:#555555;">
+          <div class="bline-full"></div>
+          <div class="bline-full"></div>
+          <div class="bline-full"></div>
+        </div>
+      </div>
+      <div class="cell-shen" id="sh-6"></div>
+      <div class="cell-star" id="star-6"></div>
+      <div class="cell-gate" id="gate-6"></div>
+      <div class="cell-marks" id="marks-6"></div>
+      <div class="cell-tian" id="tian-6"></div>
+      <div class="cell-di" id="di-6"></div>
+    </div>
+
+  </div>
+</div>
+
+
+<script>
+function resetPaipan() {
+  ['year','month','day','hour','minute'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  ['sy','sm','sd','st','ly','lm','ld','lt',
+   'gz-y-gan','gz-y-zhi','gz-m-gan','gz-m-zhi','gz-d-gan','gz-d-zhi','gz-h-gan','gz-h-zhi',
+   'hb-qiju','hb-xun','hb-futou','hb-kongwang','hb-yima','hb-zhifu','hb-zhishi'
+  ].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = '—';
+  });
+  [1,2,3,4,6,7,8,9].forEach(g => {
+    ['sh-','star-','gate-','tian-','di-','marks-','yin-'].forEach(pre => {
+      const el = document.getElementById(pre + g);
+      if (el) el.innerHTML = '';
+    });
+  });
+}
+
+function setNow() {
+  const now = new Date();
+  document.getElementById('year').value = now.getFullYear();
+  document.getElementById('month').value = now.getMonth() + 1;
+  document.getElementById('day').value = now.getDate();
+  document.getElementById('hour').value = now.getHours();
+  document.getElementById('minute').value = now.getMinutes();
+}
+
+// 自動跳格
+const INPUT_ORDER = ['year','month','day','hour','minute'];
+const INPUT_MAXLEN = { year:4, month:2, day:2, hour:2, minute:2 };
+
+INPUT_ORDER.forEach((id, idx) => {
+  const el = document.getElementById(id);
+  el.addEventListener('input', function() {
+    // 只保留數字
+    this.value = this.value.replace(/\D/g, '');
+    if (this.value.length >= INPUT_MAXLEN[id]) {
+      const next = INPUT_ORDER[idx + 1];
+      if (next) document.getElementById(next).focus();
+    }
+  });
+  el.addEventListener('keydown', function(e) {
+    if (e.key === 'Backspace' && this.value === '') {
+      const prev = INPUT_ORDER[idx - 1];
+      if (prev) {
+        const prevEl = document.getElementById(prev);
+        prevEl.focus();
+        // 游標移到末位
+        const len = prevEl.value.length;
+        prevEl.setSelectionRange(len, len);
+      }
+    }
+  });
+});
+
+// 地支序數
+const EARTHLY_BRANCHES_REF = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+
+// 數字根（各位數相加到一位數，0視為9）
+function digitalRoot(n) {
+  while (n > 9) {
+    n = String(n).split('').reduce((a, b) => a + parseInt(b), 0);
+  }
+  return n === 0 ? 9 : n;
+}
+
+// 取時辰地支
+function hourToZhi(h) {
+  // 子=23-1, 丑=1-3, ..., 亥=21-23
+  const idx = Math.floor((h + 1) / 2) % 12;
+  return EARTHLY_BRANCHES_REF[idx];
+}
+
+// 判斷陰陽遁：找開盤時間前最近的冬至或夏至
+function getSolsticeType(y, m, d, h) {
+  const openDate = new Date(y, m-1, d, h);
+  
+  // 搜尋前兩年到當年的節氣，找最近一個冬至或夏至
+  let lastSolstice = null;
+  let lastType = null;
+
+  for (let yr = y - 1; yr <= y; yr++) {
+    const lunarYr = LunarYear.fromYear(yr);
+    const jieQiDays = lunarYr.getJieQiJulianDays();
+    const jieQiNames = lunarYr.getJieQiTable ? lunarYr.getJieQiTable() : null;
+
+    // lunar-javascript 節氣順序固定，冬至是第0個，夏至是第12個（從冬至開始算）
+    // 用 Solar.fromJulianDay 取得日期，再用 getLunar().getJieQi() 確認名稱
+    for (let i = 0; i < jieQiDays.length; i++) {
+      const jd = jieQiDays[i];
+      const s = Solar.fromJulianDay(jd);
+      const name = s.getLunar().getJieQi();
+      if (name === '冬至' || name === '夏至') {
+        const sDate = new Date(s.getYear(), s.getMonth()-1, s.getDay());
+        if (sDate <= openDate) {
+          lastSolstice = sDate;
+          lastType = name;
+        }
+      }
+    }
+  }
+
+  return lastType === '冬至' ? '陽' : '陰';
+}
+
+// 計算局數
+function getChartNumber(lunar, h) {
+  const yearZhi = lunar.getYearZhi();    // 年支
+  const lunarMonth = Math.abs(lunar.getMonth()); // 農曆月
+  const lunarDay = lunar.getDay();       // 農曆日
+  const hourZhi = hourToZhi(h);         // 時支
+
+  const yearZhiIdx = EARTHLY_BRANCHES_REF.indexOf(yearZhi) + 1;
+  const hourZhiIdx = EARTHLY_BRANCHES_REF.indexOf(hourZhi) + 1;
+
+  const sum = yearZhiIdx + lunarMonth + lunarDay + hourZhiIdx;
+  return digitalRoot(sum);
+}
+
+// 九宮數字順序（地盤天干用）
+const HOUSE_NUM_ASC  = [1, 2, 3, 4, 6, 7, 8, 9]; // 陽順（九宮數字）
+const HOUSE_NUM_DESC = [9, 8, 7, 6, 4, 3, 2, 1]; // 陰逆（九宮數字）
+
+// 實際順時針／逆時針（八神、八星、天盤天干、引干用）
+const HOUSE_CW  = [1, 8, 3, 4, 9, 2, 7, 6]; // 順時針
+const HOUSE_CCW = [1, 6, 7, 2, 9, 4, 3, 8]; // 逆時針
+
+// 六儀三奇順序
+const EARTH_PLATE_STEM_ORDER = ['戊','己','庚','辛','壬','癸','丁','丙','乙'];
+
+// 九宮完整順序（含5，供路中判斷用）
+const HOUSE_NUM_ASC_FULL  = [1, 2, 3, 4, 5, 6, 7, 8, 9]; // 順時針含中宮
+const HOUSE_NUM_DESC_FULL = [9, 8, 7, 6, 5, 4, 3, 2, 1]; // 逆時針含中宮
+
+// 地盤固定對應：宮位→九星名稱、八門名稱
+const HOUSE_STAR = { 1:'天蓬', 2:'天芮', 3:'天沖', 4:'天輔', 6:'天心', 7:'天柱', 8:'天任', 9:'天英' };
+const HOUSE_GATE  = { 1:'休門', 2:'死門', 3:'傷門', 4:'杜門', 6:'開門', 7:'驚門', 8:'生門', 9:'景門' };
+
+// 八神固定順序
+const EIGHT_SPIRITS = ['值符','騰蛇','太陰','六合','白虎','玄武','九地','九天'];
+
+// 排八神：時天干宮起，陽遁實際順時針，陰遁實際逆時針
+function getSpiritHouse(shiganGong, yinYang) {
+  const order = yinYang === '陽' ? HOUSE_CW : HOUSE_CCW;
+  const startIdx = order.indexOf(parseInt(shiganGong));
+  const result = {};
+  for (let i = 0; i < 8; i++) {
+    result[order[(startIdx + i) % 8]] = EIGHT_SPIRITS[i];
+  }
+  return result;
+}
+
+// 地支→宮位對應表
+const BRANCH_HOUSE = {
+  '子':1, '丑':8, '寅':8, '卯':3, '辰':4, '巳':4,
+  '午':9, '未':2, '申':2, '酉':7, '戌':6, '亥':6
+};
+
+// 馬星：時辰地支→馬星地支
+const HORSE_BRANCH_TABLE = {
+  '申':'寅', '子':'寅', '辰':'寅',
+  '寅':'申', '午':'申', '戌':'申',
+  '巳':'亥', '酉':'亥', '丑':'亥',
+  '亥':'巳', '卯':'巳', '未':'巳'
+};
+
+// 時干序數
+const EIGHT_GATES = ['休門','生門','傷門','杜門','景門','死門','驚門','開門'];
+
+// 地盤宮位→八門 index（對應 EIGHT_GATES）
+const HOUSE_GATE_IDX = { 1:0, 2:5, 3:2, 4:3, 6:7, 7:6, 8:1, 9:4 };
+
+// 時干序數
+const HEAVENLY_STEMS_REF = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+
+// 排八門：從地盤值使門宮位走步，落點放值使門，其餘實際順時針放入
+function getGateHouse(shimenGong, yinYang, hGan) {
+  shimenGong = parseInt(shimenGong);
+  // 時干序數（甲=1…癸=10），起點算第一步，所以走 steps-1 步
+  const steps = HEAVENLY_STEMS_REF.indexOf(hGan) + 1;
+  // 走步用含中宮的九宮數字順序
+  const walkOrder = yinYang === '陽'
+    ? [1,2,3,4,5,6,7,8,9]
+    : [1,9,8,7,6,5,4,3,2];
+  const startIdx = walkOrder.indexOf(shimenGong);
+  // 走 steps-1 步（起點算第一步）
+  let landGong = walkOrder[(startIdx + steps - 1) % 9];
+  // 入中寄坤
+  if (landGong === 5) landGong = 2;
+
+  // 值使門的門名 index
+  const shimenMenIdx = HOUSE_GATE_IDX[shimenGong];
+
+  // 從落點起，實際順時針放入八門
+  const landIdx = HOUSE_CW.indexOf(landGong);
+  const result = {};
+  for (let i = 0; i < 8; i++) {
+    const gong = HOUSE_CW[(landIdx + i) % 8];
+    result[gong] = EIGHT_GATES[(shimenMenIdx + i) % 8];
+  }
+  return result;
+}
+
+// 排引干：值使門落宮起，時天干為頭，沿地盤實際順時針序列切入，永遠順時針放入
+function getPullingStem(menLandGong, diPanGan, hGan) {
+  menLandGong = parseInt(menLandGong);
+  // 用實際順時針讀出地盤天干序列（8個位置）
+  const diSeq = HOUSE_CW.map(g => diPanGan[g] || '');
+  // 找時天干在序列中的位置
+  const headPos = diSeq.findIndex(s => s.includes(hGan));
+  // 從值使門落宮起，實際順時針放入
+  const startIdx = HOUSE_CW.indexOf(menLandGong);
+  const result = {};
+  for (let i = 0; i < 8; i++) {
+    const gong = HOUSE_CW[(startIdx + i) % 8];
+    result[gong] = diSeq[(headPos + i) % 8];
+  }
+  return result;
+}
+
+const EIGHT_STARS = ['天蓬','天任','天沖','天輔','天英','天芮','天柱','天心'];
+
+// 排八星：地盤時干宮起，值符星為頭，固定蓬任沖輔英芮柱心順時針
+function getStarHouse(shiganGong, zhifuXing) {
+  const headIdx = EIGHT_STARS.indexOf(zhifuXing);
+  const startIdx = HOUSE_CW.indexOf(parseInt(shiganGong));
+  const result = {};
+  for (let i = 0; i < 8; i++) {
+    result[HOUSE_CW[(startIdx + i) % 8]] = EIGHT_STARS[(headIdx + i) % 8];
+  }
+  return result;
+}
+
+// 排天盤天干：地盤時干宮起，沿地盤實際順時針序列從符頭切入，永遠順時針放入
+function getHStemHouse(shiganGong, diPanGan, futou) {
+  shiganGong = parseInt(shiganGong);
+  // 用實際順時針讀出地盤天干序列（8個位置，寄干宮保留兩個天干）
+  const diSeq = HOUSE_CW.map(g => diPanGan[g] || '');
+  // 找符頭所在位置（位置index）
+  const headPos = diSeq.findIndex(s => s.includes(futou));
+  // 從地盤時干宮起，實際順時針放入天盤
+  const startIdx = HOUSE_CW.indexOf(shiganGong);
+  const result = {};
+  for (let i = 0; i < 8; i++) {
+    const gong = HOUSE_CW[(startIdx + i) % 8];
+    result[gong] = diSeq[(headPos + i) % 8];
+  }
+  return result;
+}
+
+// 排地盤天干
+// 回傳 { 宮位數: 天干 }，例如 { 1:'丙', 2:'戊乙', ... }
+function getEStemHouse(yinYang, juShu) {
+  const result = {};
+  const fullOrder = yinYang === '陽' ? HOUSE_NUM_ASC_FULL : HOUSE_NUM_DESC_FULL;
+
+  // 找戊的起始宮位在完整順序中的 index
+  const startIdx = fullOrder.indexOf(juShu);
+
+  for (let i = 0; i < 9; i++) {
+    const gan = EARTH_PLATE_STEM_ORDER[i];
+    const idx = (startIdx + i) % 9;
+    let gong = fullOrder[idx];
+    // 入中寄坤（二）
+    if (gong === 5) gong = 2;
+    if (result[gong]) {
+      result[gong] = result[gong] + gan;
+    } else {
+      result[gong] = gan;
+    }
+  }
+  return result;
+}
+
+// 六甲旬對照表
+const XUN_TABLE = [
+  { xun: '甲子旬', futou: '戊', kongwang: ['戌','亥'],
+    zhis: ['子','丑','寅','卯','辰','巳','午','未','申','酉'] },
+  { xun: '甲戌旬', futou: '己', kongwang: ['申','酉'],
+    zhis: ['戌','亥','子','丑','寅','卯','辰','巳','午','未'] },
+  { xun: '甲申旬', futou: '庚', kongwang: ['午','未'],
+    zhis: ['申','酉','戌','亥','子','丑','寅','卯','辰','巳'] },
+  { xun: '甲午旬', futou: '辛', kongwang: ['辰','巳'],
+    zhis: ['午','未','申','酉','戌','亥','子','丑','寅','卯'] },
+  { xun: '甲辰旬', futou: '壬', kongwang: ['寅','卯'],
+    zhis: ['辰','巳','午','未','申','酉','戌','亥','子','丑'] },
+  { xun: '甲寅旬', futou: '癸', kongwang: ['子','丑'],
+    zhis: ['寅','卯','辰','巳','午','未','申','酉','戌','亥'] },
+];
+
+// 根據時柱干支找旬首資料（用完整干支配對）
+function getDecInfo(hGan, hZhi) {
+  const TIAN_GAN = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+  const EARTHLY_BRANCHES_REF12 = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+
+  const ganIdx = TIAN_GAN.indexOf(hGan);
+  const zhiIdx = EARTHLY_BRANCHES_REF12.indexOf(hZhi);
+  const posInXun = ganIdx; // 在旬中的位置就是天干序號（甲=0, 乙=1, ...）
+  const xunFirstZhiIdx = (zhiIdx - posInXun + 12) % 12;
+  const xunFirstZhi = EARTHLY_BRANCHES_REF12[xunFirstZhiIdx];
+
+  console.log('ganIdx=' + ganIdx + ' zhiIdx=' + zhiIdx + ' posInXun=' + posInXun + ' xunFirstZhi=' + xunFirstZhi);
+
+  const xunMap = {
+    '子': { xun: '甲子旬', futou: '戊', kongwang: ['戌','亥'] },
+    '戌': { xun: '甲戌旬', futou: '己', kongwang: ['申','酉'] },
+    '申': { xun: '甲申旬', futou: '庚', kongwang: ['午','未'] },
+    '午': { xun: '甲午旬', futou: '辛', kongwang: ['辰','巳'] },
+    '辰': { xun: '甲辰旬', futou: '壬', kongwang: ['寅','卯'] },
+    '寅': { xun: '甲寅旬', futou: '癸', kongwang: ['子','丑'] },
+  };
+  return xunMap[xunFirstZhi] || null;
+}
+
+function startPaipan() {
+  const y   = parseInt(document.getElementById('year').value);
+  const m   = parseInt(document.getElementById('month').value);
+  const d   = parseInt(document.getElementById('day').value);
+  const h   = parseInt(document.getElementById('hour').value);
+  const min = parseInt(document.getElementById('minute').value);
+
+  const solar = Solar.fromYmdHms(y, m, d, h, min, 0);
+  const lunar = solar.getLunar();
+  const ec = lunar.getEightChar();
+
+  // 西元
+  document.getElementById('sy').textContent = y;
+  document.getElementById('sm').textContent = String(m).padStart(2,'0');
+  document.getElementById('sd').textContent = String(d).padStart(2,'0');
+  document.getElementById('st').textContent = String(h * 100 + min).padStart(4,'0');
+
+  // 農曆
+  document.getElementById('ly').textContent = lunar.getYear();
+  document.getElementById('lm').textContent = String(Math.abs(lunar.getMonth())).padStart(2,'0');
+  document.getElementById('ld').textContent = String(lunar.getDay()).padStart(2,'0');
+  document.getElementById('lt').textContent = String(h * 100 + min).padStart(4,'0');
+
+  // 四柱
+  const yGZ = ec.getYear();
+  const mGZ = ec.getMonth();
+  const dGZ = ec.getDay();
+  const hGZ = ec.getTime();
+
+  document.getElementById('gz-y-gan').textContent = yGZ[0];
+  document.getElementById('gz-y-zhi').textContent = yGZ[1];
+  document.getElementById('gz-m-gan').textContent = mGZ[0];
+  document.getElementById('gz-m-zhi').textContent = mGZ[1];
+  document.getElementById('gz-d-gan').textContent = dGZ[0];
+  document.getElementById('gz-d-zhi').textContent = dGZ[1];
+  document.getElementById('gz-h-gan').textContent = hGZ[0];
+  document.getElementById('gz-h-zhi').textContent = hGZ[1];
+
+  // 陰陽遁 + 局數
+  const yinYang = getSolsticeType(y, m, d, h);
+  const juShu = getChartNumber(lunar, h);
+  document.getElementById('hb-qiju').textContent = yinYang + juShu + '局';
+
+  // 排地盤天干
+  const diPanGan = getEStemHouse(yinYang, juShu);
+
+  // 寫入地盤天干到各宮格
+  [1,2,3,4,6,7,8,9].forEach(g => {
+    const el = document.getElementById('di-' + g);
+    if (el) el.textContent = diPanGan[g] || '';
+  });
+
+  // 旬首 / 符頭 / 空亡
+  const xunInfo = getDecInfo(hGZ[0], hGZ[1]);
+  if (xunInfo) {
+    document.getElementById('hb-xun').textContent = xunInfo.xun;
+    document.getElementById('hb-futou').textContent = xunInfo.futou;
+    document.getElementById('hb-kongwang').textContent = xunInfo.kongwang.join('、');
+
+    // 清除所有 marks
+    [1,2,3,4,6,7,8,9].forEach(g => {
+      const el = document.getElementById('marks-' + g);
+      if (el) el.innerHTML = '';
+    });
+
+    // 先計算馬和空的宮位
+    const maZhi = HORSE_BRANCH_TABLE[hGZ[1]];
+    const maGong = maZhi ? BRANCH_HOUSE[maZhi] : null;
+    const kongGongs = xunInfo.kongwang.map(zhi => BRANCH_HOUSE[zhi]);
+
+    // 馬先放（馬在左）
+    if (maGong) {
+      const el = document.getElementById('marks-' + maGong);
+      if (el) el.innerHTML += '<span class="tag ma">馬</span>';
+      document.getElementById('hb-yima').textContent = maZhi;
+    }
+
+    // 空後放（空在右）
+    const marked = new Set();
+    xunInfo.kongwang.forEach(zhi => {
+      const g = BRANCH_HOUSE[zhi];
+      const el = document.getElementById('marks-' + g);
+      if (el && !marked.has(g)) {
+        el.innerHTML += '<span class="tag kong">空</span>';
+        marked.add(g);
+      }
+    });
+
+    // 值符宮：符頭天干在地盤的宮位
+    const zhifuGong = Object.keys(diPanGan).find(g => diPanGan[g].includes(xunInfo.futou));
+
+    if (zhifuGong) {
+      const zhifuXing = HOUSE_STAR[zhifuGong];
+      document.getElementById('hb-zhifu').textContent = zhifuXing || '—';
+      document.getElementById('hb-zhishi').textContent = HOUSE_GATE[zhifuGong] || '—';
+
+      // 地盤時干宮：時柱天干在地盤的宮位
+      const shiganGong = Object.keys(diPanGan).find(g => diPanGan[g].includes(hGZ[0]));
+
+      if (shiganGong) {
+        try {
+          // 排八神
+          const shenPan = getSpiritHouse(shiganGong, yinYang);
+          // 排八星
+          const xingPan = getStarHouse(shiganGong, zhifuXing);
+          // 排天盤天干
+          const tianPanGan = getHStemHouse(shiganGong, diPanGan, xunInfo.futou);
+          // 排八門：值使門地盤宮位
+          const menPan = getGateHouse(zhifuGong, yinYang, hGZ[0]);
+          // 找值使門落宮（天盤使門所在宮位）
+          const shimenName = HOUSE_GATE[zhifuGong];
+          const menLandGong = Object.keys(menPan).find(g => menPan[g] === shimenName);
+          // 排引干
+          const yinGan = menLandGong ? getPullingStem(menLandGong, diPanGan, hGZ[0]) : {};
+
+          [1,2,3,4,6,7,8,9].forEach(g => {
+            const shenEl = document.getElementById('sh-' + g);
+            const starEl = document.getElementById('star-' + g);
+            const tianEl = document.getElementById('tian-' + g);
+            const gateEl = document.getElementById('gate-' + g);
+            const yinEl  = document.getElementById('yin-' + g);
+            if (shenEl) shenEl.textContent = shenPan[g] || '';
+            if (starEl) starEl.textContent = xingPan[g] || '';
+            if (tianEl) tianEl.textContent = tianPanGan[g] || '';
+            if (gateEl) gateEl.textContent = menPan[g] || '';
+            if (yinEl) {
+              const val = yinGan[g] || '';
+              // 震(3)、兌(7) 左右位置，寄干兩字時直式排列
+              if ((g === 3 || g === 7) && val.length > 1) {
+                yinEl.innerHTML = '<span class="yigan-vertical">' +
+                  val.split('').map(c => '<span>' + c + '</span>').join('') +
+                  '</span>';
+              } else {
+                yinEl.textContent = val;
+              }
+            }
+          });
+        } catch(e) {
+          console.log('ERROR:', e.message, e.stack);
+        }
+      }
+    }
+  }
+
+  document.getElementById('paipan-result').style.display = 'block';
+  document.getElementById('paipan-result').scrollIntoView({ behavior: 'smooth' });
+}
+</script>
+
+</div><!-- end inner -->
+</div><!-- end paipan-result -->
+</div><!-- end page -->
+</body>
+</html>
