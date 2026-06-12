@@ -8,56 +8,99 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    background: #ddd8ce;
+    background: #f5f0e8;
     font-family: "Noto Serif TC", "SimSun", "STSong", serif;
-    padding: 0;
-    margin: 0;
+    padding: 8px 12px 24px;
+    max-width: 440px;
+    margin: 0 auto;
+    min-height: 100vh;
   }
   .page {
     max-width: 440px;
     margin: 0 auto;
-    background: #f5f0e8;
-    min-height: 100vh;
     padding: 8px 12px 24px;
+    display: flex;
+    flex-direction: column;
   }
 
   .header {
     display: flex;
     align-items: stretch;
-    border: 2px solid #000;
+    border: 1.5px solid #888;
     border-radius: 12px;
     overflow: hidden;
     background: #fff;
-    margin: 0 0 28px 0;
+    margin: 0 -24px 28px -24px;
   }
-  .h-col { padding: 5px 6px; }
-  .h-col-left  { flex: 0 0 54%; border-right: 1px solid #ccc; padding-left: 6px; }
-  .h-col-mid   { flex: 0 0 23%; border-right: 1px solid #ccc; }
-  .h-col-right { flex: 0 0 23%; padding-right: 6px; }
-  .h-table {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed;
+  .header-left {
+    flex: 0 0 50%;
+    border-right: 1px solid #ccc;
+    padding: 6px 8px;
   }
-  .h-table tr { line-height: 1.8; }
-  .h-table td {
+  .header-top {
+    display: grid;
+    grid-template-columns: 2.5em repeat(4, 1fr);
+    row-gap: 0;
+    column-gap: 0;
+    align-items: center;
+  }
+  .header-mid {
+    flex: 0 0 25%;
+    border-right: 1px solid #ccc;
+    padding: 6px 8px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0 4px;
+    align-content: start;
+    font-size: 13px;
+    line-height: 1.8;
+  }
+  .header-right {
+    flex: 0 0 25%;
+    padding: 6px 8px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0 4px;
+    align-content: start;
+    font-size: 13px;
+    line-height: 1.8;
+  }
+  .ht-label {
+    font-size: 14px;
+    color: #aaa;
+    line-height: 1.8;
     text-align: center;
+    padding-right: 4px;
+  }
+  .ht-val {
+    font-size: 14px;
+    color: #333;
+    line-height: 1.8;
+    text-align: center;
+    border-left: 1px solid #eee;
+    padding: 0 2px;
+  }
+  .ht-val-num {
     font-size: 11px;
     color: #333;
-    font-family: "Menlo", monospace;
-    overflow: hidden;
-    white-space: nowrap;
+    line-height: 1.8;
+    text-align: center;
+    border-left: 1px solid #eee;
+    padding: 0 1px;
+    font-family: Menlo, "Courier New", monospace;
   }
-  .h-table td.hl {
-    font-family: "Noto Serif TC", serif;
-    color: #aaa;
-    text-align: right;
-    padding-right: 3px;
-    width: 2.2em;
+  .header-bottom {
+    display: grid;
+    grid-template-columns: auto 1fr auto 1fr;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 2px 8px;
+    gap: 0 4px;
   }
-  .h-table td.hk {
-    font-size: 11px;
-  }
+  .hb-label { color: #aaa; font-size: 14px; text-align: center; padding-right: 2px; white-space: nowrap; }
+  .hb-val   { color: #333; padding-left: 2px; text-align: center; }
+  .hb-divider { grid-column: 1 / 5; border-top: 1px solid #eee; margin: 2px 0; }
+  .hl { color: #888; }
 
   .outer {
     position: relative;
@@ -98,7 +141,7 @@
     grid-template-rows: repeat(3, 1fr);
     border-radius: 12px;
     overflow: hidden;
-    border: 2px solid #000;
+    border: 1.5px solid #888;
     box-sizing: border-box;
   }
 
@@ -345,29 +388,45 @@
 <div id="paipan-result" style="display:block;">
 
 <div class="header">
-  <div class="h-col h-col-left">
-    <table class="h-table">
-      <tr><td class="hl">西元</td><td id="sy">—</td><td id="sm">—</td><td id="sd">—</td><td id="st">—</td></tr>
-      <tr><td class="hl">農曆</td><td id="ly">—</td><td id="lm">—</td><td id="ld">—</td><td id="lt">—</td></tr>
-      <tr><td class="hl">天干</td><td class="hk" id="gz-y-gan">—</td><td class="hk" id="gz-m-gan">—</td><td class="hk" id="gz-d-gan">—</td><td class="hk" id="gz-h-gan">—</td></tr>
-      <tr><td class="hl">地支</td><td class="hk" id="gz-y-zhi">—</td><td class="hk" id="gz-m-zhi">—</td><td class="hk" id="gz-d-zhi">—</td><td class="hk" id="gz-h-zhi">—</td></tr>
-    </table>
+  <div class="header-left">
+  <div class="header-top">
+    <!-- 標籤欄 -->
+    <div class="ht-label">西元</div>
+    <div class="ht-val-num" id="sy">—</div>
+    <div class="ht-val-num" id="sm">—</div>
+    <div class="ht-val-num" id="sd">—</div>
+    <div class="ht-val-num" id="st">—</div>
+
+    <div class="ht-label">農曆</div>
+    <div class="ht-val-num" id="ly">—</div>
+    <div class="ht-val-num" id="lm">—</div>
+    <div class="ht-val-num" id="ld">—</div>
+    <div class="ht-val-num" id="lt">—</div>
+
+    <div class="ht-label">天干</div>
+    <div class="ht-val" id="gz-y-gan">—</div>
+    <div class="ht-val" id="gz-m-gan">—</div>
+    <div class="ht-val" id="gz-d-gan">—</div>
+    <div class="ht-val" id="gz-h-gan">—</div>
+
+    <div class="ht-label">地支</div>
+    <div class="ht-val" id="gz-y-zhi">—</div>
+    <div class="ht-val" id="gz-m-zhi">—</div>
+    <div class="ht-val" id="gz-d-zhi">—</div>
+    <div class="ht-val" id="gz-h-zhi">—</div>
   </div>
-  <div class="h-col h-col-mid">
-    <table class="h-table">
-      <tr><td class="hl">起局</td><td id="hb-qiju">—</td></tr>
-      <tr><td class="hl">排盤</td><td>陰盤</td></tr>
-      <tr><td class="hl">旬首</td><td id="hb-xun">—</td></tr>
-      <tr><td class="hl">符頭</td><td id="hb-futou">—</td></tr>
-    </table>
   </div>
-  <div class="h-col h-col-right">
-    <table class="h-table">
-      <tr><td class="hl">值符</td><td id="hb-zhifu">—</td></tr>
-      <tr><td class="hl">值使</td><td id="hb-zhishi">—</td></tr>
-      <tr><td class="hl">空亡</td><td id="hb-kongwang">—</td></tr>
-      <tr><td class="hl">驛馬</td><td id="hb-yima">—</td></tr>
-    </table>
+  <div class="header-mid">
+    <div class="hb-label">起局</div><div class="hb-val" id="hb-qiju">—</div>
+    <div class="hb-label">排盤</div><div class="hb-val">陰盤</div>
+    <div class="hb-label">旬首</div><div class="hb-val" id="hb-xun">—</div>
+    <div class="hb-label">符頭</div><div class="hb-val" id="hb-futou">—</div>
+  </div>
+  <div class="header-right">
+    <div class="hb-label">值符</div><div class="hb-val" id="hb-zhifu">—</div>
+    <div class="hb-label">值使</div><div class="hb-val" id="hb-zhishi">—</div>
+    <div class="hb-label">空亡</div><div class="hb-val" id="hb-kongwang">—</div>
+    <div class="hb-label">驛馬</div><div class="hb-val" id="hb-yima">—</div>
   </div>
 </div>
 
@@ -877,13 +936,13 @@ function startPaipan() {
   document.getElementById('sy').textContent = y;
   document.getElementById('sm').textContent = String(m).padStart(2,'0');
   document.getElementById('sd').textContent = String(d).padStart(2,'0');
-  document.getElementById('st').textContent = String(h * 100 + min).padStart(4,'0');
+  document.getElementById('st').textContent = String(h).padStart(2,'0') + String(min).padStart(2,'0');
 
   // 農曆
   document.getElementById('ly').textContent = lunar.getYear();
   document.getElementById('lm').textContent = String(Math.abs(lunar.getMonth())).padStart(2,'0');
   document.getElementById('ld').textContent = String(lunar.getDay()).padStart(2,'0');
-  document.getElementById('lt').textContent = String(h * 100 + min).padStart(4,'0');
+  document.getElementById('lt').textContent = String(h).padStart(2,'0') + String(min).padStart(2,'0');
 
   // 四柱
   const yGZ = ec.getYear();
