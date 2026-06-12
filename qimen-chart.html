@@ -6,168 +6,144 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>奇門遁甲盤面預覽</title>
 <style>
+  /* ── Reset ── */
   * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── Base ── */
   body {
     background: #f5f0e8;
     font-family: "Noto Serif TC", "SimSun", "STSong", serif;
-    padding: 8px 12px 24px;
-    max-width: 440px;
-    margin: 0 auto;
-    min-height: 100vh;
   }
   .page {
-    max-width: 440px;
-    margin: 0 auto;
-    padding: 8px 12px 24px;
+    width: 100%;
+    padding: 10px 12px 32px;
     display: flex;
     flex-direction: column;
   }
+  @media (min-width: 500px) {
+    .page { max-width: 440px; margin: 0 auto; }
+  }
 
+  /* ══════════════════════════════════
+     盤頭 Header  (3欄: 50 / 25 / 25)
+  ══════════════════════════════════ */
   .header {
     display: flex;
     align-items: stretch;
-    border: 1.5px solid #888;
+    border: 2px solid #111;
     border-radius: 12px;
     overflow: hidden;
     background: #fff;
-    margin: 0 -24px 28px -24px;
+    margin-bottom: 28px;
   }
-  .header-left {
-    flex: 0 0 50%;
-    border-right: 1px solid #ccc;
-    padding: 6px 8px;
+
+  /* 欄分隔 */
+  .h-col-left  { flex: 0 0 50%; border-right: 1px solid #ddd; }
+  .h-col-mid   { flex: 0 0 25%; border-right: 1px solid #ddd; }
+  .h-col-right { flex: 0 0 25%; }
+
+  /* 每欄 padding：統一左右各 8px，上下 6px */
+  .h-col-left,
+  .h-col-mid,
+  .h-col-right { padding: 6px 8px; }
+
+  /* table 共用 */
+  .h-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
   }
-  .header-top {
-    display: grid;
-    grid-template-columns: 2.5em repeat(4, 1fr);
-    row-gap: 0;
-    column-gap: 0;
-    align-items: center;
-  }
-  .header-mid {
-    flex: 0 0 25%;
-    border-right: 1px solid #ccc;
-    padding: 6px 8px;
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 0 4px;
-    align-content: start;
-    font-size: 13px;
-    line-height: 1.8;
-  }
-  .header-right {
-    flex: 0 0 25%;
-    padding: 6px 8px;
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 0 4px;
-    align-content: start;
-    font-size: 13px;
-    line-height: 1.8;
-  }
-  .ht-label {
-    font-size: 14px;
-    color: #aaa;
-    line-height: 1.8;
-    text-align: center;
-    padding-right: 4px;
-  }
-  .ht-val {
-    font-size: 14px;
-    color: #333;
-    line-height: 1.8;
-    text-align: center;
-    border-left: 1px solid #eee;
-    padding: 0 2px;
-  }
-  .ht-val-num {
+  .h-table tr { line-height: 1.85; }
+  .h-table td {
+    font-family: "Noto Serif TC", serif;
     font-size: 11px;
     color: #333;
-    line-height: 1.8;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  /* 標籤欄（右對齊、灰色） */
+  .h-table td.hl {
+    color: #aaa;
+    text-align: right;
+    padding-right: 4px;
+    width: 2.2em;
+  }
+  /* 內容欄（置中） */
+  .h-table td.hv {
     text-align: center;
-    border-left: 1px solid #eee;
-    padding: 0 1px;
-    font-family: Menlo, "Courier New", monospace;
   }
-  .header-bottom {
-    display: grid;
-    grid-template-columns: auto 1fr auto 1fr;
-    font-size: 13px;
-    line-height: 1.6;
-    padding: 2px 8px;
-    gap: 0 4px;
-  }
-  .hb-label { color: #aaa; font-size: 14px; text-align: center; padding-right: 2px; white-space: nowrap; }
-  .hb-val   { color: #333; padding-left: 2px; text-align: center; }
-  .hb-divider { grid-column: 1 / 5; border-top: 1px solid #eee; margin: 2px 0; }
-  .hl { color: #888; }
 
+  /* ══════════════════════════════════
+     九宮格外層 + 引干
+  ══════════════════════════════════ */
   .outer {
     position: relative;
     width: 100%;
-    aspect-ratio: 1/1;
-    margin: 28px 0;
+    aspect-ratio: 1 / 1;
+    margin: 24px 0;
   }
+
+  /* 引干：8個方位 */
   .yigan {
     position: absolute;
     font-size: 15px;
-    font-weight: normal;
     color: #333;
     display: flex;
     align-items: center;
     justify-content: center;
     line-height: 1;
   }
-  .yigan-top    { top: -18px; left: 50%; transform: translateX(-50%); }
-  .yigan-bottom { bottom: -18px; left: 50%; transform: translateX(-50%); white-space: nowrap; }
-  .yigan-left   { left: -18px; top: 50%; transform: translateY(-50%); }
-  .yigan-right  { right: -18px; top: 50%; transform: translateY(-50%); }
-  .yigan-vertical {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    line-height: 1.1;
-  }
-  .yigan-tl { top: -18px; left: -18px; }
-  .yigan-tr { top: -18px; right: -18px; }
-  .yigan-bl { bottom: -18px; left: -18px; }
-  .yigan-br { bottom: -18px; right: -18px; }
+  .yigan-top    { top: -20px; left: 50%; transform: translateX(-50%); }
+  .yigan-bottom { bottom: -20px; left: 50%; transform: translateX(-50%); white-space: nowrap; }
+  .yigan-left   { left: -20px; top: 50%; transform: translateY(-50%); flex-direction: column; line-height: 1.2; }
+  .yigan-right  { right: -20px; top: 50%; transform: translateY(-50%); flex-direction: column; line-height: 1.2; }
+  .yigan-tl { top: -20px; left: -20px; }
+  .yigan-tr { top: -20px; right: -20px; }
+  .yigan-bl { bottom: -20px; left: -20px; }
+  .yigan-br { bottom: -20px; right: -20px; }
 
+  /* ══════════════════════════════════
+     九宮 Grid
+  ══════════════════════════════════ */
   .grid {
     width: 100%;
     height: 100%;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     grid-template-rows: repeat(3, 1fr);
-    border-radius: 12px;
-    overflow: hidden;
-    border: 1.5px solid #888;
-    box-sizing: border-box;
   }
 
+  /* 單格：三欄佈局 左28px｜中1fr｜右36px */
   .cell {
     border: 1px solid #999;
     display: grid;
-    grid-template-columns: 28px 1fr 38px;
+    grid-template-columns: 28px 1fr 36px;
     grid-template-rows: repeat(3, 1fr);
     background: #fff;
   }
   .cell.center { background: #eeebe3; }
 
-  /* 外框加粗：移除，改由 .grid border 統一處理 */
+  /* 外框粗邊 2px */
   .grid .cell:nth-child(1),
   .grid .cell:nth-child(2),
-  .grid .cell:nth-child(3) { border-top: none; }
+  .grid .cell:nth-child(3) { border-top:    2px solid #111; }
   .grid .cell:nth-child(7),
   .grid .cell:nth-child(8),
-  .grid .cell:nth-child(9) { border-bottom: none; }
+  .grid .cell:nth-child(9) { border-bottom: 2px solid #111; }
   .grid .cell:nth-child(1),
   .grid .cell:nth-child(4),
-  .grid .cell:nth-child(7) { border-left: none; }
+  .grid .cell:nth-child(7) { border-left:   2px solid #111; }
   .grid .cell:nth-child(3),
   .grid .cell:nth-child(6),
-  .grid .cell:nth-child(9) { border-right: none; }
+  .grid .cell:nth-child(9) { border-right:  2px solid #111; }
 
+  /* 四角圓角 12px */
+  .grid .cell:nth-child(1) { border-radius: 12px 0 0 0; }
+  .grid .cell:nth-child(3) { border-radius: 0 12px 0 0; }
+  .grid .cell:nth-child(7) { border-radius: 0 0 0 12px; }
+  .grid .cell:nth-child(9) { border-radius: 0 0 12px 0; }
+
+  /* ── 左欄（宮號＋八卦） ── */
   .cell-left {
     grid-column: 1;
     grid-row: 1 / 4;
@@ -176,40 +152,19 @@
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    padding: 2px 1px;
+    padding: 3px 1px;
     gap: 2px;
   }
-  .palace-id {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1px;
-  }
+  .palace-id { display: flex; flex-direction: column; align-items: center; gap: 1px; }
   .palace-num  { font-size: 14px; font-weight: bold; color: #333; line-height: 1.2; }
   .palace-name { font-size: 14px; color: #555; line-height: 1.2; }
 
-  /* 八卦線條 */
-  .bagua {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    align-items: center;
-    margin-top: 1px;
-  }
-  .bline-full {
-    width: 16px; height: 2px;
-    background: var(--line-color, #444); border-radius: 1px;
-  }
-  .bline-broken {
-    display: flex; gap: 3px;
-  }
-  .bline-broken span {
-    width: 6px; height: 2px;
-    background: var(--line-color, #444); border-radius: 1px;
-    display: block;
-  }
+  .bagua { display: flex; flex-direction: column; gap: 2px; align-items: center; margin-top: 2px; }
+  .bline-full { width: 16px; height: 2px; background: var(--line-color, #444); border-radius: 1px; }
+  .bline-broken { display: flex; gap: 3px; }
+  .bline-broken span { width: 6px; height: 2px; background: var(--line-color, #444); border-radius: 1px; display: block; }
 
-  /* 中欄 */
+  /* ── 中欄（神、星、門） ── */
   .cell-shen {
     grid-column: 2; grid-row: 1;
     border-bottom: 1px solid #ddd;
@@ -225,10 +180,10 @@
   .cell-gate {
     grid-column: 2; grid-row: 3;
     display: flex; align-items: center; justify-content: center;
-    font-size: 14px; color: #333; flex-direction: column; gap: 1px;
+    font-size: 14px; color: #333;
   }
 
-  /* 右欄 */
+  /* ── 右欄（馬空、天干、地干） ── */
   .cell-marks {
     grid-column: 3; grid-row: 1;
     border-left: 1px solid #ddd;
@@ -252,12 +207,18 @@
     font-size: 14px; color: #333;
   }
 
+  /* ── 標記（馬、空、凶） ── */
   .tag { font-size: 11px; line-height: 1; margin-top: 1px; }
   .tag.mu   { color: #8B6914; }
   .tag.xing { color: #c0392b; }
   .tag.po   { color: #c0392b; }
-  .tag.kong { color: #c0392b; font-size: 12px; line-height: 1; border: 1px solid #c0392b; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; }
-  .tag.ma   { color: #2471a3; font-size: 14px; }
+  .tag.kong {
+    color: #c0392b; font-size: 12px; line-height: 1;
+    border: 1px solid #c0392b; border-radius: 50%;
+    width: 18px; height: 18px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .tag.ma { color: #2471a3; font-size: 14px; }
 
   .zhifu-badge {
     font-size: 9px; color: #c0392b;
@@ -265,28 +226,25 @@
     padding: 0 2px; border-radius: 2px;
   }
 
-  /* 輸入區 */
+  /* ══════════════════════════════════
+     輸入區
+  ══════════════════════════════════ */
   hr.divider {
     border: none;
     border-top: 1px solid #ddd;
-    margin: 12px -16px;
-  }
-  .inner {
-    width: 100%;
-    padding: 0 48px;
+    margin: 12px 0;
   }
   .input-area {
     width: 100%;
-    width: 100%;
     background: #fff;
-    border: 1.5px solid #888;
+    border: 2px solid #111;
     border-radius: 12px;
     padding: 12px 14px;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
   }
   .input-title {
-    font-size: 14px;
-    color: #888;
+    font-size: 13px;
+    color: #aaa;
     margin-bottom: 10px;
     text-align: center;
     letter-spacing: 1px;
@@ -314,7 +272,7 @@
     padding: 4px 2px;
     font-size: 16px;
     text-align: center;
-    font-family: Menlo, "Courier New", monospace;
+    font-family: inherit;
     color: #333;
     -moz-appearance: textfield;
   }
@@ -349,8 +307,7 @@
 </style>
 </head>
 <body>
-
-<div class="inner">
+<div class="page">
 <!-- 輸入區 -->
 <div class="input-area">
   <div class="input-title">起盤時間</div>
@@ -388,45 +345,29 @@
 <div id="paipan-result" style="display:block;">
 
 <div class="header">
-  <div class="header-left">
-  <div class="header-top">
-    <!-- 標籤欄 -->
-    <div class="ht-label">西元</div>
-    <div class="ht-val-num" id="sy">—</div>
-    <div class="ht-val-num" id="sm">—</div>
-    <div class="ht-val-num" id="sd">—</div>
-    <div class="ht-val-num" id="st">—</div>
-
-    <div class="ht-label">農曆</div>
-    <div class="ht-val-num" id="ly">—</div>
-    <div class="ht-val-num" id="lm">—</div>
-    <div class="ht-val-num" id="ld">—</div>
-    <div class="ht-val-num" id="lt">—</div>
-
-    <div class="ht-label">天干</div>
-    <div class="ht-val" id="gz-y-gan">—</div>
-    <div class="ht-val" id="gz-m-gan">—</div>
-    <div class="ht-val" id="gz-d-gan">—</div>
-    <div class="ht-val" id="gz-h-gan">—</div>
-
-    <div class="ht-label">地支</div>
-    <div class="ht-val" id="gz-y-zhi">—</div>
-    <div class="ht-val" id="gz-m-zhi">—</div>
-    <div class="ht-val" id="gz-d-zhi">—</div>
-    <div class="ht-val" id="gz-h-zhi">—</div>
+  <div class="h-col-left">
+    <table class="h-table">
+      <tr><td class="hl">西元</td><td class="hv" id="sy">—</td><td class="hv" id="sm">—</td><td class="hv" id="sd">—</td><td class="hv" id="st">—</td></tr>
+      <tr><td class="hl">農曆</td><td class="hv" id="ly">—</td><td class="hv" id="lm">—</td><td class="hv" id="ld">—</td><td class="hv" id="lt">—</td></tr>
+      <tr><td class="hl">天干</td><td class="hv" id="gz-y-gan">—</td><td class="hv" id="gz-m-gan">—</td><td class="hv" id="gz-d-gan">—</td><td class="hv" id="gz-h-gan">—</td></tr>
+      <tr><td class="hl">地支</td><td class="hv" id="gz-y-zhi">—</td><td class="hv" id="gz-m-zhi">—</td><td class="hv" id="gz-d-zhi">—</td><td class="hv" id="gz-h-zhi">—</td></tr>
+    </table>
   </div>
+  <div class="h-col-mid">
+    <table class="h-table">
+      <tr><td class="hl">起局</td><td class="hv" id="hb-qiju">—</td></tr>
+      <tr><td class="hl">排盤</td><td class="hv">陰盤</td></tr>
+      <tr><td class="hl">旬首</td><td class="hv" id="hb-xun">—</td></tr>
+      <tr><td class="hl">符頭</td><td class="hv" id="hb-futou">—</td></tr>
+    </table>
   </div>
-  <div class="header-mid">
-    <div class="hb-label">起局</div><div class="hb-val" id="hb-qiju">—</div>
-    <div class="hb-label">排盤</div><div class="hb-val">陰盤</div>
-    <div class="hb-label">旬首</div><div class="hb-val" id="hb-xun">—</div>
-    <div class="hb-label">符頭</div><div class="hb-val" id="hb-futou">—</div>
-  </div>
-  <div class="header-right">
-    <div class="hb-label">值符</div><div class="hb-val" id="hb-zhifu">—</div>
-    <div class="hb-label">值使</div><div class="hb-val" id="hb-zhishi">—</div>
-    <div class="hb-label">空亡</div><div class="hb-val" id="hb-kongwang">—</div>
-    <div class="hb-label">驛馬</div><div class="hb-val" id="hb-yima">—</div>
+  <div class="h-col-right">
+    <table class="h-table">
+      <tr><td class="hl">值符</td><td class="hv" id="hb-zhifu">—</td></tr>
+      <tr><td class="hl">值使</td><td class="hv" id="hb-zhishi">—</td></tr>
+      <tr><td class="hl">空亡</td><td class="hv" id="hb-kongwang">—</td></tr>
+      <tr><td class="hl">驛馬</td><td class="hv" id="hb-yima">—</td></tr>
+    </table>
   </div>
 </div>
 
@@ -936,13 +877,13 @@ function startPaipan() {
   document.getElementById('sy').textContent = y;
   document.getElementById('sm').textContent = String(m).padStart(2,'0');
   document.getElementById('sd').textContent = String(d).padStart(2,'0');
-  document.getElementById('st').textContent = String(h).padStart(2,'0') + String(min).padStart(2,'0');
+  document.getElementById('st').textContent = String(h * 100 + min).padStart(4,'0');
 
   // 農曆
   document.getElementById('ly').textContent = lunar.getYear();
   document.getElementById('lm').textContent = String(Math.abs(lunar.getMonth())).padStart(2,'0');
   document.getElementById('ld').textContent = String(lunar.getDay()).padStart(2,'0');
-  document.getElementById('lt').textContent = String(h).padStart(2,'0') + String(min).padStart(2,'0');
+  document.getElementById('lt').textContent = String(h * 100 + min).padStart(4,'0');
 
   // 四柱
   const yGZ = ec.getYear();
@@ -1046,17 +987,7 @@ function startPaipan() {
             if (starEl) starEl.textContent = xingPan[g] || '';
             if (tianEl) tianEl.textContent = tianPanGan[g] || '';
             if (gateEl) gateEl.textContent = menPan[g] || '';
-            if (yinEl) {
-              const val = yinGan[g] || '';
-              // 震(3)、兌(7) 左右位置，寄干兩字時直式排列
-              if ((g === 3 || g === 7) && val.length > 1) {
-                yinEl.innerHTML = '<span class="yigan-vertical">' +
-                  val.split('').map(c => '<span>' + c + '</span>').join('') +
-                  '</span>';
-              } else {
-                yinEl.textContent = val;
-              }
-            }
+            if (yinEl)  yinEl.textContent  = yinGan[g] || '';
           });
         } catch(e) {
           console.log('ERROR:', e.message, e.stack);
@@ -1070,7 +1001,6 @@ function startPaipan() {
 }
 </script>
 
-</div><!-- end inner -->
 </div><!-- end paipan-result -->
 </div><!-- end page -->
 </body>
