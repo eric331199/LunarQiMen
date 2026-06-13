@@ -78,9 +78,9 @@
   ══════════════════════════════════ */
   .outer {
     position: relative;
-    width: 100%;
+    width: calc(100% - 56px);
     aspect-ratio: 1 / 1;
-    margin: 24px 0;
+    margin: 32px auto;
   }
 
   /* 引干：8個方位 */
@@ -314,29 +314,29 @@
   <div class="input-grid">
     <div class="input-row">
       <label>年</label>
-      <input type="tel" id="year" value="2026" maxlength="4" inputmode="numeric">
+      <input type="tel" id="year" value="2015" maxlength="4" inputmode="numeric">
     </div>
     <div class="input-row">
       <label>月</label>
-      <input type="tel" id="month" value="5" maxlength="2" inputmode="numeric">
+      <input type="tel" id="month" value="8" maxlength="2" inputmode="numeric">
     </div>
     <div class="input-row">
       <label>日</label>
-      <input type="tel" id="day" value="28" maxlength="2" inputmode="numeric">
+      <input type="tel" id="day" value="5" maxlength="2" inputmode="numeric">
     </div>
     <div class="input-row">
       <label>時</label>
-      <input type="tel" id="hour" value="22" maxlength="2" inputmode="numeric">
+      <input type="tel" id="hour" value="23" maxlength="2" inputmode="numeric">
     </div>
     <div class="input-row">
       <label>分</label>
-      <input type="tel" id="minute" value="5" maxlength="2" inputmode="numeric">
+      <input type="tel" id="minute" value="15" maxlength="2" inputmode="numeric">
     </div>
   </div>
   <div class="input-buttons">
     <button class="btn-now" onclick="setNow()">現時</button>
-    <button class="btn-now" onclick="resetPaipan()">重置</button>
-    <button class="btn-start" onclick="startPaipan()">排盤</button>
+    <button class="btn-now" onclick="resetChart()">重置</button>
+    <button class="btn-start" onclick="startChart()">排盤</button>
   </div>
 </div>
 
@@ -358,7 +358,7 @@
       <tr><td class="hl">起局</td><td class="hv" id="hb-qiju">—</td></tr>
       <tr><td class="hl">排盤</td><td class="hv">陰盤</td></tr>
       <tr><td class="hl">旬首</td><td class="hv" id="hb-xun">—</td></tr>
-      <tr><td class="hl">符頭</td><td class="hv" id="hb-futou">—</td></tr>
+      <tr><td class="hl">符頭</td><td class="hv" id="hb-dutyStem">—</td></tr>
     </table>
   </div>
   <div class="h-col-right">
@@ -546,14 +546,14 @@
 
 
 <script>
-function resetPaipan() {
+function resetChart() {
   ['year','month','day','hour','minute'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
   ['sy','sm','sd','st','ly','lm','ld','lt',
    'gz-y-gan','gz-y-zhi','gz-m-gan','gz-m-zhi','gz-d-gan','gz-d-zhi','gz-h-gan','gz-h-zhi',
-   'hb-qiju','hb-xun','hb-futou','hb-kongwang','hb-yima','hb-zhifu','hb-zhishi'
+   'hb-qiju','hb-xun','hb-dutyStem','hb-kongwang','hb-yima','hb-zhifu','hb-zhishi'
   ].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.textContent = '—';
@@ -690,9 +690,9 @@ const HOUSE_GATE  = { 1:'休門', 2:'死門', 3:'傷門', 4:'杜門', 6:'開門'
 const EIGHT_SPIRITS = ['值符','騰蛇','太陰','六合','白虎','玄武','九地','九天'];
 
 // 排八神：時天干宮起，陽遁實際順時針，陰遁實際逆時針
-function getSpiritHouse(shiganGong, yinYang) {
+function getSpiritMap(timeStemHouse, yinYang) {
   const order = yinYang === '陽' ? HOUSE_CW : HOUSE_CCW;
-  const startIdx = order.indexOf(parseInt(shiganGong));
+  const startIdx = order.indexOf(parseInt(timeStemHouse));
   const result = {};
   for (let i = 0; i < 8; i++) {
     result[order[(startIdx + i) % 8]] = EIGHT_SPIRITS[i];
@@ -724,22 +724,22 @@ const HOUSE_GATE_IDX = { 1:0, 2:5, 3:2, 4:3, 6:7, 7:6, 8:1, 9:4 };
 const HEAVENLY_STEMS_REF = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
 
 // 排八門：從地盤值使門宮位走步，落點放值使門，其餘實際順時針放入
-function getGateHouse(shimenGong, yinYang, hGan) {
-  shimenGong = parseInt(shimenGong);
+function getGateMap(dutyGateHouse, yinYang, timeStem) {
+  dutyGateHouse = parseInt(dutyGateHouse);
   // 時干序數（甲=1…癸=10），起點算第一步，所以走 steps-1 步
-  const steps = HEAVENLY_STEMS_REF.indexOf(hGan) + 1;
+  const steps = HEAVENLY_STEMS_REF.indexOf(timeStem) + 1;
   // 走步用含中宮的九宮數字順序
   const walkOrder = yinYang === '陽'
     ? [1,2,3,4,5,6,7,8,9]
     : [1,9,8,7,6,5,4,3,2];
-  const startIdx = walkOrder.indexOf(shimenGong);
+  const startIdx = walkOrder.indexOf(dutyGateHouse);
   // 走 steps-1 步（起點算第一步）
   let landGong = walkOrder[(startIdx + steps - 1) % 9];
   // 入中寄坤
   if (landGong === 5) landGong = 2;
 
   // 值使門的門名 index
-  const shimenMenIdx = HOUSE_GATE_IDX[shimenGong];
+  const shimenMenIdx = HOUSE_GATE_IDX[dutyGateHouse];
 
   // 從落點起，實際順時針放入八門
   const landIdx = HOUSE_CW.indexOf(landGong);
@@ -752,14 +752,14 @@ function getGateHouse(shimenGong, yinYang, hGan) {
 }
 
 // 排引干：值使門落宮起，時天干為頭，沿地盤實際順時針序列切入，永遠順時針放入
-function getPullingStem(menLandGong, diPanGan, hGan) {
-  menLandGong = parseInt(menLandGong);
+function getGuidingStemMap(dutyGateLandHouse, earthStemMap, timeStem) {
+  dutyGateLandHouse = parseInt(dutyGateLandHouse);
   // 用實際順時針讀出地盤天干序列（8個位置）
-  const diSeq = HOUSE_CW.map(g => diPanGan[g] || '');
+  const diSeq = HOUSE_CW.map(g => earthStemMap[g] || '');
   // 找時天干在序列中的位置
-  const headPos = diSeq.findIndex(s => s.includes(hGan));
+  const headPos = diSeq.findIndex(s => s.includes(timeStem));
   // 從值使門落宮起，實際順時針放入
-  const startIdx = HOUSE_CW.indexOf(menLandGong);
+  const startIdx = HOUSE_CW.indexOf(dutyGateLandHouse);
   const result = {};
   for (let i = 0; i < 8; i++) {
     const gong = HOUSE_CW[(startIdx + i) % 8];
@@ -771,9 +771,9 @@ function getPullingStem(menLandGong, diPanGan, hGan) {
 const EIGHT_STARS = ['天蓬','天任','天沖','天輔','天英','天芮','天柱','天心'];
 
 // 排八星：地盤時干宮起，值符星為頭，固定蓬任沖輔英芮柱心順時針
-function getStarHouse(shiganGong, zhifuXing) {
-  const headIdx = EIGHT_STARS.indexOf(zhifuXing);
-  const startIdx = HOUSE_CW.indexOf(parseInt(shiganGong));
+function getStarMap(timeStemHouse, dutyStar) {
+  const headIdx = EIGHT_STARS.indexOf(dutyStar);
+  const startIdx = HOUSE_CW.indexOf(parseInt(timeStemHouse));
   const result = {};
   for (let i = 0; i < 8; i++) {
     result[HOUSE_CW[(startIdx + i) % 8]] = EIGHT_STARS[(headIdx + i) % 8];
@@ -782,14 +782,14 @@ function getStarHouse(shiganGong, zhifuXing) {
 }
 
 // 排天盤天干：地盤時干宮起，沿地盤實際順時針序列從符頭切入，永遠順時針放入
-function getHStemHouse(shiganGong, diPanGan, futou) {
-  shiganGong = parseInt(shiganGong);
+function getHeavenStemMap(timeStemHouse, earthStemMap, dutyStem) {
+  timeStemHouse = parseInt(timeStemHouse);
   // 用實際順時針讀出地盤天干序列（8個位置，寄干宮保留兩個天干）
-  const diSeq = HOUSE_CW.map(g => diPanGan[g] || '');
+  const diSeq = HOUSE_CW.map(g => earthStemMap[g] || '');
   // 找符頭所在位置（位置index）
-  const headPos = diSeq.findIndex(s => s.includes(futou));
+  const headPos = diSeq.findIndex(s => s.includes(dutyStem));
   // 從地盤時干宮起，實際順時針放入天盤
-  const startIdx = HOUSE_CW.indexOf(shiganGong);
+  const startIdx = HOUSE_CW.indexOf(timeStemHouse);
   const result = {};
   for (let i = 0; i < 8; i++) {
     const gong = HOUSE_CW[(startIdx + i) % 8];
@@ -800,51 +800,55 @@ function getHStemHouse(shiganGong, diPanGan, futou) {
 
 // 排地盤天干
 // 回傳 { 宮位數: 天干 }，例如 { 1:'丙', 2:'戊乙', ... }
-function getEStemHouse(yinYang, juShu) {
+function getEarthStemMap(yinYang, chartNum) {
   const result = {};
-  const fullOrder = yinYang === '陽' ? HOUSE_NUM_ASC_FULL : HOUSE_NUM_DESC_FULL;
+  const order9 = yinYang === '陽' ? HOUSE_NUM_ASC_FULL : HOUSE_NUM_DESC_FULL; // 含5，9格
 
-  // 找戊的起始宮位在完整順序中的 index
-  const startIdx = fullOrder.indexOf(juShu);
+  // 找戊的起始宮位在9格順序中的 index
+  const startIdx = order9.indexOf(chartNum);
 
+  // 9個天干依序排入9格（含中宮5）
   for (let i = 0; i < 9; i++) {
     const gan = EARTH_PLATE_STEM_ORDER[i];
-    const idx = (startIdx + i) % 9;
-    let gong = fullOrder[idx];
-    // 入中寄坤（二）
-    if (gong === 5) gong = 2;
+    const gong = order9[(startIdx + i) % 9];
     if (result[gong]) {
       result[gong] = result[gong] + gan;
     } else {
       result[gong] = gan;
     }
   }
+  // 排完後，5宮天干寄坤（2）
+  if (result[5]) {
+    result[2] = result[2] ? result[2] + result[5] : result[5];
+    delete result[5];
+  }
+
   return result;
 }
 
 // 六甲旬對照表
 const XUN_TABLE = [
-  { xun: '甲子旬', futou: '戊', kongwang: ['戌','亥'],
+  { xun: '甲子旬', dutyStem: '戊', kongwang: ['戌','亥'],
     zhis: ['子','丑','寅','卯','辰','巳','午','未','申','酉'] },
-  { xun: '甲戌旬', futou: '己', kongwang: ['申','酉'],
+  { xun: '甲戌旬', dutyStem: '己', kongwang: ['申','酉'],
     zhis: ['戌','亥','子','丑','寅','卯','辰','巳','午','未'] },
-  { xun: '甲申旬', futou: '庚', kongwang: ['午','未'],
+  { xun: '甲申旬', dutyStem: '庚', kongwang: ['午','未'],
     zhis: ['申','酉','戌','亥','子','丑','寅','卯','辰','巳'] },
-  { xun: '甲午旬', futou: '辛', kongwang: ['辰','巳'],
+  { xun: '甲午旬', dutyStem: '辛', kongwang: ['辰','巳'],
     zhis: ['午','未','申','酉','戌','亥','子','丑','寅','卯'] },
-  { xun: '甲辰旬', futou: '壬', kongwang: ['寅','卯'],
+  { xun: '甲辰旬', dutyStem: '壬', kongwang: ['寅','卯'],
     zhis: ['辰','巳','午','未','申','酉','戌','亥','子','丑'] },
-  { xun: '甲寅旬', futou: '癸', kongwang: ['子','丑'],
+  { xun: '甲寅旬', dutyStem: '癸', kongwang: ['子','丑'],
     zhis: ['寅','卯','辰','巳','午','未','申','酉','戌','亥'] },
 ];
 
 // 根據時柱干支找旬首資料（用完整干支配對）
-function getDecInfo(hGan, hZhi) {
+function getDecInfo(timeStem, timeBranch) {
   const TIAN_GAN = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
   const EARTHLY_BRANCHES_REF12 = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
 
-  const ganIdx = TIAN_GAN.indexOf(hGan);
-  const zhiIdx = EARTHLY_BRANCHES_REF12.indexOf(hZhi);
+  const ganIdx = TIAN_GAN.indexOf(timeStem);
+  const zhiIdx = EARTHLY_BRANCHES_REF12.indexOf(timeBranch);
   const posInXun = ganIdx; // 在旬中的位置就是天干序號（甲=0, 乙=1, ...）
   const xunFirstZhiIdx = (zhiIdx - posInXun + 12) % 12;
   const xunFirstZhi = EARTHLY_BRANCHES_REF12[xunFirstZhiIdx];
@@ -852,17 +856,17 @@ function getDecInfo(hGan, hZhi) {
   console.log('ganIdx=' + ganIdx + ' zhiIdx=' + zhiIdx + ' posInXun=' + posInXun + ' xunFirstZhi=' + xunFirstZhi);
 
   const xunMap = {
-    '子': { xun: '甲子旬', futou: '戊', kongwang: ['戌','亥'] },
-    '戌': { xun: '甲戌旬', futou: '己', kongwang: ['申','酉'] },
-    '申': { xun: '甲申旬', futou: '庚', kongwang: ['午','未'] },
-    '午': { xun: '甲午旬', futou: '辛', kongwang: ['辰','巳'] },
-    '辰': { xun: '甲辰旬', futou: '壬', kongwang: ['寅','卯'] },
-    '寅': { xun: '甲寅旬', futou: '癸', kongwang: ['子','丑'] },
+    '子': { xun: '甲子旬', dutyStem: '戊', kongwang: ['戌','亥'] },
+    '戌': { xun: '甲戌旬', dutyStem: '己', kongwang: ['申','酉'] },
+    '申': { xun: '甲申旬', dutyStem: '庚', kongwang: ['午','未'] },
+    '午': { xun: '甲午旬', dutyStem: '辛', kongwang: ['辰','巳'] },
+    '辰': { xun: '甲辰旬', dutyStem: '壬', kongwang: ['寅','卯'] },
+    '寅': { xun: '甲寅旬', dutyStem: '癸', kongwang: ['子','丑'] },
   };
   return xunMap[xunFirstZhi] || null;
 }
 
-function startPaipan() {
+function startChart() {
   const y   = parseInt(document.getElementById('year').value);
   const m   = parseInt(document.getElementById('month').value);
   const d   = parseInt(document.getElementById('day').value);
@@ -902,23 +906,23 @@ function startPaipan() {
 
   // 陰陽遁 + 局數
   const yinYang = getSolsticeType(y, m, d, h);
-  const juShu = getChartNumber(lunar, h);
-  document.getElementById('hb-qiju').textContent = yinYang + juShu + '局';
+  const chartNum = getChartNumber(lunar, h);
+  document.getElementById('hb-qiju').textContent = yinYang + chartNum + '局';
 
   // 排地盤天干
-  const diPanGan = getEStemHouse(yinYang, juShu);
+  const earthStemMap = getEarthStemMap(yinYang, chartNum);
 
   // 寫入地盤天干到各宮格
   [1,2,3,4,6,7,8,9].forEach(g => {
     const el = document.getElementById('di-' + g);
-    if (el) el.textContent = diPanGan[g] || '';
+    if (el) el.textContent = earthStemMap[g] || '';
   });
 
   // 旬首 / 符頭 / 空亡
   const xunInfo = getDecInfo(hGZ[0], hGZ[1]);
   if (xunInfo) {
     document.getElementById('hb-xun').textContent = xunInfo.xun;
-    document.getElementById('hb-futou').textContent = xunInfo.futou;
+    document.getElementById('hb-dutyStem').textContent = xunInfo.dutyStem;
     document.getElementById('hb-kongwang').textContent = xunInfo.kongwang.join('、');
 
     // 清除所有 marks
@@ -951,31 +955,33 @@ function startPaipan() {
     });
 
     // 值符宮：符頭天干在地盤的宮位
-    const zhifuGong = Object.keys(diPanGan).find(g => diPanGan[g].includes(xunInfo.futou));
+    const dutyStemHouse = Object.keys(earthStemMap).find(g => earthStemMap[g].includes(xunInfo.dutyStem));
 
-    if (zhifuGong) {
-      const zhifuXing = HOUSE_STAR[zhifuGong];
-      document.getElementById('hb-zhifu').textContent = zhifuXing || '—';
-      document.getElementById('hb-zhishi').textContent = HOUSE_GATE[zhifuGong] || '—';
+    if (dutyStemHouse) {
+      const dutyStar = HOUSE_STAR[dutyStemHouse];
+      document.getElementById('hb-zhifu').textContent = dutyStar || '—';
+      document.getElementById('hb-zhishi').textContent = HOUSE_GATE[dutyStemHouse] || '—';
 
       // 地盤時干宮：時柱天干在地盤的宮位
-      const shiganGong = Object.keys(diPanGan).find(g => diPanGan[g].includes(hGZ[0]));
+      // 六甲伏吟：時干為甲，甲不在地盤，改用符頭宮位（甲遁伏於值符下）
+      let timeStemHouse = Object.keys(earthStemMap).find(g => earthStemMap[g].includes(hGZ[0]));
+      if (!timeStemHouse) timeStemHouse = dutyStemHouse;
 
-      if (shiganGong) {
+      if (timeStemHouse) {
         try {
           // 排八神
-          const shenPan = getSpiritHouse(shiganGong, yinYang);
+          const shenPan = getSpiritMap(timeStemHouse, yinYang);
           // 排八星
-          const xingPan = getStarHouse(shiganGong, zhifuXing);
+          const xingPan = getStarMap(timeStemHouse, dutyStar);
           // 排天盤天干
-          const tianPanGan = getHStemHouse(shiganGong, diPanGan, xunInfo.futou);
+          const heavenStemMap = getHeavenStemMap(timeStemHouse, earthStemMap, xunInfo.dutyStem);
           // 排八門：值使門地盤宮位
-          const menPan = getGateHouse(zhifuGong, yinYang, hGZ[0]);
+          const menPan = getGateMap(dutyStemHouse, yinYang, hGZ[0]);
           // 找值使門落宮（天盤使門所在宮位）
-          const shimenName = HOUSE_GATE[zhifuGong];
-          const menLandGong = Object.keys(menPan).find(g => menPan[g] === shimenName);
+          const shimenName = HOUSE_GATE[dutyStemHouse];
+          const dutyGateLandHouse = Object.keys(menPan).find(g => menPan[g] === shimenName);
           // 排引干
-          const yinGan = menLandGong ? getPullingStem(menLandGong, diPanGan, hGZ[0]) : {};
+          const guidingStemMap = dutyGateLandHouse ? getGuidingStemMap(dutyGateLandHouse, earthStemMap, hGZ[0]) : {};
 
           [1,2,3,4,6,7,8,9].forEach(g => {
             const shenEl = document.getElementById('sh-' + g);
@@ -985,9 +991,16 @@ function startPaipan() {
             const yinEl  = document.getElementById('yin-' + g);
             if (shenEl) shenEl.textContent = shenPan[g] || '';
             if (starEl) starEl.textContent = xingPan[g] || '';
-            if (tianEl) tianEl.textContent = tianPanGan[g] || '';
+            if (tianEl) tianEl.textContent = heavenStemMap[g] || '';
             if (gateEl) gateEl.textContent = menPan[g] || '';
-            if (yinEl)  yinEl.textContent  = yinGan[g] || '';
+            if (yinEl) {
+              const val = guidingStemMap[g] || '';
+              if ((g === 3 || g === 7) && val.length > 1) {
+                yinEl.innerHTML = val.split('').map(c => `<span>${c}</span>`).join('');
+              } else {
+                yinEl.textContent = val;
+              }
+            }
           });
         } catch(e) {
           console.log('ERROR:', e.message, e.stack);
