@@ -113,11 +113,11 @@
     grid-template-rows: repeat(3, 1fr);
   }
 
-  /* 單格：三欄佈局 左28px｜中1fr｜右36px */
+  /* 單格：三欄佈局 均等三欄 */
   .cell {
     border: 1px solid #999;
     display: grid;
-    grid-template-columns: 28px 1fr 36px;
+    grid-template-columns: 1fr 1fr 1fr;
     grid-template-rows: repeat(3, 1fr);
     background: #fff;
   }
@@ -155,9 +155,9 @@
     padding: 3px 1px;
     gap: 2px;
   }
-  .palace-id { display: flex; flex-direction: column; align-items: center; gap: 1px; }
-  .palace-num  { font-size: 14px; font-weight: bold; color: #333; line-height: 1.2; }
-  .palace-name { font-size: 14px; color: #555; line-height: 1.2; }
+  .palace-id { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 2px; }
+  .palace-num  { font-size: 13px; font-weight: bold; color: #333; line-height: 1.2; }
+  .palace-name { font-size: 13px; color: #555; line-height: 1.2; }
 
   .bagua { display: flex; flex-direction: column; gap: 2px; align-items: center; margin-top: 2px; }
   .bline-full { width: 16px; height: 2px; background: var(--line-color, #444); border-radius: 1px; }
@@ -314,11 +314,11 @@
   <div class="input-grid">
     <div class="input-row">
       <label>年</label>
-      <input type="tel" id="year" value="2015" maxlength="4" inputmode="numeric">
+      <input type="tel" id="year" value="2022" maxlength="4" inputmode="numeric">
     </div>
     <div class="input-row">
       <label>月</label>
-      <input type="tel" id="month" value="8" maxlength="2" inputmode="numeric">
+      <input type="tel" id="month" value="4" maxlength="2" inputmode="numeric">
     </div>
     <div class="input-row">
       <label>日</label>
@@ -326,11 +326,11 @@
     </div>
     <div class="input-row">
       <label>時</label>
-      <input type="tel" id="hour" value="23" maxlength="2" inputmode="numeric">
+      <input type="tel" id="hour" value="3" maxlength="2" inputmode="numeric">
     </div>
     <div class="input-row">
       <label>分</label>
-      <input type="tel" id="minute" value="15" maxlength="2" inputmode="numeric">
+      <input type="tel" id="minute" value="44" maxlength="2" inputmode="numeric">
     </div>
   </div>
   <div class="input-buttons">
@@ -752,13 +752,61 @@ function getGateMap(dutyGateHouse, yinYang, timeStem) {
 }
 
 // 排引干：值使門落宮起，時天干為頭，沿地盤實際順時針序列切入，永遠順時針放入
-function getGuidingStemMap(dutyGateLandHouse, earthStemMap, timeStem) {
+// 六甲伏吟特例：時干甲不在地盤，改用符頭天干（dutyStem）替代
+// 特例三：三干相同時，將時干替代值入中宮飛布，飛布結果直接作為引干
+function getGuidingStemMap(dutyGateLandHouse, earthStemMap, timeStem, dutyStem, yinYang) {
   dutyGateLandHouse = parseInt(dutyGateLandHouse);
+
+  // 決定實際使用的時干（甲不在地盤時改用符頭）
+  const effectiveStem = (timeStem === '甲') ? dutyStem : timeStem;
+
   // 用實際順時針讀出地盤天干序列（8個位置）
-  const diSeq = HOUSE_CW.map(g => earthStemMap[g] || '');
-  // 找時天干在序列中的位置
-  const headPos = diSeq.findIndex(s => s.includes(timeStem));
-  // 從值使門落宮起，實際順時針放入
+  let diSeq = HOUSE_CW.map(g => earthStemMap[g] || '');
+
+  // 偵測三干相同：值使門落宮的地盤干是否等於 effectiveStem
+  const diStemAtLand = earthStemMap[dutyGateLandHouse] || '';
+  const isTripleSame = diStemAtLand.includes(effectiveStem);
+
+  if (isTripleSame) {
+    const stemOrder = EARTH_PLATE_STEM_ORDER; // 戊己庚辛壬癸丁丙乙
+    const walkFull = yinYang === '陽'
+      ? [5,6,7,8,9,1,2,3,4]
+      : [5,4,3,2,1,9,8,7,6];
+
+    // 飛布函數：將 centerStem 入中宮飛布，回傳 flyMap
+    function doFly(centerStem) {
+      const centerIdx = stemOrder.indexOf(centerStem);
+      const fm = {};
+      for (let i = 0; i < 9; i++) {
+        const gan = stemOrder[(centerIdx + i) % 9];
+        const gong = walkFull[i];
+        fm[gong] = (fm[gong] || '') + gan;
+      }
+      if (fm[5]) {
+        fm[2] = (fm[2] || '') + fm[5];
+        delete fm[5];
+      }
+      return fm;
+    }
+
+    // 特例三：effectiveStem 入中飛布
+    let flyMap = doFly(effectiveStem);
+
+    // 特例四：飛布後坤二仍含 effectiveStem → 閉環
+    // 改用坤二的另一個天干入中飛布
+    if ((flyMap[2] || '').includes(effectiveStem)) {
+      const otherStem = (flyMap[2] || '').split('').find(c => c !== effectiveStem);
+      if (otherStem) flyMap = doFly(otherStem);
+    }
+
+    const result = {};
+    [1,2,3,4,6,7,8,9].forEach(g => { result[g] = flyMap[g] || ''; });
+    return result;
+  }
+
+  // 普通情況：從值使門落宮起，以 effectiveStem 為頭，順時針放入
+  let headPos = diSeq.findIndex(s => s.includes(effectiveStem));
+  if (headPos === -1) headPos = 0;
   const startIdx = HOUSE_CW.indexOf(dutyGateLandHouse);
   const result = {};
   for (let i = 0; i < 8; i++) {
@@ -981,7 +1029,7 @@ function startChart() {
           const shimenName = HOUSE_GATE[dutyStemHouse];
           const dutyGateLandHouse = Object.keys(menPan).find(g => menPan[g] === shimenName);
           // 排引干
-          const guidingStemMap = dutyGateLandHouse ? getGuidingStemMap(dutyGateLandHouse, earthStemMap, hGZ[0]) : {};
+          const guidingStemMap = dutyGateLandHouse ? getGuidingStemMap(dutyGateLandHouse, earthStemMap, hGZ[0], xunInfo.dutyStem, yinYang) : {};
 
           [1,2,3,4,6,7,8,9].forEach(g => {
             const shenEl = document.getElementById('sh-' + g);
