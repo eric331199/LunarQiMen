@@ -130,13 +130,12 @@
   .cell.center { background: #eeebe3; }
   .cell.center .cell-shen  { border-bottom: 1px solid #ccc; }
   .cell.center .cell-star  { border-bottom: 1px solid #ccc; }
-  .cell.center .cell-marks { border-left: 1px solid #ccc; border-bottom: 1px solid #ccc; }
+  .cell.center .cell-kong { border-left: 1px solid #ccc; border-bottom: 1px solid #ccc; }
   .cell.center .cell-tian  { border-left: 1px solid #ccc; border-bottom: 1px solid #ccc; }
   .cell.center .cell-di    { border-left: 1px solid #ccc; }
   .cell.center .cell-left  { border-right: 1px solid #ccc; border-bottom: 1px solid #ccc; }
   .cell.center .cell-left2 { border-right: 1px solid #ccc; border-bottom: 1px solid #ccc; }
   .cell.center .cell-ma    { border-right: 1px solid #ccc; }
-  .cell.center .cell-gate  { }
 
   /* 外框粗邊 2px */
   .grid .cell:nth-child(1),
@@ -203,8 +202,8 @@
   }
 
   /* ── col3 右欄三格 ── */
-  /* marks（空）：col3 row1 */
-  .cell-marks {
+  /* kong（空亡）：col3 row1 */
+  .cell-kong {
     grid-column: 3; grid-row: 1;
     border-left: 1px solid #ddd;
     border-bottom: 1px solid #ddd;
@@ -475,7 +474,7 @@
       <div class="cell-shen" id="sh-4"></div>
       <div class="cell-star" id="star-4"></div>
       <div class="cell-gate" id="gate-4"></div>
-      <div class="cell-marks" id="marks-4"></div>
+      <div class="cell-kong" id="kong-4"></div>
       <div class="cell-tian" id="tian-4"></div>
       <div class="cell-di" id="di-4"></div>
       <div class="cell-ma" id="ma-4"></div>
@@ -495,7 +494,7 @@
       <div class="cell-shen" id="sh-9"></div>
       <div class="cell-star" id="star-9"></div>
       <div class="cell-gate" id="gate-9"></div>
-      <div class="cell-marks" id="marks-9"></div>
+      <div class="cell-kong" id="kong-9"></div>
       <div class="cell-tian" id="tian-9"></div>
       <div class="cell-di" id="di-9"></div>
       <div class="cell-ma" id="ma-9"></div>
@@ -515,7 +514,7 @@
       <div class="cell-shen" id="sh-2"></div>
       <div class="cell-star" id="star-2"></div>
       <div class="cell-gate" id="gate-2"></div>
-      <div class="cell-marks" id="marks-2"></div>
+      <div class="cell-kong" id="kong-2"></div>
       <div class="cell-tian" id="tian-2"></div>
       <div class="cell-di" id="di-2"></div>
       <div class="cell-ma" id="ma-2"></div>
@@ -535,7 +534,7 @@
       <div class="cell-shen" id="sh-3"></div>
       <div class="cell-star" id="star-3"></div>
       <div class="cell-gate" id="gate-3"></div>
-      <div class="cell-marks" id="marks-3"></div>
+      <div class="cell-kong" id="kong-3"></div>
       <div class="cell-tian" id="tian-3"></div>
       <div class="cell-di" id="di-3"></div>
       <div class="cell-ma" id="ma-3"></div>
@@ -550,7 +549,7 @@
       <div class="cell-shen"></div>
       <div class="cell-star"></div>
       <div class="cell-gate"></div>
-      <div class="cell-marks"></div>
+      <div class="cell-kong"></div>
       <div class="cell-tian"></div>
       <div class="cell-di"></div>
       <div class="cell-ma"></div>
@@ -570,7 +569,7 @@
       <div class="cell-shen" id="sh-7"></div>
       <div class="cell-star" id="star-7"></div>
       <div class="cell-gate" id="gate-7"></div>
-      <div class="cell-marks" id="marks-7"></div>
+      <div class="cell-kong" id="kong-7"></div>
       <div class="cell-tian" id="tian-7"></div>
       <div class="cell-di" id="di-7"></div>
       <div class="cell-ma" id="ma-7"></div>
@@ -590,7 +589,7 @@
       <div class="cell-shen" id="sh-8"></div>
       <div class="cell-star" id="star-8"></div>
       <div class="cell-gate" id="gate-8"></div>
-      <div class="cell-marks" id="marks-8"></div>
+      <div class="cell-kong" id="kong-8"></div>
       <div class="cell-tian" id="tian-8"></div>
       <div class="cell-di" id="di-8"></div>
       <div class="cell-ma" id="ma-8"></div>
@@ -610,7 +609,7 @@
       <div class="cell-shen" id="sh-1"></div>
       <div class="cell-star" id="star-1"></div>
       <div class="cell-gate" id="gate-1"></div>
-      <div class="cell-marks" id="marks-1"></div>
+      <div class="cell-kong" id="kong-1"></div>
       <div class="cell-tian" id="tian-1"></div>
       <div class="cell-di" id="di-1"></div>
       <div class="cell-ma" id="ma-1"></div>
@@ -630,7 +629,7 @@
       <div class="cell-shen" id="sh-6"></div>
       <div class="cell-star" id="star-6"></div>
       <div class="cell-gate" id="gate-6"></div>
-      <div class="cell-marks" id="marks-6"></div>
+      <div class="cell-kong" id="kong-6"></div>
       <div class="cell-tian" id="tian-6"></div>
       <div class="cell-di" id="di-6"></div>
       <div class="cell-ma" id="ma-6"></div>
@@ -654,7 +653,7 @@ function resetChart() {
     if (el) el.textContent = '—';
   });
   [1,2,3,4,6,7,8,9].forEach(g => {
-    ['sh-','star-','gate-','tian-','di-','marks-','ma-','yin-'].forEach(pre => {
+    ['sh-','star-','gate-','tian-','di-','kong-','ma-','yin-'].forEach(pre => {
       const el = document.getElementById(pre + g);
       if (el) el.innerHTML = '';
     });
@@ -1080,10 +1079,10 @@ function startChart() {
     document.getElementById('hb-dutyStem').textContent = xunInfo.dutyStem;
     document.getElementById('hb-kongwang').textContent = xunInfo.kongwang.join('、');
 
-    // 清除所有 marks 與 ma
+    // 清除所有 kong 與 ma
     [1,2,3,4,6,7,8,9].forEach(g => {
-      const marksEl = document.getElementById('marks-' + g);
-      if (marksEl) marksEl.innerHTML = '';
+      const kongEl = document.getElementById('kong-' + g);
+      if (kongEl) kongEl.innerHTML = '';
       const maEl = document.getElementById('ma-' + g);
       if (maEl) maEl.innerHTML = '';
     });
@@ -1104,7 +1103,7 @@ function startChart() {
     const marked = new Set();
     xunInfo.kongwang.forEach(zhi => {
       const g = BRANCH_HOUSE[zhi];
-      const el = document.getElementById('marks-' + g);
+      const el = document.getElementById('kong-' + g);
       if (el && !marked.has(g)) {
         el.innerHTML += '<span class="tag kong">空</span>';
         marked.add(g);
