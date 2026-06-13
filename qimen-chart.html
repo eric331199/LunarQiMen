@@ -87,6 +87,7 @@
   .yigan {
     position: absolute;
     font-size: 15px;
+    font-weight: normal;
     color: #333;
     display: flex;
     align-items: center;
@@ -113,7 +114,7 @@
     grid-template-rows: repeat(3, 1fr);
   }
 
-  /* 單格：三欄佈局 均等三欄 */
+  /* 單格：3×3 九格佈局 */
   .cell {
     border: 1px solid #999;
     display: grid;
@@ -143,10 +144,10 @@
   .grid .cell:nth-child(7) { border-radius: 0 0 0 12px; }
   .grid .cell:nth-child(9) { border-radius: 0 0 12px 0; }
 
-  /* ── 左欄（宮號＋八卦） ── */
+  /* ── 左上格（宮號＋八卦）：col1 row1+row2 ── */
   .cell-left {
     grid-column: 1;
-    grid-row: 1 / 4;
+    grid-row: 1 / 3;
     border-right: 1px solid #ddd;
     display: flex;
     flex-direction: column;
@@ -165,25 +166,29 @@
   .bline-broken span { width: 6px; height: 2px; background: var(--line-color, #444); border-radius: 1px; display: block; }
 
   /* ── 中欄（神、星、門） ── */
+  /* 神：col2 row1 */
   .cell-shen {
     grid-column: 2; grid-row: 1;
     border-bottom: 1px solid #ddd;
     display: flex; align-items: center; justify-content: center;
     font-size: 14px; color: #333;
   }
+  /* 星：col2 row2 */
   .cell-star {
     grid-column: 2; grid-row: 2;
     border-bottom: 1px solid #ddd;
     display: flex; align-items: center; justify-content: center;
     font-size: 14px; color: #333; gap: 2px;
   }
+  /* 門：col2 row3 */
   .cell-gate {
     grid-column: 2; grid-row: 3;
     display: flex; align-items: center; justify-content: center;
     font-size: 14px; color: #333;
   }
 
-  /* ── 右欄（馬空、天干、地干） ── */
+  /* ── col3 右欄三格 ── */
+  /* marks（空）：col3 row1 */
   .cell-marks {
     grid-column: 3; grid-row: 1;
     border-left: 1px solid #ddd;
@@ -191,6 +196,7 @@
     display: flex; flex-direction: row;
     align-items: center; justify-content: center; gap: 1px;
   }
+  /* 天干：col3 row2 */
   .cell-tian {
     grid-column: 3; grid-row: 2;
     border-left: 1px solid #ddd;
@@ -199,12 +205,21 @@
     align-items: center; justify-content: center;
     font-size: 14px; color: #333;
   }
+  /* 地干：col3 row3 */
   .cell-di {
     grid-column: 3; grid-row: 3;
     border-left: 1px solid #ddd;
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
     font-size: 14px; color: #333;
+  }
+  /* 馬：col1 row3 */
+  .cell-ma {
+    grid-column: 1; grid-row: 3;
+    border-right: 1px solid #ddd;
+    border-top: 1px solid #ddd;
+    display: flex; flex-direction: row;
+    align-items: center; justify-content: center; gap: 1px;
   }
 
   /* ── 標記（馬、空、凶） ── */
@@ -218,7 +233,21 @@
     width: 18px; height: 18px;
     display: flex; align-items: center; justify-content: center;
   }
-  .tag.ma { color: #2471a3; font-size: 14px; }
+  .tag.ma {
+    color: #2471a3; font-size: 11px; line-height: 1;
+    position: relative; display: inline-flex; align-items: center; justify-content: center;
+  }
+  .tag.ma::before {
+    content: '△';
+    font-size: 26px;
+    color: #2471a3;
+    line-height: 1;
+    position: absolute;
+  }
+  .tag.ma span {
+    position: relative; z-index: 1;
+    font-size: 10px; margin-top: 4px;
+  }
 
   .zhifu-badge {
     font-size: 9px; color: #c0392b;
@@ -400,6 +429,7 @@
       <div class="cell-marks" id="marks-4"></div>
       <div class="cell-tian" id="tian-4"></div>
       <div class="cell-di" id="di-4"></div>
+      <div class="cell-ma" id="ma-4"></div>
     </div>
 
     <!-- 9 離：中虛（下實，中斷，上實） -->
@@ -418,6 +448,7 @@
       <div class="cell-marks" id="marks-9"></div>
       <div class="cell-tian" id="tian-9"></div>
       <div class="cell-di" id="di-9"></div>
+      <div class="cell-ma" id="ma-9"></div>
     </div>
 
     <!-- 2 坤：六斷（全斷） -->
@@ -436,6 +467,7 @@
       <div class="cell-marks" id="marks-2"></div>
       <div class="cell-tian" id="tian-2"></div>
       <div class="cell-di" id="di-2"></div>
+      <div class="cell-ma" id="ma-2"></div>
     </div>
 
     <!-- 3 震：仰盂（下實，中斷，上斷） -->
@@ -454,6 +486,7 @@
       <div class="cell-marks" id="marks-3"></div>
       <div class="cell-tian" id="tian-3"></div>
       <div class="cell-di" id="di-3"></div>
+      <div class="cell-ma" id="ma-3"></div>
     </div>
 
     <!-- 5 中宮 -->
@@ -485,6 +518,7 @@
       <div class="cell-marks" id="marks-7"></div>
       <div class="cell-tian" id="tian-7"></div>
       <div class="cell-di" id="di-7"></div>
+      <div class="cell-ma" id="ma-7"></div>
     </div>
 
     <!-- 8 艮：覆碗（下斷，中斷，上實） -->
@@ -503,6 +537,7 @@
       <div class="cell-marks" id="marks-8"></div>
       <div class="cell-tian" id="tian-8"></div>
       <div class="cell-di" id="di-8"></div>
+      <div class="cell-ma" id="ma-8"></div>
     </div>
 
     <!-- 1 坎：中滿（下斷，中實，上斷） -->
@@ -521,6 +556,7 @@
       <div class="cell-marks" id="marks-1"></div>
       <div class="cell-tian" id="tian-1"></div>
       <div class="cell-di" id="di-1"></div>
+      <div class="cell-ma" id="ma-1"></div>
     </div>
 
     <!-- 6 乾：三連（全實） -->
@@ -539,6 +575,7 @@
       <div class="cell-marks" id="marks-6"></div>
       <div class="cell-tian" id="tian-6"></div>
       <div class="cell-di" id="di-6"></div>
+      <div class="cell-ma" id="ma-6"></div>
     </div>
 
   </div>
@@ -559,7 +596,7 @@ function resetChart() {
     if (el) el.textContent = '—';
   });
   [1,2,3,4,6,7,8,9].forEach(g => {
-    ['sh-','star-','gate-','tian-','di-','marks-','yin-'].forEach(pre => {
+    ['sh-','star-','gate-','tian-','di-','marks-','ma-','yin-'].forEach(pre => {
       const el = document.getElementById(pre + g);
       if (el) el.innerHTML = '';
     });
@@ -773,8 +810,8 @@ function getGuidingStemMap(dutyGateLandHouse, earthStemMap, timeStem, dutyStem, 
       ? [5,6,7,8,9,1,2,3,4]
       : [5,4,3,2,1,9,8,7,6];
 
-    // 飛布函數：將 centerStem 入中宮飛布，回傳 flyMap
-    function doFly(centerStem) {
+    // 飛布函數：將 centerStem 入中宮飛布，回傳 flyMap（中宮寄坤二前）
+    function doFlyRaw(centerStem) {
       const centerIdx = stemOrder.indexOf(centerStem);
       const fm = {};
       for (let i = 0; i < 9; i++) {
@@ -782,25 +819,33 @@ function getGuidingStemMap(dutyGateLandHouse, earthStemMap, timeStem, dutyStem, 
         const gong = walkFull[i];
         fm[gong] = (fm[gong] || '') + gan;
       }
-      if (fm[5]) {
-        fm[2] = (fm[2] || '') + fm[5];
-        delete fm[5];
-      }
       return fm;
     }
 
     // 特例三：effectiveStem 入中飛布
-    let flyMap = doFly(effectiveStem);
+    let rawMap = doFlyRaw(effectiveStem);
 
-    // 特例四：飛布後坤二仍含 effectiveStem → 閉環
-    // 改用坤二的另一個天干入中飛布
-    if ((flyMap[2] || '').includes(effectiveStem)) {
-      const otherStem = (flyMap[2] || '').split('').find(c => c !== effectiveStem);
-      if (otherStem) flyMap = doFly(otherStem);
+    // 中宮寄坤二
+    if (rawMap[5]) {
+      rawMap[2] = (rawMap[2] || '') + rawMap[5];
+      delete rawMap[5];
+    }
+
+    // 特例四：飛布後值使門落宮引干仍含 effectiveStem → 閉環
+    // 改用坤二另一個天干入中飛布
+    if ((rawMap[dutyGateLandHouse] || '').includes(effectiveStem)) {
+      const otherStem = (rawMap[2] || '').split('').find(c => c !== effectiveStem);
+      if (otherStem) {
+        rawMap = doFlyRaw(otherStem);
+        if (rawMap[5]) {
+          rawMap[2] = (rawMap[2] || '') + rawMap[5];
+          delete rawMap[5];
+        }
+      }
     }
 
     const result = {};
-    [1,2,3,4,6,7,8,9].forEach(g => { result[g] = flyMap[g] || ''; });
+    [1,2,3,4,6,7,8,9].forEach(g => { result[g] = rawMap[g] || ''; });
     return result;
   }
 
@@ -973,10 +1018,12 @@ function startChart() {
     document.getElementById('hb-dutyStem').textContent = xunInfo.dutyStem;
     document.getElementById('hb-kongwang').textContent = xunInfo.kongwang.join('、');
 
-    // 清除所有 marks
+    // 清除所有 marks 與 ma
     [1,2,3,4,6,7,8,9].forEach(g => {
-      const el = document.getElementById('marks-' + g);
-      if (el) el.innerHTML = '';
+      const marksEl = document.getElementById('marks-' + g);
+      if (marksEl) marksEl.innerHTML = '';
+      const maEl = document.getElementById('ma-' + g);
+      if (maEl) maEl.innerHTML = '';
     });
 
     // 先計算馬和空的宮位
@@ -984,10 +1031,10 @@ function startChart() {
     const maGong = maZhi ? BRANCH_HOUSE[maZhi] : null;
     const kongGongs = xunInfo.kongwang.map(zhi => BRANCH_HOUSE[zhi]);
 
-    // 馬先放（馬在左）
+    // 馬先放（放入 ma- 格）
     if (maGong) {
-      const el = document.getElementById('marks-' + maGong);
-      if (el) el.innerHTML += '<span class="tag ma">馬</span>';
+      const el = document.getElementById('ma-' + maGong);
+      if (el) el.innerHTML = '<span class="tag ma"><span>馬</span></span>';
       document.getElementById('hb-yima').textContent = maZhi;
     }
 
