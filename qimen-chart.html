@@ -17,13 +17,14 @@
   }
   .page {
     width: 100%;
+    max-width: 440px;
+    margin: 0 auto;
     padding: 10px 12px 32px;
     display: flex;
     flex-direction: column;
   }
   @media (min-width: 500px) {
-    .page { max-width: 440px; margin: 0 auto; }
-  }
+    }
 
   /* ══════════════════════════════════
      盤頭 Header  (3欄: 50 / 25 / 25)
@@ -101,8 +102,8 @@
   }
   .yigan-top    { top: -20px; left: 50%; transform: translateX(-50%); }
   .yigan-bottom { bottom: -20px; left: 50%; transform: translateX(-50%); white-space: nowrap; }
-  .yigan-left   { left: -16px; top: 50%; transform: translateY(-50%); flex-direction: column; line-height: 1.2; }
-  .yigan-right  { right: -16px; top: 50%; transform: translateY(-50%); flex-direction: column; line-height: 1.2; }
+  .yigan-left   { left: -18px; top: 50%; transform: translateY(-50%); flex-direction: column; line-height: 1.2; }
+  .yigan-right  { right: -18px; top: 50%; transform: translateY(-50%); flex-direction: column; line-height: 1.2; }
   .yigan-tl { top: -20px; left: -16px; }
   .yigan-tr { top: -20px; right: -16px; }
   .yigan-bl { bottom: -20px; left: -16px; }
@@ -243,7 +244,9 @@
 
   /* ── 標記（馬、空、凶） ── */
   .tag { font-size: 11px; line-height: 1; margin-top: 1px; }
-  .tag.mu   { color: #8B6914; }
+  .tag.mu   { color: #999; font-size: 9px; line-height: 1; position: absolute; bottom: -1px; right: -8px; }
+  .stem-mu  { display: inline-block; position: relative; }
+  .stem-char { color: #aaa; }
   .tag.xing { color: #c0392b; }
   .tag.po   { color: #c0392b; }
   .tag.kong {
@@ -640,6 +643,24 @@
 
 
 <script>
+// ── 入墓判定 ──
+const MU_TABLE = { '癸':2, '乙':6,'丙':6,'戊':6, '丁':8,'己':8,'庚':8, '辛':4,'壬':4 };
+
+// 渲染天干字串（含寄干），有入墓則加淡色＋「墓」字
+// isHeavenDutyHouse: 此格為天盤天干且為符頭所在宮位（用於甲入墓判定）
+function renderStemHTML(stem, house, dutyStem, isHeavenDutyHouse) {
+  if (!stem) return '';
+  return stem.split('').map(ch => {
+    let mu = MU_TABLE[ch] === house;
+    // 甲入墓：天盤天干在坤宮(2)且此字為符頭天干（甲遁伏於其下）
+    if (!mu && isHeavenDutyHouse && house === 2 && ch === dutyStem) mu = true;
+    if (mu) {
+      return `<span class="stem-mu"><span class="stem-char">${ch}</span><span class="tag mu">墓</span></span>`;
+    }
+    return `<span>${ch}</span>`;
+  }).join('');
+}
+
 function resetChart() {
   ['year','month','day','hour','minute'].forEach(id => {
     const el = document.getElementById(id);
@@ -1065,12 +1086,7 @@ function startChart() {
 
   // 排地盤天干
   const earthStemMap = getEarthStemMap(yinYang, chartNum);
-
-  // 寫入地盤天干到各宮格
-  [1,2,3,4,6,7,8,9].forEach(g => {
-    const el = document.getElementById('di-' + g);
-    if (el) el.textContent = earthStemMap[g] || '';
-  });
+  // 地盤天干寫入將在後面取得 dutyStemHouse 後統一處理（入墓判定需要）
 
   // 旬首 / 符頭 / 空亡
   const xunInfo = getDecInfo(hGZ[0], hGZ[1]);
@@ -1145,14 +1161,25 @@ function startChart() {
             const tianEl = document.getElementById('tian-' + g);
             const gateEl = document.getElementById('gate-' + g);
             const yinEl  = document.getElementById('yin-' + g);
+            const diEl   = document.getElementById('di-' + g);
             if (shenEl) shenEl.textContent = shenPan[g] || '';
             if (starEl) starEl.textContent = xingPan[g] || '';
-            if (tianEl) tianEl.textContent = heavenStemMap[g] || '';
+            // 天盤天干（入墓判定，含甲入墓特例）
+            if (tianEl) {
+              const isHeavenDutyHouse = String(g) === String(timeStemHouse);
+              tianEl.innerHTML = renderStemHTML(heavenStemMap[g] || '', g, xunInfo.dutyStem, isHeavenDutyHouse);
+            }
             if (gateEl) gateEl.textContent = menPan[g] || '';
+            // 地盤天干（入墓判定）
+            if (diEl) {
+              diEl.innerHTML = renderStemHTML(earthStemMap[g] || '', g, xunInfo.dutyStem, false);
+            }
+            // 引干（不判定四害）
             if (yinEl) {
               const val = guidingStemMap[g] || '';
+              if (!val) { yinEl.innerHTML = ''; return; }
               if ((g === 3 || g === 7) && val.length > 1) {
-                yinEl.innerHTML = val.split('').map(c => `<span>${c}</span>`).join('');
+                yinEl.innerHTML = val.split('').map(ch => `<span>${ch}</span>`).join('');
               } else {
                 yinEl.textContent = val;
               }
@@ -1172,6 +1199,7 @@ function startChart() {
 
 </div><!-- end paipan-result -->
 
+  </div>
   <div style="text-align:center;padding:24px 20px 8px;font-family:'Noto Serif TC',serif">
     <a href="https://buy.stripe.com/5kQ8wQe1NcdT9cN4Sq8Vi00" target="_blank" style="display:inline-block;padding:9px 22px;border:1px solid #ddd;border-radius:20px;font-size:12px;color:#888;text-decoration:none;letter-spacing:.08em;transition:all .15s" onmouseover="this.style.borderColor='#bbb';this.style.color='#555'" onmouseout="this.style.borderColor='#ddd';this.style.color='#888'">☕ 請我喝杯咖啡</a>
   </div>
