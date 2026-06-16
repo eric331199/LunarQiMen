@@ -86,7 +86,7 @@
     position: relative;
     width: calc(100% - 44px);
     aspect-ratio: 1 / 1;
-    margin: 32px auto;
+    margin: 32px auto 20px;
   }
 
   /* 引干：8個方位 */
@@ -128,15 +128,25 @@
     grid-template-rows: repeat(3, 1fr);
     background: #fff;
   }
-  .cell.center { background: #eeebe3; }
-  .cell.center .cell-shen  { border-bottom: 1px solid #ccc; }
-  .cell.center .cell-star  { border-bottom: 1px solid #ccc; }
-  .cell.center .cell-kong { border-left: 1px solid #ccc; border-bottom: 1px solid #ccc; }
-  .cell.center .cell-tian  { border-left: 1px solid #ccc; border-bottom: 1px solid #ccc; }
-  .cell.center .cell-di    { border-left: 1px solid #ccc; }
-  .cell.center .cell-left  { border-right: 1px solid #ccc; border-bottom: 1px solid #ccc; }
-  .cell.center .cell-left2 { border-right: 1px solid #ccc; border-bottom: 1px solid #ccc; }
-  .cell.center .cell-ma    { border-right: 1px solid #ccc; }
+  .cell.center { background: #eeebe3; display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr 1fr; }
+  .dz-corner { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; font-size: 9px; color: #aaa; }
+  .dz-corner span { display: flex; align-items: center; justify-content: center; }
+  .dz-edge { font-size: 9px; color: #aaa; display: flex; align-items: center; justify-content: center; }
+  .dz-wu  { align-items: flex-start !important; }
+  .dz-zi  { align-items: flex-end !important; }
+  .dz-mao { justify-content: flex-start !important; padding-left: 2px; }
+  .dz-you { justify-content: flex-end !important; padding-right: 2px; }
+  .dz-center { display: flex; align-items: center; justify-content: center; font-size: 10px; color: #bbb; }
+  /* 中宮格線：col1 border-right, col3 border-left, row1+row2 border-bottom */
+  .cell.center > div:nth-child(1) { border-right: 1px solid #ccc; border-bottom: 1px solid #ccc; }
+  .cell.center > div:nth-child(2) { border-bottom: 1px solid #ccc; }
+  .cell.center > div:nth-child(3) { border-left: 1px solid #ccc; border-bottom: 1px solid #ccc; }
+  .cell.center > div:nth-child(4) { border-right: 1px solid #ccc; border-bottom: 1px solid #ccc; }
+  .cell.center > div:nth-child(5) { border-bottom: 1px solid #ccc; }
+  .cell.center > div:nth-child(6) { border-left: 1px solid #ccc; border-bottom: 1px solid #ccc; }
+  .cell.center > div:nth-child(7) { border-right: 1px solid #ccc; }
+  .cell.center > div:nth-child(8) { }
+  .cell.center > div:nth-child(9) { border-left: 1px solid #ccc; }
 
   /* 外框粗邊 2px */
   .grid .cell:nth-child(1),
@@ -364,7 +374,7 @@
   .btn-quick-row {
     display: flex;
     gap: 8px;
-    margin: 10px 0 4px;
+    margin: 10px 0 0;
   }
   .btn-start {
     background: #444;
@@ -562,19 +572,17 @@
       <div class="cell-ma" id="ma-3"></div>
     </div>
 
-    <!-- 5 中宮 -->
+    <!-- 5 中宮：地支羅盤 -->
     <div class="cell center">
-      <div class="cell-left">
-        <div class="palace-id"><span class="palace-num">5</span><span class="palace-name">中</span></div>
-      </div>
-      <div class="cell-left2"></div>
-      <div class="cell-shen"></div>
-      <div class="cell-star"></div>
-      <div class="cell-gate"></div>
-      <div class="cell-kong"></div>
-      <div class="cell-tian"></div>
-      <div class="cell-di"></div>
-      <div class="cell-ma"></div>
+      <div class="dz-corner"><span></span><span>巳</span><span>辰</span><span></span></div>
+      <div class="dz-edge dz-wu">午</div>
+      <div class="dz-corner"><span>未</span><span></span><span></span><span>申</span></div>
+      <div class="dz-edge dz-mao">卯</div>
+      <div class="dz-center">5中</div>
+      <div class="dz-edge dz-you">酉</div>
+      <div class="dz-corner"><span>寅</span><span></span><span></span><span>丑</span></div>
+      <div class="dz-edge dz-zi">子</div>
+      <div class="dz-corner"><span></span><span>戌</span><span>亥</span><span></span></div>
     </div>
 
     <!-- 7 兌：上缺（下實，中實，上斷） -->
@@ -666,7 +674,7 @@
 const MU_TABLE = { '癸':2, '乙':6,'丙':6,'戊':6, '丁':8,'己':8,'庚':8, '辛':4,'壬':4 };
 
 // ── 擊刑判定（六儀天干） ──
-// 庚在艮(8)、壬在巽(4) 同時符合入墓與擊刑，兩者皆標記
+// 庚在艮(8)、壬在巽(4) 同時符合入墓與擊刑，兩者皆標記，天干顯示為擊刑紅色
 const XING_TABLE = { '戊':3, '己':2, '庚':8, '辛':9, '壬':4, '癸':4 };
 
 // 渲染天干字串（含寄干），有入墓或擊刑則標記
@@ -859,8 +867,8 @@ function getSolsticeType(y, m, d, h) {
 }
 
 // 計算局數
-function getChartNumber(lunar, h) {
-  const yearZhi = lunar.getYearZhi();    // 年支
+function getChartNumber(lunar, h, ec) {
+  const yearZhi = ec.getYear()[1];       // 年支（節氣換年，取四柱年柱地支）
   const lunarMonth = Math.abs(lunar.getMonth()); // 農曆月
   const lunarDay = lunar.getDay();       // 農曆日
   const hourZhi = hourToZhi(h);         // 時支
@@ -1177,7 +1185,7 @@ function startChart() {
 
   // 陰陽遁 + 局數
   const yinYang = getSolsticeType(y, m, d, h);
-  const chartNum = getChartNumber(lunar, h);
+  const chartNum = getChartNumber(lunar, h, ec);
   document.getElementById('hb-qiju').textContent = yinYang + chartNum + '局';
 
   // 排地盤天干
@@ -1297,7 +1305,7 @@ function startChart() {
 
 </div><!-- end paipan-result -->
 
-<div id="btn-capture-wrap" style="display:none; text-align:center; padding:4px 0 8px;">
+<div id="btn-capture-wrap" style="display:none; text-align:center; padding:10px 0 0;">
   <button onclick="captureChart()" style="display:inline-block;padding:9px 22px;border:1px solid #ddd;border-radius:20px;font-size:13px;color:#666;background:#fff;letter-spacing:.05em;cursor:pointer;">📷 儲存截圖</button>
   <div class="btn-quick-row" style="margin-top:10px; width:calc(100% - 44px); margin-left:auto; margin-right:auto;">
     <button class="btn-quick" onclick="shiftDate(-1)">前日</button>
@@ -1308,10 +1316,10 @@ function startChart() {
 </div>
 
   </div>
-  <div style="text-align:center;padding:8px 20px 8px;font-family:'Noto Serif TC',serif">
+  <div style="text-align:center;padding:0 20px 12px;margin-top:-8px;font-family:'Noto Serif TC',serif">
     <a href="https://buy.stripe.com/5kQ8wQe1NcdT9cN4Sq8Vi00" target="_blank" style="display:inline-block;padding:9px 22px;border:1px solid #ddd;border-radius:20px;font-size:12px;color:#888;text-decoration:none;letter-spacing:.08em;transition:all .15s" onmouseover="this.style.borderColor='#bbb';this.style.color='#555'" onmouseout="this.style.borderColor='#ddd';this.style.color='#888'">☕ 請我喝杯咖啡</a>
   </div>
-  <div style="text-align:center;padding:16px 20px 40px;font-family:'Noto Serif TC',serif;font-size:11px;color:#bbb;letter-spacing:.05em">
+  <div style="text-align:center;padding:8px 20px 40px;font-family:'Noto Serif TC',serif;font-size:11px;color:#bbb;letter-spacing:.05em">
     © 2026 Eric CH / <a href="https://www.therootshollow.com" target="_blank" style="color:inherit;text-decoration:none;">樹根樹洞</a>　·　<a href="https://instagram.com/eric.hypnotist" target="_blank" style="color:#bbb;text-decoration:none;display:inline-flex;align-items:center;gap:4px"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg> @eric.hypnotist</a>
   </div>
 </div><!-- end page -->
