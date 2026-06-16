@@ -216,7 +216,7 @@
     grid-column: 3; grid-row: 2;
     border-left: 1px solid #ddd;
     border-bottom: 1px solid #ddd;
-    display: flex; flex-direction: column;
+    display: flex; flex-direction: row;
     align-items: center; justify-content: center;
     font-size: 14px; color: #333;
   }
@@ -224,7 +224,7 @@
   .cell-di {
     grid-column: 3; grid-row: 3;
     border-left: 1px solid #ddd;
-    display: flex; flex-direction: column;
+    display: flex; flex-direction: row;
     align-items: center; justify-content: center;
     font-size: 14px; color: #333;
   }
@@ -244,11 +244,14 @@
 
   /* ── 標記（馬、空、凶） ── */
   .tag { font-size: 11px; line-height: 1; margin-top: 1px; }
-  .tag.mu   { color: #999; font-size: 9px; line-height: 1; position: absolute; bottom: -1px; right: -8px; }
+  .tag.mu   { color: #999; font-size: 9px; line-height: 1; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); }
+  .tag.xing { color: #c0392b; font-size: 9px; line-height: 1; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); }
+  .tag.mu.has-xing  { left: 50%; transform: translateX(-100%); }
+  .tag.xing.has-mu  { left: 50%; transform: translateX(0%); right: auto; }
   .stem-mu  { display: inline-block; position: relative; }
   .stem-char { color: #aaa; }
-  .tag.xing { color: #c0392b; }
-  .tag.po   { color: #c0392b; }
+  .stem-char.xing { color: #c0392b; }
+  .tag.po   { color: #c0392b; font-size: 9px; line-height: 1; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); }
   .tag.kong {
     color: #c0392b; font-size: 12px; line-height: 1;
     border: 1px solid #c0392b; border-radius: 50%;
@@ -346,6 +349,23 @@
     color: #555;
     cursor: pointer;
   }
+  .btn-quick {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    padding: 8px 0;
+    font-size: 13px;
+    font-family: inherit;
+    color: #666;
+    cursor: pointer;
+    flex: 1;
+    letter-spacing: .05em;
+  }
+  .btn-quick-row {
+    display: flex;
+    gap: 8px;
+    margin: 10px 0 4px;
+  }
   .btn-start {
     background: #444;
     border: none;
@@ -356,7 +376,6 @@
     color: #fff;
     cursor: pointer;
   }
-
 </style>
 </head>
 <body>
@@ -389,9 +408,9 @@
     </div>
   </div>
   <div class="input-buttons">
-    <button class="btn-now" onclick="setNow()">現時</button>
     <button class="btn-now" onclick="resetChart()">重置</button>
     <button class="btn-start" onclick="startChart()">排盤</button>
+    <button class="btn-now" onclick="setNow()">現時</button>
   </div>
 </div>
 
@@ -646,19 +665,53 @@
 // ── 入墓判定 ──
 const MU_TABLE = { '癸':2, '乙':6,'丙':6,'戊':6, '丁':8,'己':8,'庚':8, '辛':4,'壬':4 };
 
-// 渲染天干字串（含寄干），有入墓則加淡色＋「墓」字
-// isHeavenDutyHouse: 此格為天盤天干且為符頭所在宮位（用於甲入墓判定）
-function renderStemHTML(stem, house, dutyStem, isHeavenDutyHouse) {
+// ── 擊刑判定（六儀天干） ──
+// 庚在艮(8)、壬在巽(4) 同時符合入墓與擊刑，兩者皆標記
+const XING_TABLE = { '戊':3, '己':2, '庚':8, '辛':9, '壬':4, '癸':4 };
+
+// 渲染天干字串（含寄干），有入墓或擊刑則標記
+// isDutyHouse: 此格是否為符頭天干所在宮位（甲入墓判定用，天盤地盤皆適用）
+function renderStemHTML(stem, house, dutyStem, isDutyHouse) {
   if (!stem) return '';
   return stem.split('').map(ch => {
-    let mu = MU_TABLE[ch] === house;
-    // 甲入墓：天盤天干在坤宮(2)且此字為符頭天干（甲遁伏於其下）
-    if (!mu && isHeavenDutyHouse && house === 2 && ch === dutyStem) mu = true;
-    if (mu) {
-      return `<span class="stem-mu"><span class="stem-char">${ch}</span><span class="tag mu">墓</span></span>`;
+    const isXing = !!XING_TABLE[ch] && XING_TABLE[ch] === house;
+    let isMu = MU_TABLE[ch] === house;
+    if (!isMu && isDutyHouse && house === 2 && ch === dutyStem) isMu = true;
+
+    if (isXing || isMu) {
+      const charClass = isXing ? 'stem-char xing' : 'stem-char';
+      const fontSize = (isXing && isMu) ? '7px' : '9px';
+      const muTag   = isMu   ? `<span class="tag mu${isXing ? ' has-xing' : ''}" style="font-size:${fontSize};">墓</span>` : '';
+      const xingTag = isXing ? `<span class="tag xing${isMu  ? ' has-mu'  : ''}" style="font-size:${fontSize};">刑</span>` : '';
+      return `<span class="stem-mu"><span class="${charClass}">${ch}</span>${muTag}${xingTag}</span>`;
     }
     return `<span>${ch}</span>`;
   }).join('');
+}
+
+function captureChart() {
+  alert('截圖功能暫時停用，請使用系統截圖。');
+}
+
+// ── 門迫判定 ──
+const PO_TABLE = {
+  '休門': [9],
+  '生門': [1],
+  '傷門': [2, 8],
+  '杜門': [2, 8],
+  '景門': [6, 7],
+  '死門': [1],
+  '驚門': [3, 4],
+  '開門': [3, 4],
+};
+
+function renderGateHTML(gate, house) {
+  if (!gate) return '';
+  const poHouses = PO_TABLE[gate] || [];
+  if (poHouses.includes(house)) {
+    return `<span style="position:relative;display:inline-block;color:#c0392b;">${gate}<span class="tag po">迫</span></span>`;
+  }
+  return gate;
 }
 
 function resetChart() {
@@ -679,6 +732,39 @@ function resetChart() {
       if (el) el.innerHTML = '';
     });
   });
+}
+
+function getInputDate() {
+  const pad = n => String(n).padStart(2, '0');
+  const y = parseInt(document.getElementById('year').value) || 0;
+  const m = parseInt(document.getElementById('month').value) || 1;
+  const d = parseInt(document.getElementById('day').value) || 1;
+  const h = parseInt(document.getElementById('hour').value) || 0;
+  const mn = parseInt(document.getElementById('minute').value) || 0;
+  return new Date(y, m - 1, d, h, mn);
+}
+
+function setInputDate(dt) {
+  const pad = n => String(n).padStart(2, '0');
+  document.getElementById('year').value = dt.getFullYear();
+  document.getElementById('month').value = pad(dt.getMonth() + 1);
+  document.getElementById('day').value = pad(dt.getDate());
+  document.getElementById('hour').value = pad(dt.getHours());
+  document.getElementById('minute').value = pad(dt.getMinutes());
+}
+
+function shiftDate(days) {
+  const dt = getInputDate();
+  dt.setDate(dt.getDate() + days);
+  setInputDate(dt);
+  startChart();
+}
+
+function shiftHour(hours) {
+  const dt = getInputDate();
+  dt.setHours(dt.getHours() + hours);
+  setInputDate(dt);
+  startChart();
 }
 
 function setNow() {
@@ -1028,7 +1114,7 @@ function getDecInfo(timeStem, timeBranch) {
   const xunFirstZhiIdx = (zhiIdx - posInXun + 12) % 12;
   const xunFirstZhi = EARTHLY_BRANCHES_REF12[xunFirstZhiIdx];
 
-  console.log('ganIdx=' + ganIdx + ' zhiIdx=' + zhiIdx + ' posInXun=' + posInXun + ' xunFirstZhi=' + xunFirstZhi);
+
 
   const xunMap = {
     '子': { xun: '甲子旬', dutyStem: '戊', kongwang: ['戌','亥'] },
@@ -1048,7 +1134,17 @@ function startChart() {
   const h   = parseInt(document.getElementById('hour').value);
   const min = parseInt(document.getElementById('minute').value);
 
-  const solar = Solar.fromYmdHms(y, m, d, h, min, 0);
+  // 子時跨日：23:00-23:59 屬於隔日子時，農曆換算需 +1 天，時辰改為 0
+  let lunarD = d, lunarM = m, lunarY = y, lunarH = h;
+  if (h === 23) {
+    const nextDay = new Date(y, m - 1, d + 1);
+    lunarY = nextDay.getFullYear();
+    lunarM = nextDay.getMonth() + 1;
+    lunarD = nextDay.getDate();
+    lunarH = 0;
+  }
+
+  const solar = Solar.fromYmdHms(lunarY, lunarM, lunarD, lunarH, min, 0);
   const lunar = solar.getLunar();
   const ec = lunar.getEightChar();
 
@@ -1166,13 +1262,14 @@ function startChart() {
             if (starEl) starEl.textContent = xingPan[g] || '';
             // 天盤天干（入墓判定，含甲入墓特例）
             if (tianEl) {
-              const isHeavenDutyHouse = String(g) === String(timeStemHouse);
-              tianEl.innerHTML = renderStemHTML(heavenStemMap[g] || '', g, xunInfo.dutyStem, isHeavenDutyHouse);
+              const isDutyHouse = String(g) === String(timeStemHouse);
+              tianEl.innerHTML = renderStemHTML(heavenStemMap[g] || '', g, xunInfo.dutyStem, isDutyHouse);
             }
-            if (gateEl) gateEl.textContent = menPan[g] || '';
-            // 地盤天干（入墓判定）
+            if (gateEl) gateEl.innerHTML = renderGateHTML(menPan[g] || '', g);
+            // 地盤天干（入墓判定，含甲入墓特例）
             if (diEl) {
-              diEl.innerHTML = renderStemHTML(earthStemMap[g] || '', g, xunInfo.dutyStem, false);
+              const isDutyHouse = String(g) === String(dutyStemHouse);
+              diEl.innerHTML = renderStemHTML(earthStemMap[g] || '', g, xunInfo.dutyStem, isDutyHouse);
             }
             // 引干（不判定四害）
             if (yinEl) {
@@ -1193,14 +1290,25 @@ function startChart() {
   }
 
   document.getElementById('paipan-result').style.display = 'block';
+  document.getElementById('btn-capture-wrap').style.display = 'block';
   document.getElementById('paipan-result').scrollIntoView({ behavior: 'smooth' });
 }
 </script>
 
 </div><!-- end paipan-result -->
 
+<div id="btn-capture-wrap" style="display:none; text-align:center; padding:4px 0 8px;">
+  <button onclick="captureChart()" style="display:inline-block;padding:9px 22px;border:1px solid #ddd;border-radius:20px;font-size:13px;color:#666;background:#fff;letter-spacing:.05em;cursor:pointer;">📷 儲存截圖</button>
+  <div class="btn-quick-row" style="margin-top:10px; width:calc(100% - 44px); margin-left:auto; margin-right:auto;">
+    <button class="btn-quick" onclick="shiftDate(-1)">前日</button>
+    <button class="btn-quick" onclick="shiftDate(+1)">次日</button>
+    <button class="btn-quick" onclick="shiftHour(-2)">上時</button>
+    <button class="btn-quick" onclick="shiftHour(+2)">下時</button>
   </div>
-  <div style="text-align:center;padding:24px 20px 8px;font-family:'Noto Serif TC',serif">
+</div>
+
+  </div>
+  <div style="text-align:center;padding:8px 20px 8px;font-family:'Noto Serif TC',serif">
     <a href="https://buy.stripe.com/5kQ8wQe1NcdT9cN4Sq8Vi00" target="_blank" style="display:inline-block;padding:9px 22px;border:1px solid #ddd;border-radius:20px;font-size:12px;color:#888;text-decoration:none;letter-spacing:.08em;transition:all .15s" onmouseover="this.style.borderColor='#bbb';this.style.color='#555'" onmouseout="this.style.borderColor='#ddd';this.style.color='#888'">☕ 請我喝杯咖啡</a>
   </div>
   <div style="text-align:center;padding:16px 20px 40px;font-family:'Noto Serif TC',serif;font-size:11px;color:#bbb;letter-spacing:.05em">
