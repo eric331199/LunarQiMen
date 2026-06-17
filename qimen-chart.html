@@ -23,9 +23,6 @@
     display: flex;
     flex-direction: column;
   }
-  @media (min-width: 500px) {
-    }
-
   /* ══════════════════════════════════
      盤頭 Header  (3欄: 50 / 25 / 25)
   ══════════════════════════════════ */
@@ -128,14 +125,19 @@
     grid-template-rows: repeat(3, 1fr);
     background: #fff;
   }
+  /* ── 中宮：十二地支時鐘盤 ──
+     中宮不顯示奇門符號，改用十二地支排列成時鐘圓盤。
+     位置對應外圍八宮方位：子午卯酉在四正，辰巳／未申／戌亥／寅丑在四隅。
+     用途：應期判斷——哪個宮位有動象，對應中宮同方向的地支即為應期時辰。
+  */
   .cell.center { background: #eeebe3; display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr 1fr; }
   .dz-corner { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; font-size: 9px; color: #aaa; }
   .dz-corner span { display: flex; align-items: center; justify-content: center; }
   .dz-edge { font-size: 9px; color: #aaa; display: flex; align-items: center; justify-content: center; }
-  .dz-wu  { align-items: flex-start !important; }
-  .dz-zi  { align-items: flex-end !important; }
-  .dz-mao { justify-content: flex-start !important; padding-left: 2px; }
-  .dz-you { justify-content: flex-end !important; padding-right: 2px; }
+  .dz-wu  { align-items: flex-start !important; }  /* 午：靠上（南） */
+  .dz-zi  { align-items: flex-end !important; }    /* 子：靠下（北） */
+  .dz-mao { justify-content: flex-start !important; padding-left: 2px; }  /* 卯：靠左（東） */
+  .dz-you { justify-content: flex-end !important; padding-right: 2px; }   /* 酉：靠右（西） */
   .dz-center { display: flex; align-items: center; justify-content: center; font-size: 10px; color: #bbb; }
   /* 中宮格線：col1 border-right, col3 border-left, row1+row2 border-bottom */
   .cell.center > div:nth-child(1) { border-right: 1px solid #ccc; border-bottom: 1px solid #ccc; }
@@ -698,7 +700,7 @@ function renderStemHTML(stem, house, dutyStem, isDutyHouse) {
 }
 
 function captureChart() {
-  alert('截圖功能暫時停用，請使用系統截圖。');
+  alert('請直接使用手機截圖儲存。');
 }
 
 // ── 門迫判定 ──
@@ -881,7 +883,6 @@ function getChartNumber(lunar, h, ec) {
 }
 
 // 九宮數字順序（地盤天干用）
-const HOUSE_NUM_ASC  = [1, 2, 3, 4, 6, 7, 8, 9]; // 陽順（九宮數字）
 const HOUSE_NUM_DESC = [9, 8, 7, 6, 4, 3, 2, 1]; // 陰逆（九宮數字）
 
 // 實際順時針／逆時針（八神、八星、天盤天干、引干用）
@@ -1095,34 +1096,13 @@ function getEarthStemMap(yinYang, chartNum) {
   return result;
 }
 
-// 六甲旬對照表
-const XUN_TABLE = [
-  { xun: '甲子旬', dutyStem: '戊', kongwang: ['戌','亥'],
-    zhis: ['子','丑','寅','卯','辰','巳','午','未','申','酉'] },
-  { xun: '甲戌旬', dutyStem: '己', kongwang: ['申','酉'],
-    zhis: ['戌','亥','子','丑','寅','卯','辰','巳','午','未'] },
-  { xun: '甲申旬', dutyStem: '庚', kongwang: ['午','未'],
-    zhis: ['申','酉','戌','亥','子','丑','寅','卯','辰','巳'] },
-  { xun: '甲午旬', dutyStem: '辛', kongwang: ['辰','巳'],
-    zhis: ['午','未','申','酉','戌','亥','子','丑','寅','卯'] },
-  { xun: '甲辰旬', dutyStem: '壬', kongwang: ['寅','卯'],
-    zhis: ['辰','巳','午','未','申','酉','戌','亥','子','丑'] },
-  { xun: '甲寅旬', dutyStem: '癸', kongwang: ['子','丑'],
-    zhis: ['寅','卯','辰','巳','午','未','申','酉','戌','亥'] },
-];
-
 // 根據時柱干支找旬首資料（用完整干支配對）
 function getDecInfo(timeStem, timeBranch) {
-  const TIAN_GAN = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
-  const EARTHLY_BRANCHES_REF12 = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
-
-  const ganIdx = TIAN_GAN.indexOf(timeStem);
-  const zhiIdx = EARTHLY_BRANCHES_REF12.indexOf(timeBranch);
+  const ganIdx = HEAVENLY_STEMS_REF.indexOf(timeStem);
+  const zhiIdx = EARTHLY_BRANCHES_REF.indexOf(timeBranch);
   const posInXun = ganIdx; // 在旬中的位置就是天干序號（甲=0, 乙=1, ...）
   const xunFirstZhiIdx = (zhiIdx - posInXun + 12) % 12;
-  const xunFirstZhi = EARTHLY_BRANCHES_REF12[xunFirstZhiIdx];
-
-
+  const xunFirstZhi = EARTHLY_BRANCHES_REF[xunFirstZhiIdx];
 
   const xunMap = {
     '子': { xun: '甲子旬', dutyStem: '戊', kongwang: ['戌','亥'] },
@@ -1298,7 +1278,13 @@ function startChart() {
   }
 
   document.getElementById('paipan-result').style.display = 'block';
-  document.getElementById('btn-capture-wrap').style.display = 'block';
+  // 截圖按鈕只在桌面或 iPad 顯示（手機用系統截圖即可）
+  const isIPad = /iPad/.test(navigator.userAgent) ||
+                 (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isDesktop = navigator.maxTouchPoints === 0 || isIPad;
+  if (isDesktop) {
+    document.getElementById('btn-capture-wrap').style.display = 'block';
+  }
   document.getElementById('paipan-result').scrollIntoView({ behavior: 'smooth' });
 }
 </script>
