@@ -43,8 +43,7 @@
 
   .h-col-left  { grid-column: 1; grid-row: 1; border-right: 1px solid #ddd; padding: 6px 8px; }
   .h-col-left2 { grid-column: 1; grid-row: 2; border-right: 1px solid #ddd; border-top: 2px solid #111; padding: 4px 8px 6px; }
-  .h-col-mid   { grid-column: 2; grid-row: 1; border-right: 1px solid #ddd; padding: 6px 8px; }
-  .h-col-right { grid-column: 3; grid-row: 1; padding: 6px 8px; }
+  .h-col-mid   { grid-column: 2 / 4; grid-row: 1; padding: 6px 8px; }
   .h-col-ref   { grid-column: 2 / 4; grid-row: 2; border-top: 2px solid #111; padding: 4px 8px 6px; }
 
 
@@ -138,7 +137,7 @@
   .dz-zi  { align-items: flex-end !important; }    /* 子：靠下（北） */
   .dz-mao { justify-content: flex-start !important; padding-left: 2px; }  /* 卯：靠左（東） */
   .dz-you { justify-content: flex-end !important; padding-right: 2px; }   /* 酉：靠右（西） */
-  .dz-center { display: flex; align-items: center; justify-content: center; font-size: 10px; color: #bbb; }
+  .dz-center { display: flex; align-items: center; justify-content: center; font-size: 13px; color: #bbb; }
   /* 中宮格線：col1 border-right, col3 border-left, row1+row2 border-bottom */
   .cell.center > div:nth-child(1) { border-right: 1px solid #ccc; border-bottom: 1px solid #ccc; }
   .cell.center > div:nth-child(2) { border-bottom: 1px solid #ccc; }
@@ -346,6 +345,17 @@
   }
   .input-row input::-webkit-outer-spin-button,
   .input-row input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .input-row input.input-error {
+    border: 1px solid #c0392b;
+    background: #fdecea;
+  }
+  .input-error-msg {
+    font-size: 13px;
+    color: #c0392b;
+    text-align: center;
+    margin-top: 8px;
+    display: none;
+  }
   .input-buttons {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
@@ -424,6 +434,7 @@
     <button class="btn-start" onclick="startChart()">排盤</button>
     <button class="btn-now" onclick="setNow()">現時</button>
   </div>
+  <div class="input-error-msg" id="input-error-msg"></div>
 </div>
 
 <hr class="divider">
@@ -453,18 +464,10 @@
   </div>
   <div class="h-col-mid">
     <table class="h-table">
-      <tr><td class="hl">起局</td><td class="hv" id="hb-qiju">—</td></tr>
-      <tr><td class="hl">排盤</td><td class="hv">陰盤</td></tr>
-      <tr><td class="hl">旬首</td><td class="hv" id="hb-xun">—</td></tr>
-      <tr><td class="hl">符頭</td><td class="hv" id="hb-dutyStem">—</td></tr>
-    </table>
-  </div>
-  <div class="h-col-right">
-    <table class="h-table">
-      <tr><td class="hl">值符</td><td class="hv" id="hb-zhifu">—</td></tr>
-      <tr><td class="hl">值使</td><td class="hv" id="hb-zhishi">—</td></tr>
-      <tr><td class="hl">空亡</td><td class="hv" id="hb-kongwang">—</td></tr>
-      <tr><td class="hl">驛馬</td><td class="hv" id="hb-yima">—</td></tr>
+      <tr><td class="hl">起局</td><td class="hv" id="hb-qiju">—</td><td class="hl">類型</td><td class="hv" id="hb-fuyin">—</td></tr>
+      <tr><td class="hl">旬首</td><td class="hv" id="hb-xun">—</td><td class="hl">符頭</td><td class="hv" id="hb-dutyStem">—</td></tr>
+      <tr><td class="hl">值符</td><td class="hv" id="hb-zhifu">—</td><td class="hl">值使</td><td class="hv" id="hb-zhishi">—</td></tr>
+      <tr><td class="hl">空亡</td><td class="hv" id="hb-kongwang">—</td><td class="hl">驛馬</td><td class="hv" id="hb-yima">—</td></tr>
     </table>
   </div>
   <div class="h-col-ref">
@@ -727,8 +730,13 @@ function renderGateHTML(gate, house) {
 function resetChart() {
   ['year','month','day','hour','minute'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.value = '';
+    if (el) {
+      el.value = '';
+      el.classList.remove('input-error');
+    }
   });
+  const msgEl = document.getElementById('input-error-msg');
+  if (msgEl) { msgEl.textContent = ''; msgEl.style.display = 'none'; }
   ['sy','sm','sd','st','ly','lm','ld','lt',
    'gz-y-gan','gz-y-zhi','gz-m-gan','gz-m-zhi','gz-d-gan','gz-d-zhi','gz-h-gan','gz-h-zhi',
    'hb-qiju','hb-xun','hb-dutyStem','hb-kongwang','hb-yima','hb-zhifu','hb-zhishi'
@@ -882,9 +890,6 @@ function getChartNumber(lunar, h, ec) {
   return digitalRoot(sum);
 }
 
-// 九宮數字順序（地盤天干用）
-const HOUSE_NUM_DESC = [9, 8, 7, 6, 4, 3, 2, 1]; // 陰逆（九宮數字）
-
 // 實際順時針／逆時針（八神、八星、天盤天干、引干用）
 const HOUSE_CW  = [1, 8, 3, 4, 9, 2, 7, 6]; // 順時針
 const HOUSE_CCW = [1, 6, 7, 2, 9, 4, 3, 8]; // 逆時針
@@ -942,18 +947,16 @@ function getGateMap(dutyGateHouse, yinYang, timeStem) {
   dutyGateHouse = parseInt(dutyGateHouse);
   // 時干序數（甲=1…癸=10），起點算第一步，所以走 steps-1 步
   const steps = HEAVENLY_STEMS_REF.indexOf(timeStem) + 1;
-  // 走步用含中宮的九宮數字順序
-  const walkOrder = yinYang === '陽'
-    ? [1,2,3,4,5,6,7,8,9]
-    : [1,9,8,7,6,5,4,3,2];
+  // 走步用含中宮的九宮數字順序（中宮5為獨立計數站，不可提前併入坤2）
+  const walkOrder = yinYang === '陽' ? HOUSE_NUM_ASC_FULL : HOUSE_NUM_DESC_FULL;
   const startIdx = walkOrder.indexOf(dutyGateHouse);
   // 走 steps-1 步（起點算第一步）
   let landGong = walkOrder[(startIdx + steps - 1) % 9];
   // 入中寄坤
   if (landGong === 5) landGong = 2;
 
-  // 值使門的門名 index
-  const shimenMenIdx = HOUSE_GATE_IDX[dutyGateHouse];
+  // 值使門的門名 index（中宮無門，查表時用寄坤後的2）
+  const shimenMenIdx = HOUSE_GATE_IDX[dutyGateHouse === 5 ? 2 : dutyGateHouse];
 
   // 從落點起，實際順時針放入八門
   const landIdx = HOUSE_CW.indexOf(landGong);
@@ -966,9 +969,10 @@ function getGateMap(dutyGateHouse, yinYang, timeStem) {
 }
 
 // 排引干：值使門落宮起，時天干為頭，沿地盤實際順時針序列切入，永遠順時針放入
-// 六甲伏吟特例：時干甲不在地盤，改用符頭天干（dutyStem）替代
-// 特例三：三干相同時，將時干替代值入中宮飛布，飛布結果直接作為引干
-function getGuidingStemMap(dutyGateLandHouse, earthStemMap, timeStem, dutyStem, yinYang) {
+// 星伏／門伏：純位置標記（八星/八門是否全部回到固定本宮），畫面顯示用，跟特例三觸發邏輯分開
+// 特例三/四觸發前提：① 星伏（isStarFrozen）② 引干閉環（isGuidingClosed，值使門落宮地盤干含effectiveStem）
+// 兩個觸發條件都成立才飛布；星伏/門伏的「位置」標記本身不直接決定要不要飛布
+function getGuidingStemMap(dutyGateLandHouse, earthStemMap, timeStem, dutyStem, yinYang, timeStemHouse, dutyStemHouse) {
   dutyGateLandHouse = parseInt(dutyGateLandHouse);
 
   // 決定實際使用的時干（甲不在地盤時改用符頭）
@@ -977,10 +981,20 @@ function getGuidingStemMap(dutyGateLandHouse, earthStemMap, timeStem, dutyStem, 
   // 用實際順時針讀出地盤天干序列（8個位置）
   let diSeq = HOUSE_CW.map(g => earthStemMap[g] || '');
 
-  // 偵測三干相同：值使門落宮的地盤干是否等於 effectiveStem
-  const diStemAtLand = earthStemMap[dutyGateLandHouse] || '';
-  const isTripleSame = diStemAtLand.includes(effectiveStem);
+  // 星伏（純位置）：時干所在地盤宮位 是否＝符頭所在地盤宮位（八星、天盤天干排列同一起點）
+  const isStarFrozen = String(timeStemHouse) === String(dutyStemHouse);
 
+  // 門伏（純位置）：值使門落宮 是否＝值使門固定本宮（＝符頭所在地盤宮位）。八門同一起點同一offset，單點檢查即代表全部八門
+  const isGateFrozen = String(dutyGateLandHouse) === String(dutyStemHouse);
+
+  // 引干閉環（觸發特例三用，內容檢查，跟門伏的位置檢查是不同條件）：
+  // 值使門落宮的地盤干 是否包含 effectiveStem
+  const diStemAtLand = earthStemMap[dutyGateLandHouse] || '';
+  const isGuidingClosed = diStemAtLand.includes(effectiveStem);
+
+  const isTripleSame = isStarFrozen && isGuidingClosed;
+
+  let guidingMap;
   if (isTripleSame) {
     const stemOrder = EARTH_PLATE_STEM_ORDER; // 戊己庚辛壬癸丁丙乙
     const walkFull = yinYang === '陽'
@@ -1021,21 +1035,21 @@ function getGuidingStemMap(dutyGateLandHouse, earthStemMap, timeStem, dutyStem, 
       }
     }
 
-    const result = {};
-    [1,2,3,4,6,7,8,9].forEach(g => { result[g] = rawMap[g] || ''; });
-    return result;
+    guidingMap = {};
+    [1,2,3,4,6,7,8,9].forEach(g => { guidingMap[g] = rawMap[g] || ''; });
+  } else {
+    // 普通情況：從值使門落宮起，以 effectiveStem 為頭，順時針放入
+    let headPos = diSeq.findIndex(s => s.includes(effectiveStem));
+    if (headPos === -1) headPos = 0;
+    const startIdx = HOUSE_CW.indexOf(dutyGateLandHouse);
+    guidingMap = {};
+    for (let i = 0; i < 8; i++) {
+      const gong = HOUSE_CW[(startIdx + i) % 8];
+      guidingMap[gong] = diSeq[(headPos + i) % 8];
+    }
   }
 
-  // 普通情況：從值使門落宮起，以 effectiveStem 為頭，順時針放入
-  let headPos = diSeq.findIndex(s => s.includes(effectiveStem));
-  if (headPos === -1) headPos = 0;
-  const startIdx = HOUSE_CW.indexOf(dutyGateLandHouse);
-  const result = {};
-  for (let i = 0; i < 8; i++) {
-    const gong = HOUSE_CW[(startIdx + i) % 8];
-    result[gong] = diSeq[(headPos + i) % 8];
-  }
-  return result;
+  return { guidingMap, isStarFrozen, isGateFrozen };
 }
 
 const EIGHT_STARS = ['天蓬','天任','天沖','天輔','天英','天芮','天柱','天心'];
@@ -1087,13 +1101,16 @@ function getEarthStemMap(yinYang, chartNum) {
       result[gong] = gan;
     }
   }
-  // 排完後，5宮天干寄坤（2）
+  // 中宮5原始天干（寄坤前），第六步排八門的數字走步需要用這個原始位置
+  const houseFiveStem = result[5] || null;
+
+  // 排完後，5宮天干寄坤（2）－ 此為「顯示用／空間旋轉用」的合併版本
   if (result[5]) {
     result[2] = result[2] ? result[2] + result[5] : result[5];
     delete result[5];
   }
 
-  return result;
+  return { earthStemMap: result, houseFiveStem };
 }
 
 // 根據時柱干支找旬首資料（用完整干支配對）
@@ -1115,12 +1132,57 @@ function getDecInfo(timeStem, timeBranch) {
   return xunMap[xunFirstZhi] || null;
 }
 
+// 驗證年月日時分是否為合理數字，不合理則標紅對應欄位並顯示訊息
+function validateDateInputs(y, m, d, h, min) {
+  const fields = [
+    { id: 'year', valid: Number.isInteger(y) && y >= 1, msg: '年份須為正整數' },
+    { id: 'month', valid: Number.isInteger(m) && m >= 1 && m <= 12, msg: '月份須在1–12之間' },
+    { id: 'hour', valid: Number.isInteger(h) && h >= 0 && h <= 23, msg: '時須在0–23之間' },
+    { id: 'minute', valid: Number.isInteger(min) && min >= 0 && min <= 59, msg: '分須在0–59之間' },
+  ];
+
+  // 日的合理範圍要先確定月份合法才能算當月天數，否則先用31上限粗略檢查
+  const daysInMonth = (Number.isInteger(y) && Number.isInteger(m) && m >= 1 && m <= 12)
+    ? new Date(y, m, 0).getDate()
+    : 31;
+  fields.push({ id: 'day', valid: Number.isInteger(d) && d >= 1 && d <= daysInMonth, msg: `日須在1–${daysInMonth}之間` });
+
+  const errorMsgs = [];
+  fields.forEach(f => {
+    const el = document.getElementById(f.id);
+    if (!el) return;
+    if (f.valid) {
+      el.classList.remove('input-error');
+    } else {
+      el.classList.add('input-error');
+      errorMsgs.push(f.msg);
+    }
+  });
+
+  const msgEl = document.getElementById('input-error-msg');
+  if (msgEl) {
+    if (errorMsgs.length) {
+      msgEl.textContent = errorMsgs.join('；');
+      msgEl.style.display = 'block';
+    } else {
+      msgEl.textContent = '';
+      msgEl.style.display = 'none';
+    }
+  }
+
+  return errorMsgs.length === 0;
+}
+
 function startChart() {
   const y   = parseInt(document.getElementById('year').value);
   const m   = parseInt(document.getElementById('month').value);
   const d   = parseInt(document.getElementById('day').value);
   const h   = parseInt(document.getElementById('hour').value);
   const min = parseInt(document.getElementById('minute').value);
+
+  if (!validateDateInputs(y, m, d, h, min)) {
+    return;
+  }
 
   // 子時跨日：23:00-23:59 屬於隔日子時，農曆換算需 +1 天，時辰改為 0
   let lunarD = d, lunarM = m, lunarY = y, lunarH = h;
@@ -1169,7 +1231,7 @@ function startChart() {
   document.getElementById('hb-qiju').textContent = yinYang + chartNum + '局';
 
   // 排地盤天干
-  const earthStemMap = getEarthStemMap(yinYang, chartNum);
+  const { earthStemMap, houseFiveStem } = getEarthStemMap(yinYang, chartNum);
   // 地盤天干寫入將在後面取得 dutyStemHouse 後統一處理（入墓判定需要）
 
   // 旬首 / 符頭 / 空亡
@@ -1232,12 +1294,34 @@ function startChart() {
           // 排天盤天干
           const heavenStemMap = getHeavenStemMap(timeStemHouse, earthStemMap, xunInfo.dutyStem);
           // 排八門：值使門地盤宮位
-          const menPan = getGateMap(dutyStemHouse, yinYang, hGZ[0]);
+          // 走步起點需用「寄坤前」的原始宮位──若符頭天干恰為中宮5寄坤前的原始天干，
+          // 數字走步（含中宮）的起點應為5本身，不可用已合併到坤2的位置（5與2在九宮數字
+          // 循環中是不同的計數站，提前合併會讓起點算錯）
+          const dutyStemHouseForGate = (houseFiveStem && xunInfo.dutyStem === houseFiveStem) ? 5 : dutyStemHouse;
+          const menPan = getGateMap(dutyStemHouseForGate, yinYang, hGZ[0]);
           // 找值使門落宮（天盤使門所在宮位）
           const shimenName = HOUSE_GATE[dutyStemHouse];
           const dutyGateLandHouse = Object.keys(menPan).find(g => menPan[g] === shimenName);
           // 排引干
-          const guidingStemMap = dutyGateLandHouse ? getGuidingStemMap(dutyGateLandHouse, earthStemMap, hGZ[0], xunInfo.dutyStem, yinYang) : {};
+          const guidingResult = dutyGateLandHouse
+            ? getGuidingStemMap(dutyGateLandHouse, earthStemMap, hGZ[0], xunInfo.dutyStem, yinYang, timeStemHouse, dutyStemHouse)
+            : { guidingMap: {}, isStarFrozen: false, isGateFrozen: false };
+          const guidingStemMap = guidingResult.guidingMap;
+
+          // 伏吟標記顯示：有伏吟顯示星伏／門伏（標紅）；無伏吟則顯示陰盤（沿用原排盤標示位置）
+          const fuyinEl = document.getElementById('hb-fuyin');
+          if (fuyinEl) {
+            const labels = [];
+            if (guidingResult.isStarFrozen) labels.push('星伏');
+            if (guidingResult.isGateFrozen) labels.push('門伏');
+            if (labels.length) {
+              fuyinEl.textContent = labels.join('');
+              fuyinEl.style.color = '#c0392b';
+            } else {
+              fuyinEl.textContent = '陰盤';
+              fuyinEl.style.color = '';
+            }
+          }
 
           [1,2,3,4,6,7,8,9].forEach(g => {
             const shenEl = document.getElementById('sh-' + g);
