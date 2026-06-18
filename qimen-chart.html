@@ -894,6 +894,17 @@ function getChartNumber(lunar, h, ec) {
 const HOUSE_CW  = [1, 8, 3, 4, 9, 2, 7, 6]; // 順時針
 const HOUSE_CCW = [1, 6, 7, 2, 9, 4, 3, 8]; // 逆時針
 
+// 共用：從 startHouse 起，沿 order 方向，把 items 陣列從 headIdx 偏移開始依序放入8個宮位
+// （八神、八星、天盤天干、引干普通法，皆為同一種「起點+方向+固定序列+偏移」的放置模式）
+function walkPlace(startHouse, order, items, headIdx = 0) {
+  const startIdx = order.indexOf(parseInt(startHouse));
+  const result = {};
+  for (let i = 0; i < 8; i++) {
+    result[order[(startIdx + i) % 8]] = items[(headIdx + i) % 8];
+  }
+  return result;
+}
+
 // 六儀三奇順序
 const EARTH_PLATE_STEM_ORDER = ['戊','己','庚','辛','壬','癸','丁','丙','乙'];
 
@@ -911,12 +922,7 @@ const EIGHT_SPIRITS = ['值符','騰蛇','太陰','六合','白虎','玄武','�
 // 排八神：時天干宮起，陽遁實際順時針，陰遁實際逆時針
 function getSpiritMap(timeStemHouse, yinYang) {
   const order = yinYang === '陽' ? HOUSE_CW : HOUSE_CCW;
-  const startIdx = order.indexOf(parseInt(timeStemHouse));
-  const result = {};
-  for (let i = 0; i < 8; i++) {
-    result[order[(startIdx + i) % 8]] = EIGHT_SPIRITS[i];
-  }
-  return result;
+  return walkPlace(timeStemHouse, order, EIGHT_SPIRITS);
 }
 
 // 地支→宮位對應表
@@ -972,14 +978,12 @@ function getGateMap(dutyGateHouse, yinYang, timeStem) {
 // 星伏／門伏：純位置標記（八星/八門是否全部回到固定本宮），畫面顯示用，跟特例三觸發邏輯分開
 // 特例三/四觸發前提：① 星伏（isStarFrozen）② 引干閉環（isGuidingClosed，值使門落宮地盤干含effectiveStem）
 // 兩個觸發條件都成立才飛布；星伏/門伏的「位置」標記本身不直接決定要不要飛布
-function getGuidingStemMap(dutyGateLandHouse, earthStemMap, timeStem, dutyStem, yinYang, timeStemHouse, dutyStemHouse) {
+// diSeq：實際順時針讀出的地盤天干序列（8個位置，由呼叫端算好傳入，避免與getHeavenStemMap重複計算）
+function getGuidingStemMap(dutyGateLandHouse, earthStemMap, diSeq, timeStem, dutyStem, yinYang, timeStemHouse, dutyStemHouse) {
   dutyGateLandHouse = parseInt(dutyGateLandHouse);
 
   // 決定實際使用的時干（甲不在地盤時改用符頭）
   const effectiveStem = (timeStem === '甲') ? dutyStem : timeStem;
-
-  // 用實際順時針讀出地盤天干序列（8個位置）
-  let diSeq = HOUSE_CW.map(g => earthStemMap[g] || '');
 
   // 星伏（純位置）：時干所在地盤宮位 是否＝符頭所在地盤宮位（八星、天盤天干排列同一起點）
   const isStarFrozen = String(timeStemHouse) === String(dutyStemHouse);
@@ -1041,12 +1045,7 @@ function getGuidingStemMap(dutyGateLandHouse, earthStemMap, timeStem, dutyStem, 
     // 普通情況：從值使門落宮起，以 effectiveStem 為頭，順時針放入
     let headPos = diSeq.findIndex(s => s.includes(effectiveStem));
     if (headPos === -1) headPos = 0;
-    const startIdx = HOUSE_CW.indexOf(dutyGateLandHouse);
-    guidingMap = {};
-    for (let i = 0; i < 8; i++) {
-      const gong = HOUSE_CW[(startIdx + i) % 8];
-      guidingMap[gong] = diSeq[(headPos + i) % 8];
-    }
+    guidingMap = walkPlace(dutyGateLandHouse, HOUSE_CW, diSeq, headPos);
   }
 
   return { guidingMap, isStarFrozen, isGateFrozen };
@@ -1057,29 +1056,15 @@ const EIGHT_STARS = ['天蓬','天任','天沖','天輔','天英','天芮','天�
 // 排八星：地盤時干宮起，值符星為頭，固定蓬任沖輔英芮柱心順時針
 function getStarMap(timeStemHouse, dutyStar) {
   const headIdx = EIGHT_STARS.indexOf(dutyStar);
-  const startIdx = HOUSE_CW.indexOf(parseInt(timeStemHouse));
-  const result = {};
-  for (let i = 0; i < 8; i++) {
-    result[HOUSE_CW[(startIdx + i) % 8]] = EIGHT_STARS[(headIdx + i) % 8];
-  }
-  return result;
+  return walkPlace(timeStemHouse, HOUSE_CW, EIGHT_STARS, headIdx);
 }
 
 // 排天盤天干：地盤時干宮起，沿地盤實際順時針序列從符頭切入，永遠順時針放入
-function getHeavenStemMap(timeStemHouse, earthStemMap, dutyStem) {
-  timeStemHouse = parseInt(timeStemHouse);
-  // 用實際順時針讀出地盤天干序列（8個位置，寄干宮保留兩個天干）
-  const diSeq = HOUSE_CW.map(g => earthStemMap[g] || '');
+// diSeq：實際順時針讀出的地盤天干序列（8個位置，由呼叫端算好傳入，避免與getGuidingStemMap重複計算）
+function getHeavenStemMap(timeStemHouse, diSeq, dutyStem) {
   // 找符頭所在位置（位置index）
   const headPos = diSeq.findIndex(s => s.includes(dutyStem));
-  // 從地盤時干宮起，實際順時針放入天盤
-  const startIdx = HOUSE_CW.indexOf(timeStemHouse);
-  const result = {};
-  for (let i = 0; i < 8; i++) {
-    const gong = HOUSE_CW[(startIdx + i) % 8];
-    result[gong] = diSeq[(headPos + i) % 8];
-  }
-  return result;
+  return walkPlace(timeStemHouse, HOUSE_CW, diSeq, headPos);
 }
 
 // 排地盤天干
@@ -1291,8 +1276,10 @@ function startChart() {
           const shenPan = getSpiritMap(timeStemHouse, yinYang);
           // 排八星
           const xingPan = getStarMap(timeStemHouse, dutyStar);
+          // 地盤天干序列（實際順時針讀出，8個位置，寄干宮保留兩個天干）－供天盤天干、引干共用，避免重複計算
+          const diSeq = HOUSE_CW.map(g => earthStemMap[g] || '');
           // 排天盤天干
-          const heavenStemMap = getHeavenStemMap(timeStemHouse, earthStemMap, xunInfo.dutyStem);
+          const heavenStemMap = getHeavenStemMap(timeStemHouse, diSeq, xunInfo.dutyStem);
           // 排八門：值使門地盤宮位
           // 走步起點需用「寄坤前」的原始宮位──若符頭天干恰為中宮5寄坤前的原始天干，
           // 數字走步（含中宮）的起點應為5本身，不可用已合併到坤2的位置（5與2在九宮數字
@@ -1304,7 +1291,7 @@ function startChart() {
           const dutyGateLandHouse = Object.keys(menPan).find(g => menPan[g] === shimenName);
           // 排引干
           const guidingResult = dutyGateLandHouse
-            ? getGuidingStemMap(dutyGateLandHouse, earthStemMap, hGZ[0], xunInfo.dutyStem, yinYang, timeStemHouse, dutyStemHouse)
+            ? getGuidingStemMap(dutyGateLandHouse, earthStemMap, diSeq, hGZ[0], xunInfo.dutyStem, yinYang, timeStemHouse, dutyStemHouse)
             : { guidingMap: {}, isStarFrozen: false, isGateFrozen: false };
           const guidingStemMap = guidingResult.guidingMap;
 
@@ -1377,7 +1364,10 @@ function startChart() {
 
 <div id="btn-capture-wrap" style="display:none; text-align:center; padding:10px 0 0;">
   <button onclick="captureChart()" style="display:inline-block;padding:9px 22px;border:1px solid #ddd;border-radius:20px;font-size:13px;color:#666;background:#fff;letter-spacing:.05em;cursor:pointer;">📷 儲存截圖</button>
-  <div class="btn-quick-row" style="margin-top:10px; width:calc(100% - 44px); margin-left:auto; margin-right:auto;">
+</div>
+
+<div id="btn-quick-wrap" style="text-align:center; padding:10px 0 0;">
+  <div class="btn-quick-row" style="width:calc(100% - 44px); margin-left:auto; margin-right:auto;">
     <button class="btn-quick" onclick="shiftDate(-1)">前日</button>
     <button class="btn-quick" onclick="shiftDate(+1)">次日</button>
     <button class="btn-quick" onclick="shiftHour(-2)">上時</button>
