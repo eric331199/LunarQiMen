@@ -988,6 +988,9 @@ function getGuidingStemMap(dutyGateLandHouse, earthStemMap, diSeq, timeStem, dut
   // 星伏（純位置）：時干所在地盤宮位 是否＝符頭所在地盤宮位（八星、天盤天干排列同一起點）
   const isStarFrozen = String(timeStemHouse) === String(dutyStemHouse);
 
+  // 星反：另在外層用 xingPan 判斷，此處占位
+  const isStarReversed = false;
+
   // 門伏（純位置）：值使門落宮 是否＝值使門固定本宮（＝符頭所在地盤宮位）。八門同一起點同一offset，單點檢查即代表全部八門
   const isGateFrozen = String(dutyGateLandHouse) === String(dutyStemHouse);
 
@@ -1048,7 +1051,7 @@ function getGuidingStemMap(dutyGateLandHouse, earthStemMap, diSeq, timeStem, dut
     guidingMap = walkPlace(dutyGateLandHouse, HOUSE_CW, diSeq, headPos);
   }
 
-  return { guidingMap, isStarFrozen, isGateFrozen };
+  return { guidingMap, isStarFrozen, isGateFrozen, isStarReversed };
 }
 
 const EIGHT_STARS = ['天蓬','天任','天沖','天輔','天英','天芮','天柱','天心'];
@@ -1289,18 +1292,25 @@ function startChart() {
           // 找值使門落宮（天盤使門所在宮位）
           const shimenName = HOUSE_GATE[dutyStemHouse];
           const dutyGateLandHouse = Object.keys(menPan).find(g => menPan[g] === shimenName);
+          // 星反：天蓬落在離9 → 星反成立
+          const isStarReversed = Object.keys(xingPan).find(g => xingPan[g] === '天蓬') === '9';
+          // 門反：休門落在離9 → 門反成立
+          const isGateReversed = Object.keys(menPan).find(g => menPan[g] === '休門') === '9';
+
           // 排引干
           const guidingResult = dutyGateLandHouse
             ? getGuidingStemMap(dutyGateLandHouse, earthStemMap, diSeq, hGZ[0], xunInfo.dutyStem, yinYang, timeStemHouse, dutyStemHouse)
-            : { guidingMap: {}, isStarFrozen: false, isGateFrozen: false };
+            : { guidingMap: {}, isStarFrozen: false, isGateFrozen: false, isStarReversed: false };
           const guidingStemMap = guidingResult.guidingMap;
 
-          // 伏吟標記顯示：有伏吟顯示星伏／門伏（標紅）；無伏吟則顯示陰盤（沿用原排盤標示位置）
+          // 伏吟/反吟標記顯示：有伏吟顯示星伏／門伏（標紅）；有反吟顯示星反（標紅）；無則顯示陰盤
           const fuyinEl = document.getElementById('hb-fuyin');
           if (fuyinEl) {
             const labels = [];
             if (guidingResult.isStarFrozen) labels.push('星伏');
             if (guidingResult.isGateFrozen) labels.push('門伏');
+            if (isStarReversed) labels.push('星反');
+            if (isGateReversed) labels.push('門反');
             if (labels.length) {
               fuyinEl.textContent = labels.join('');
               fuyinEl.style.color = '#c0392b';
