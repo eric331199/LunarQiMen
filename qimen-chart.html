@@ -920,8 +920,8 @@ const HOUSE_GATE  = { 1:'休門', 2:'死門', 3:'傷門', 4:'杜門', 6:'開門'
 const EIGHT_SPIRITS = ['值符','騰蛇','太陰','六合','白虎','玄武','九地','九天'];
 
 // 排八神：時天干宮起，陽遁實際順時針，陰遁實際逆時針
-function getSpiritMap(timeStemHouse, yinYang) {
-  const order = yinYang === '陽' ? HOUSE_CW : HOUSE_CCW;
+function getSpiritMap(timeStemHouse, solsticeType) {
+  const order = solsticeType === '陽' ? HOUSE_CW : HOUSE_CCW;
   return walkPlace(timeStemHouse, order, EIGHT_SPIRITS);
 }
 
@@ -949,12 +949,12 @@ const HOUSE_GATE_IDX = { 1:0, 2:5, 3:2, 4:3, 6:7, 7:6, 8:1, 9:4 };
 const HEAVENLY_STEMS_REF = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
 
 // 排八門：從地盤值使門宮位走步，落點放值使門，其餘實際順時針放入
-function getGateMap(dutyGateHouse, yinYang, timeStem) {
+function getGateMap(dutyGateHouse, solsticeType, timeStem) {
   dutyGateHouse = parseInt(dutyGateHouse);
   // 時干序數（甲=1…癸=10），起點算第一步，所以走 steps-1 步
   const steps = HEAVENLY_STEMS_REF.indexOf(timeStem) + 1;
   // 走步用含中宮的九宮數字順序（中宮5為獨立計數站，不可提前併入坤2）
-  const walkOrder = yinYang === '陽' ? HOUSE_NUM_ASC_FULL : HOUSE_NUM_DESC_FULL;
+  const walkOrder = solsticeType === '陽' ? HOUSE_NUM_ASC_FULL : HOUSE_NUM_DESC_FULL;
   const startIdx = walkOrder.indexOf(dutyGateHouse);
   // 走 steps-1 步（起點算第一步）
   let landGong = walkOrder[(startIdx + steps - 1) % 9];
@@ -978,8 +978,8 @@ function getGateMap(dutyGateHouse, yinYang, timeStem) {
 // 星伏／門伏：純位置標記（八星/八門是否全部回到固定本宮），畫面顯示用，跟特例三觸發邏輯分開
 // 特例三/四觸發前提：① 星伏（isStarFrozen）② 引干閉環（isGuidingClosed，值使門落宮地盤干含effectiveStem）
 // 兩個觸發條件都成立才飛布；星伏/門伏的「位置」標記本身不直接決定要不要飛布
-// diSeq：實際順時針讀出的地盤天干序列（8個位置，由呼叫端算好傳入，避免與getHeavenStemMap重複計算）
-function getGuidingStemMap(dutyGateLandHouse, earthStemMap, diSeq, timeStem, dutyStem, yinYang, timeStemHouse, dutyStemHouse) {
+// earthStemSeq：實際順時針讀出的地盤天干序列（8個位置，由呼叫端算好傳入，避免與getHeavenStemMap重複計算）
+function getGuidingStemMap(dutyGateLandHouse, earthStemMap, earthStemSeq, timeStem, dutyStem, solsticeType, timeStemHouse, dutyStemHouse) {
   dutyGateLandHouse = parseInt(dutyGateLandHouse);
 
   // 決定實際使用的時干（甲不在地盤時改用符頭）
@@ -987,9 +987,6 @@ function getGuidingStemMap(dutyGateLandHouse, earthStemMap, diSeq, timeStem, dut
 
   // 星伏（純位置）：時干所在地盤宮位 是否＝符頭所在地盤宮位（八星、天盤天干排列同一起點）
   const isStarFrozen = String(timeStemHouse) === String(dutyStemHouse);
-
-  // 星反：另在外層用 xingPan 判斷，此處占位
-  const isStarReversed = false;
 
   // 門伏（純位置）：值使門落宮 是否＝值使門固定本宮（＝符頭所在地盤宮位）。八門同一起點同一offset，單點檢查即代表全部八門
   const isGateFrozen = String(dutyGateLandHouse) === String(dutyStemHouse);
@@ -1004,7 +1001,7 @@ function getGuidingStemMap(dutyGateLandHouse, earthStemMap, diSeq, timeStem, dut
   let guidingMap;
   if (isTripleSame) {
     const stemOrder = EARTH_PLATE_STEM_ORDER; // 戊己庚辛壬癸丁丙乙
-    const walkFull = yinYang === '陽'
+    const walkFull = solsticeType === '陽'
       ? [5,6,7,8,9,1,2,3,4]
       : [5,4,3,2,1,9,8,7,6];
 
@@ -1046,12 +1043,12 @@ function getGuidingStemMap(dutyGateLandHouse, earthStemMap, diSeq, timeStem, dut
     [1,2,3,4,6,7,8,9].forEach(g => { guidingMap[g] = rawMap[g] || ''; });
   } else {
     // 普通情況：從值使門落宮起，以 effectiveStem 為頭，順時針放入
-    let headPos = diSeq.findIndex(s => s.includes(effectiveStem));
+    let headPos = earthStemSeq.findIndex(s => s.includes(effectiveStem));
     if (headPos === -1) headPos = 0;
-    guidingMap = walkPlace(dutyGateLandHouse, HOUSE_CW, diSeq, headPos);
+    guidingMap = walkPlace(dutyGateLandHouse, HOUSE_CW, earthStemSeq, headPos);
   }
 
-  return { guidingMap, isStarFrozen, isGateFrozen, isStarReversed };
+  return { guidingMap, isStarFrozen, isGateFrozen };
 }
 
 const EIGHT_STARS = ['天蓬','天任','天沖','天輔','天英','天芮','天柱','天心'];
@@ -1063,18 +1060,18 @@ function getStarMap(timeStemHouse, dutyStar) {
 }
 
 // 排天盤天干：地盤時干宮起，沿地盤實際順時針序列從符頭切入，永遠順時針放入
-// diSeq：實際順時針讀出的地盤天干序列（8個位置，由呼叫端算好傳入，避免與getGuidingStemMap重複計算）
-function getHeavenStemMap(timeStemHouse, diSeq, dutyStem) {
+// earthStemSeq：實際順時針讀出的地盤天干序列（8個位置，由呼叫端算好傳入，避免與getGuidingStemMap重複計算）
+function getHeavenStemMap(timeStemHouse, earthStemSeq, dutyStem) {
   // 找符頭所在位置（位置index）
-  const headPos = diSeq.findIndex(s => s.includes(dutyStem));
-  return walkPlace(timeStemHouse, HOUSE_CW, diSeq, headPos);
+  const headPos = earthStemSeq.findIndex(s => s.includes(dutyStem));
+  return walkPlace(timeStemHouse, HOUSE_CW, earthStemSeq, headPos);
 }
 
 // 排地盤天干
 // 回傳 { 宮位數: 天干 }，例如 { 1:'丙', 2:'戊乙', ... }
-function getEarthStemMap(yinYang, chartNum) {
+function getEarthStemMap(solsticeType, chartNum) {
   const result = {};
-  const order9 = yinYang === '陽' ? HOUSE_NUM_ASC_FULL : HOUSE_NUM_DESC_FULL; // 含5，9格
+  const order9 = solsticeType === '陽' ? HOUSE_NUM_ASC_FULL : HOUSE_NUM_DESC_FULL; // 含5，9格
 
   // 找戊的起始宮位在9格順序中的 index
   const startIdx = order9.indexOf(chartNum);
@@ -1214,12 +1211,12 @@ function startChart() {
   document.getElementById('gz-h-zhi').textContent = hGZ[1];
 
   // 陰陽遁 + 局數
-  const yinYang = getSolsticeType(y, m, d, h);
+  const solsticeType = getSolsticeType(y, m, d, h);
   const chartNum = getChartNumber(lunar, h, ec);
-  document.getElementById('hb-qiju').textContent = yinYang + chartNum + '局';
+  document.getElementById('hb-qiju').textContent = solsticeType + chartNum + '局';
 
   // 排地盤天干
-  const { earthStemMap, houseFiveStem } = getEarthStemMap(yinYang, chartNum);
+  const { earthStemMap, houseFiveStem } = getEarthStemMap(solsticeType, chartNum);
   // 地盤天干寫入將在後面取得 dutyStemHouse 後統一處理（入墓判定需要）
 
   // 旬首 / 符頭 / 空亡
@@ -1276,30 +1273,30 @@ function startChart() {
       if (timeStemHouse) {
         try {
           // 排八神
-          const shenPan = getSpiritMap(timeStemHouse, yinYang);
+          const spiritMap = getSpiritMap(timeStemHouse, solsticeType);
           // 排八星
-          const xingPan = getStarMap(timeStemHouse, dutyStar);
+          const starMap = getStarMap(timeStemHouse, dutyStar);
           // 地盤天干序列（實際順時針讀出，8個位置，寄干宮保留兩個天干）－供天盤天干、引干共用，避免重複計算
-          const diSeq = HOUSE_CW.map(g => earthStemMap[g] || '');
+          const earthStemSeq = HOUSE_CW.map(g => earthStemMap[g] || '');
           // 排天盤天干
-          const heavenStemMap = getHeavenStemMap(timeStemHouse, diSeq, xunInfo.dutyStem);
+          const heavenStemMap = getHeavenStemMap(timeStemHouse, earthStemSeq, xunInfo.dutyStem);
           // 排八門：值使門地盤宮位
           // 走步起點需用「寄坤前」的原始宮位──若符頭天干恰為中宮5寄坤前的原始天干，
           // 數字走步（含中宮）的起點應為5本身，不可用已合併到坤2的位置（5與2在九宮數字
           // 循環中是不同的計數站，提前合併會讓起點算錯）
           const dutyStemHouseForGate = (houseFiveStem && xunInfo.dutyStem === houseFiveStem) ? 5 : dutyStemHouse;
-          const menPan = getGateMap(dutyStemHouseForGate, yinYang, hGZ[0]);
+          const gateMap = getGateMap(dutyStemHouseForGate, solsticeType, hGZ[0]);
           // 找值使門落宮（天盤使門所在宮位）
           const shimenName = HOUSE_GATE[dutyStemHouse];
-          const dutyGateLandHouse = Object.keys(menPan).find(g => menPan[g] === shimenName);
+          const dutyGateLandHouse = Object.keys(gateMap).find(g => gateMap[g] === shimenName);
           // 星反：天蓬落在離9 → 星反成立
-          const isStarReversed = Object.keys(xingPan).find(g => xingPan[g] === '天蓬') === '9';
+          const isStarReversed = Object.keys(starMap).find(g => starMap[g] === '天蓬') === '9';
           // 門反：休門落在離9 → 門反成立
-          const isGateReversed = Object.keys(menPan).find(g => menPan[g] === '休門') === '9';
+          const isGateReversed = Object.keys(gateMap).find(g => gateMap[g] === '休門') === '9';
 
           // 排引干
           const guidingResult = dutyGateLandHouse
-            ? getGuidingStemMap(dutyGateLandHouse, earthStemMap, diSeq, hGZ[0], xunInfo.dutyStem, yinYang, timeStemHouse, dutyStemHouse)
+            ? getGuidingStemMap(dutyGateLandHouse, earthStemMap, earthStemSeq, hGZ[0], xunInfo.dutyStem, solsticeType, timeStemHouse, dutyStemHouse)
             : { guidingMap: {}, isStarFrozen: false, isGateFrozen: false, isStarReversed: false };
           const guidingStemMap = guidingResult.guidingMap;
 
@@ -1327,14 +1324,14 @@ function startChart() {
             const gateEl = document.getElementById('gate-' + g);
             const yinEl  = document.getElementById('yin-' + g);
             const diEl   = document.getElementById('di-' + g);
-            if (shenEl) shenEl.textContent = shenPan[g] || '';
-            if (starEl) starEl.textContent = xingPan[g] || '';
+            if (shenEl) shenEl.textContent = spiritMap[g] || '';
+            if (starEl) starEl.textContent = starMap[g] || '';
             // 天盤天干（入墓判定，含甲入墓特例）
             if (tianEl) {
               const isDutyHouse = String(g) === String(timeStemHouse);
               tianEl.innerHTML = renderStemHTML(heavenStemMap[g] || '', g, xunInfo.dutyStem, isDutyHouse);
             }
-            if (gateEl) gateEl.innerHTML = renderGateHTML(menPan[g] || '', g);
+            if (gateEl) gateEl.innerHTML = renderGateHTML(gateMap[g] || '', g);
             // 地盤天干（入墓判定，含甲入墓特例）
             if (diEl) {
               const isDutyHouse = String(g) === String(dutyStemHouse);
