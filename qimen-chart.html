@@ -431,7 +431,7 @@
   </div>
   <div class="input-buttons">
     <button class="btn-now" onclick="resetChart()">重置</button>
-    <button class="btn-start" onclick="startChart()">排盤</button>
+    <button class="btn-start" onclick="castChart()">排盤</button>
     <button class="btn-now" onclick="setNow()">現時</button>
   </div>
   <div class="input-error-msg" id="input-error-msg"></div>
@@ -775,14 +775,14 @@ function shiftDate(days) {
   const dt = getInputDate();
   dt.setDate(dt.getDate() + days);
   setInputDate(dt);
-  startChart();
+  castChart();
 }
 
 function shiftHour(hours) {
   const dt = getInputDate();
   dt.setHours(dt.getHours() + hours);
   setInputDate(dt);
-  startChart();
+  castChart();
 }
 
 function setNow() {
@@ -847,33 +847,27 @@ function hourToZhi(h) {
 // 判斷陰陽遁：找開盤時間前最近的冬至或夏至
 function getSolsticeType(y, m, d, h) {
   const openDate = new Date(y, m-1, d, h);
-  
-  // 搜尋前兩年到當年的節氣，找最近一個冬至或夏至
+
+  // 搜尋前兩年到當年的節氣，找最近一個冬至或夏至的名稱
   let lastSolstice = null;
-  let lastType = null;
 
   for (let yr = y - 1; yr <= y; yr++) {
     const lunarYr = LunarYear.fromYear(yr);
     const jieQiDays = lunarYr.getJieQiJulianDays();
-    const jieQiNames = lunarYr.getJieQiTable ? lunarYr.getJieQiTable() : null;
 
     // lunar-javascript 節氣順序固定，冬至是第0個，夏至是第12個（從冬至開始算）
     // 用 Solar.fromJulianDay 取得日期，再用 getLunar().getJieQi() 確認名稱
     for (let i = 0; i < jieQiDays.length; i++) {
-      const jd = jieQiDays[i];
-      const s = Solar.fromJulianDay(jd);
+      const s = Solar.fromJulianDay(jieQiDays[i]);
       const name = s.getLunar().getJieQi();
       if (name === '冬至' || name === '夏至') {
         const sDate = new Date(s.getYear(), s.getMonth()-1, s.getDay());
-        if (sDate <= openDate) {
-          lastSolstice = sDate;
-          lastType = name;
-        }
+        if (sDate <= openDate) lastSolstice = name;
       }
     }
   }
 
-  return lastType === '冬至' ? '陽' : '陰';
+  return lastSolstice === '冬至' ? '陽' : '陰';
 }
 
 // 計算局數
@@ -896,7 +890,7 @@ const HOUSE_CCW = [1, 6, 7, 2, 9, 4, 3, 8]; // 逆時針
 
 // 共用：從 startHouse 起，沿 order 方向，把 items 陣列從 headIdx 偏移開始依序放入8個宮位
 // （八神、八星、天盤天干、引干普通法，皆為同一種「起點+方向+固定序列+偏移」的放置模式）
-function walkPlace(startHouse, order, items, headIdx = 0) {
+function placeInOrder(startHouse, order, items, headIdx = 0) {
   const startIdx = order.indexOf(parseInt(startHouse));
   const result = {};
   for (let i = 0; i < 8; i++) {
@@ -922,7 +916,7 @@ const EIGHT_SPIRITS = ['值符','騰蛇','太陰','六合','白虎','玄武','�
 // 排八神：時天干宮起，陽遁實際順時針，陰遁實際逆時針
 function getSpiritMap(timeStemHouse, solsticeType) {
   const order = solsticeType === '陽' ? HOUSE_CW : HOUSE_CCW;
-  return walkPlace(timeStemHouse, order, EIGHT_SPIRITS);
+  return placeInOrder(timeStemHouse, order, EIGHT_SPIRITS);
 }
 
 // 地支→宮位對應表
@@ -979,7 +973,7 @@ function getGateMap(dutyGateHouse, solsticeType, timeStem) {
 // 特例三/四觸發前提：① 星伏（isStarFrozen）② 引干閉環（isGuidingClosed，值使門落宮地盤干含effectiveStem）
 // 兩個觸發條件都成立才飛布；星伏/門伏的「位置」標記本身不直接決定要不要飛布
 // earthStemSeq：實際順時針讀出的地盤天干序列（8個位置，由呼叫端算好傳入，避免與getHeavenStemMap重複計算）
-function getGuidingStemMap(dutyGateLandHouse, earthStemMap, earthStemSeq, timeStem, dutyStem, solsticeType, timeStemHouse, dutyStemHouse) {
+function getHidingStemMap(dutyGateLandHouse, earthStemMap, earthStemSeq, timeStem, dutyStem, solsticeType, timeStemHouse, dutyStemHouse) {
   dutyGateLandHouse = parseInt(dutyGateLandHouse);
 
   // 決定實際使用的時干（甲不在地盤時改用符頭）
@@ -1045,7 +1039,7 @@ function getGuidingStemMap(dutyGateLandHouse, earthStemMap, earthStemSeq, timeSt
     // 普通情況：從值使門落宮起，以 effectiveStem 為頭，順時針放入
     let headPos = earthStemSeq.findIndex(s => s.includes(effectiveStem));
     if (headPos === -1) headPos = 0;
-    guidingMap = walkPlace(dutyGateLandHouse, HOUSE_CW, earthStemSeq, headPos);
+    guidingMap = placeInOrder(dutyGateLandHouse, HOUSE_CW, earthStemSeq, headPos);
   }
 
   return { guidingMap, isStarFrozen, isGateFrozen };
@@ -1056,15 +1050,15 @@ const EIGHT_STARS = ['天蓬','天任','天沖','天輔','天英','天芮','天�
 // 排八星：地盤時干宮起，值符星為頭，固定蓬任沖輔英芮柱心順時針
 function getStarMap(timeStemHouse, dutyStar) {
   const headIdx = EIGHT_STARS.indexOf(dutyStar);
-  return walkPlace(timeStemHouse, HOUSE_CW, EIGHT_STARS, headIdx);
+  return placeInOrder(timeStemHouse, HOUSE_CW, EIGHT_STARS, headIdx);
 }
 
 // 排天盤天干：地盤時干宮起，沿地盤實際順時針序列從符頭切入，永遠順時針放入
-// earthStemSeq：實際順時針讀出的地盤天干序列（8個位置，由呼叫端算好傳入，避免與getGuidingStemMap重複計算）
+// earthStemSeq：實際順時針讀出的地盤天干序列（8個位置，由呼叫端算好傳入，避免與getHidingStemMap重複計算）
 function getHeavenStemMap(timeStemHouse, earthStemSeq, dutyStem) {
   // 找符頭所在位置（位置index）
   const headPos = earthStemSeq.findIndex(s => s.includes(dutyStem));
-  return walkPlace(timeStemHouse, HOUSE_CW, earthStemSeq, headPos);
+  return placeInOrder(timeStemHouse, HOUSE_CW, earthStemSeq, headPos);
 }
 
 // 排地盤天干
@@ -1158,7 +1152,7 @@ function validateDateInputs(y, m, d, h, min) {
   return errorMsgs.length === 0;
 }
 
-function startChart() {
+function castChart() {
   const y   = parseInt(document.getElementById('year').value);
   const m   = parseInt(document.getElementById('month').value);
   const d   = parseInt(document.getElementById('day').value);
@@ -1296,9 +1290,9 @@ function startChart() {
 
           // 排引干
           const guidingResult = dutyGateLandHouse
-            ? getGuidingStemMap(dutyGateLandHouse, earthStemMap, earthStemSeq, hGZ[0], xunInfo.dutyStem, solsticeType, timeStemHouse, dutyStemHouse)
+            ? getHidingStemMap(dutyGateLandHouse, earthStemMap, earthStemSeq, hGZ[0], xunInfo.dutyStem, solsticeType, timeStemHouse, dutyStemHouse)
             : { guidingMap: {}, isStarFrozen: false, isGateFrozen: false, isStarReversed: false };
-          const guidingStemMap = guidingResult.guidingMap;
+          const hidingStemMap = guidingResult.guidingMap;
 
           // 伏吟/反吟標記顯示：有伏吟顯示星伏／門伏（標紅）；有反吟顯示星反（標紅）；無則顯示陰盤
           const fuyinEl = document.getElementById('hb-fuyin');
@@ -1339,7 +1333,7 @@ function startChart() {
             }
             // 引干（不判定四害）
             if (yinEl) {
-              const val = guidingStemMap[g] || '';
+              const val = hidingStemMap[g] || '';
               if (!val) { yinEl.innerHTML = ''; return; }
               if ((g === 3 || g === 7) && val.length > 1) {
                 yinEl.innerHTML = val.split('').map(ch => `<span>${ch}</span>`).join('');
