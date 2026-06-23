@@ -123,6 +123,11 @@
     grid-template-columns: 1fr 1fr 1fr;
     grid-template-rows: repeat(3, 1fr);
     background: #fff;
+    cursor: pointer;
+  }
+  .cell.highlighted {
+    box-shadow: inset 0 0 0 3px #e67e22;
+    background: #fffaf5;
   }
   /* ── 中宮：十二地支時鐘盤 ──
      中宮不顯示奇門符號，改用十二地支排列成時鐘圓盤。
@@ -498,7 +503,7 @@
   <div class="grid">
 
     <!-- 4 巽：下斷（下斷，中實，上實） -->
-    <div class="cell">
+    <div class="cell" data-gong="4">
       <div class="cell-left">
         <div class="palace-id"><span class="palace-num" style="color:#4caf50;">4</span><span class="palace-name" style="color:#4caf50;">巽</span></div>
         <div class="bagua" style="--line-color:#4caf50;">
@@ -518,7 +523,7 @@
     </div>
 
     <!-- 9 離：中虛（下實，中斷，上實） -->
-    <div class="cell">
+    <div class="cell" data-gong="9">
       <div class="cell-left">
         <div class="palace-id"><span class="palace-num" style="color:#c0392b;">9</span><span class="palace-name" style="color:#c0392b;">離</span></div>
         <div class="bagua" style="--line-color:#c0392b;">
@@ -538,7 +543,7 @@
     </div>
 
     <!-- 2 坤：六斷（全斷） -->
-    <div class="cell">
+    <div class="cell" data-gong="2">
       <div class="cell-left">
         <div class="palace-id"><span class="palace-num" style="color:#a0714f;">2</span><span class="palace-name" style="color:#a0714f;">坤</span></div>
         <div class="bagua" style="--line-color:#a0714f;">
@@ -558,7 +563,7 @@
     </div>
 
     <!-- 3 震：仰盂（下實，中斷，上斷） -->
-    <div class="cell">
+    <div class="cell" data-gong="3">
       <div class="cell-left">
         <div class="palace-id"><span class="palace-num" style="color:#1a7a1a;">3</span><span class="palace-name" style="color:#1a7a1a;">震</span></div>
         <div class="bagua" style="--line-color:#1a7a1a;">
@@ -591,7 +596,7 @@
     </div>
 
     <!-- 7 兌：上缺（下實，中實，上斷） -->
-    <div class="cell">
+    <div class="cell" data-gong="7">
       <div class="cell-left">
         <div class="palace-id"><span class="palace-num" style="color:#999999;">7</span><span class="palace-name" style="color:#999999;">兌</span></div>
         <div class="bagua" style="--line-color:#999999;">
@@ -611,7 +616,7 @@
     </div>
 
     <!-- 8 艮：覆碗（下斷，中斷，上實） -->
-    <div class="cell">
+    <div class="cell" data-gong="8">
       <div class="cell-left">
         <div class="palace-id"><span class="palace-num" style="color:#6b4423;">8</span><span class="palace-name" style="color:#6b4423;">艮</span></div>
         <div class="bagua" style="--line-color:#6b4423;">
@@ -631,7 +636,7 @@
     </div>
 
     <!-- 1 坎：中滿（下斷，中實，上斷） -->
-    <div class="cell">
+    <div class="cell" data-gong="1">
       <div class="cell-left">
         <div class="palace-id"><span class="palace-num" style="color:#2471a3;">1</span><span class="palace-name" style="color:#2471a3;">坎</span></div>
         <div class="bagua" style="--line-color:#2471a3;">
@@ -651,7 +656,7 @@
     </div>
 
     <!-- 6 乾：三連（全實） -->
-    <div class="cell">
+    <div class="cell" data-gong="6">
       <div class="cell-left">
         <div class="palace-id"><span class="palace-num" style="color:#555555;">6</span><span class="palace-name" style="color:#555555;">乾</span></div>
         <div class="bagua" style="--line-color:#555555;">
@@ -797,6 +802,16 @@ function setNow() {
 
 // 頁面載入時自動填入當前時間
 window.addEventListener('DOMContentLoaded', setNow);
+
+// ── 宮位點擊高亮 ──
+document.querySelectorAll('.cell[data-gong]').forEach(cell => {
+  cell.addEventListener('click', function() {
+    const already = this.classList.contains('highlighted');
+    document.querySelectorAll('.cell.highlighted').forEach(c => c.classList.remove('highlighted'));
+    if (!already) this.classList.add('highlighted');
+  });
+});
+
 
 // 自動跳格
 const INPUT_ORDER = ['year','month','day','hour','minute'];
