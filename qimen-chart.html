@@ -106,7 +106,7 @@
   .yigan-br { bottom: -20px; right: -16px; }
 
   /* ══════════════════════════════════
-     九宮 Grid
+     九宮 Grid  (3×3 cell wrapper)
   ══════════════════════════════════ */
   .grid {
     width: 100%;
@@ -114,47 +114,24 @@
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     grid-template-rows: repeat(3, 1fr);
+    box-sizing: border-box;
+    position: relative;
   }
 
-  /* 單格：3×3 九格佈局 */
+  /* 宮位 wrapper：負責邊框、點擊、高亮 */
   .cell {
     border: 1px solid #999;
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: repeat(3, 1fr);
     grid-template-rows: repeat(3, 1fr);
     background: #fff;
     cursor: pointer;
+    box-sizing: border-box;
+    overflow: hidden;
+    min-width: 0; min-height: 0;
   }
-  .cell.highlighted {
-    box-shadow: inset 0 0 0 3px #e67e22;
-    background: #fffaf5;
-  }
-  /* ── 中宮：十二地支時鐘盤 ──
-     中宮不顯示奇門符號，改用十二地支排列成時鐘圓盤。
-     位置對應外圍八宮方位：子午卯酉在四正，辰巳／未申／戌亥／寅丑在四隅。
-     用途：應期判斷——哪個宮位有動象，對應中宮同方向的地支即為應期時辰。
-  */
-  .cell.center { background: #eeebe3; display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr 1fr; }
-  .dz-corner { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; font-size: 9px; color: #aaa; }
-  .dz-corner span { display: flex; align-items: center; justify-content: center; }
-  .dz-edge { font-size: 9px; color: #aaa; display: flex; align-items: center; justify-content: center; }
-  .dz-wu  { align-items: flex-start !important; }  /* 午：靠上（南） */
-  .dz-zi  { align-items: flex-end !important; }    /* 子：靠下（北） */
-  .dz-mao { justify-content: flex-start !important; padding-left: 2px; }  /* 卯：靠左（東） */
-  .dz-you { justify-content: flex-end !important; padding-right: 2px; }   /* 酉：靠右（西） */
-  .dz-center { display: flex; align-items: center; justify-content: center; font-size: 13px; color: #bbb; }
-  /* 中宮格線：col1 border-right, col3 border-left, row1+row2 border-bottom */
-  .cell.center > div:nth-child(1) { border-right: 1px solid #ccc; border-bottom: 1px solid #ccc; }
-  .cell.center > div:nth-child(2) { border-bottom: 1px solid #ccc; }
-  .cell.center > div:nth-child(3) { border-left: 1px solid #ccc; border-bottom: 1px solid #ccc; }
-  .cell.center > div:nth-child(4) { border-right: 1px solid #ccc; border-bottom: 1px solid #ccc; }
-  .cell.center > div:nth-child(5) { border-bottom: 1px solid #ccc; }
-  .cell.center > div:nth-child(6) { border-left: 1px solid #ccc; border-bottom: 1px solid #ccc; }
-  .cell.center > div:nth-child(7) { border-right: 1px solid #ccc; }
-  .cell.center > div:nth-child(8) { }
-  .cell.center > div:nth-child(9) { border-left: 1px solid #ccc; }
 
-  /* 外框粗邊 2px */
+  /* 外框粗邊 2px + 圓角 */
   .grid .cell:nth-child(1),
   .grid .cell:nth-child(2),
   .grid .cell:nth-child(3) { border-top:    2px solid #111; }
@@ -167,98 +144,48 @@
   .grid .cell:nth-child(3),
   .grid .cell:nth-child(6),
   .grid .cell:nth-child(9) { border-right:  2px solid #111; }
-
-  /* 四角圓角 12px */
   .grid .cell:nth-child(1) { border-radius: 12px 0 0 0; }
   .grid .cell:nth-child(3) { border-radius: 0 12px 0 0; }
   .grid .cell:nth-child(7) { border-radius: 0 0 0 12px; }
   .grid .cell:nth-child(9) { border-radius: 0 0 12px 0; }
 
-  /* ── 左上格（宮號＋八卦）：col1 row1+row2 ── */
-  .cell-left {
-    grid-column: 1;
-    grid-row: 1;
+  /* 高亮 */
+  .cell.highlighted { border-color: #e67e22 !important; background: #fffaf5; }
+
+  /* 每個小格：只畫右邊和下邊 */
+  .gc {
+    border-top: none;
+    border-left: none;
     border-right: 1px solid #ddd;
     border-bottom: 1px solid #ddd;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    padding: 3px 1px;
-    gap: 2px;
-  }
-  .palace-id { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 2px; }
-  .palace-num  { font-size: 13px; font-weight: bold; color: #333; line-height: 1.2; }
-  .palace-name { font-size: 13px; color: #555; line-height: 1.2; }
-
-  .bagua { display: flex; flex-direction: column; gap: 2px; align-items: center; margin-top: 2px; }
-  .bline-full { width: 16px; height: 2px; background: var(--line-color, #444); border-radius: 1px; }
-  .bline-broken { display: flex; gap: 3px; }
-  .bline-broken span { width: 6px; height: 2px; background: var(--line-color, #444); border-radius: 1px; display: block; }
-
-  /* ── 中欄（神、星、門） ── */
-  /* 神：col2 row1 */
-  .cell-shen {
-    grid-column: 2; grid-row: 1;
-    border-bottom: 1px solid #ddd;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 14px; color: #333;
-  }
-  /* 星：col2 row2 */
-  .cell-star {
-    grid-column: 2; grid-row: 2;
-    border-bottom: 1px solid #ddd;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 14px; color: #333; gap: 2px;
-  }
-  /* 門：col2 row3 */
-  .cell-gate {
-    grid-column: 2; grid-row: 3;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 14px; color: #333;
+    background: transparent;
+    box-sizing: border-box;
+    overflow: hidden;
+    min-width: 0; min-height: 0;
   }
 
-  /* ── col3 右欄三格 ── */
-  /* kong（空亡）：col3 row1 */
-  .cell-kong {
-    grid-column: 3; grid-row: 1;
-    border-left: 1px solid #ddd;
-    border-bottom: 1px solid #ddd;
-    display: flex; flex-direction: row;
-    align-items: center; justify-content: center; gap: 1px;
-  }
-  /* 天干：col3 row2 */
-  .cell-tian {
-    grid-column: 3; grid-row: 2;
-    border-left: 1px solid #ddd;
-    border-bottom: 1px solid #ddd;
-    display: flex; flex-direction: row;
-    align-items: center; justify-content: center;
-    font-size: 14px; color: #333;
-  }
-  /* 地干：col3 row3 */
-  .cell-di {
-    grid-column: 3; grid-row: 3;
-    border-left: 1px solid #ddd;
-    display: flex; flex-direction: row;
-    align-items: center; justify-content: center;
-    font-size: 14px; color: #333;
-  }
-  /* r2c1 空白格 */
-  .cell-left2 {
-    grid-column: 1; grid-row: 2;
-    border-right: 1px solid #ddd;
-    border-bottom: 1px solid #ddd;
-  }
-  /* 馬：col1 row3 */
-  .cell-ma {
-    grid-column: 1; grid-row: 3;
-    border-right: 1px solid #ddd;
-    display: flex; flex-direction: row;
-    align-items: center; justify-content: center; gap: 1px;
-  }
+  /* 每宮最右欄、最下列不畫線（cell 外框已畫） */
+  .gc[style*="grid-column:3;"] { border-right:  none; }
+  .gc[style*="grid-row:3;"]    { border-bottom: none; }
 
-  /* ── 標記（馬、空、凶） ── */
+  /* 中宮 */
+  .cell.center { background: #eeebe3; cursor: default; border: none; }
+  /* 中宮小格：全部自己負責四邊 */
+  .gc-center {
+    background: transparent;
+    border-top: none;
+    border-left: none;
+    border-right: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
+  }
+  /* col1：加左邊（中宮外框左邊） */
+  #g5r1c1, #g5r2c1, #g5r3c1 { border-left: 1px solid #999; }
+  /* row1：加上邊（中宮外框上邊） */
+  #g5r1c1, #g5r1c2, #g5r1c3 { border-top: 1px solid #999; }
+  /* col3：右邊（中宮外框右邊） */
+  #g5r1c3, #g5r2c3, #g5r3c3 { border-right: 1px solid #999; }
+  /* row3：下邊（中宮外框下邊） */
+  #g5r3c1, #g5r3c2, #g5r3c3 { border-bottom: 1px solid #999; }
   .tag { font-size: 11px; line-height: 1; margin-top: 1px; }
   .tag.mu   { color: #999; font-size: 9px; line-height: 1; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); }
   .tag.xing { color: #c0392b; font-size: 9px; line-height: 1; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); }
@@ -289,14 +216,89 @@
     position: relative; z-index: 1;
     font-size: 10px; margin-top: 4px;
   }
-
   .zhifu-badge {
     font-size: 9px; color: #c0392b;
     border: 1px solid #c0392b;
     padding: 0 2px; border-radius: 2px;
   }
 
-  /* ══════════════════════════════════
+  /* ── 左上格（宮號＋八卦）── */
+  .gc-left {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 3px 1px;
+    gap: 2px;
+  }
+  .palace-id { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 2px; }
+  .palace-num  { font-size: 13px; font-weight: bold; color: #333; line-height: 1.2; }
+  .palace-name { font-size: 13px; color: #555; line-height: 1.2; }
+  .bagua { display: flex; flex-direction: column; gap: 2px; align-items: center; margin-top: 2px; }
+  .bline-full { width: 16px; height: 2px; background: var(--line-color, #444); border-radius: 1px; }
+  .bline-broken { display: flex; gap: 3px; }
+  .bline-broken span { width: 6px; height: 2px; background: var(--line-color, #444); border-radius: 1px; display: block; }
+
+  /* ── 左中（空白）── */
+  .gc-left2 {}
+
+  /* ── 左下（馬）── */
+  .gc-ma {
+    display: flex; flex-direction: row;
+    align-items: center; justify-content: center; gap: 1px;
+  }
+
+  /* ── 中上（神）── */
+  .gc-shen {
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; color: #333;
+  }
+
+  /* ── 中中（星）── */
+  .gc-star {
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; color: #333; gap: 2px;
+  }
+
+  /* ── 中下（門）── */
+  .gc-gate {
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; color: #333;
+  }
+
+  /* ── 右上（空亡）── */
+  .gc-kong {
+    display: flex; flex-direction: row;
+    align-items: center; justify-content: center; gap: 1px;
+  }
+
+  /* ── 右中（天盤干）── */
+  .gc-tian {
+    display: flex; flex-direction: row;
+    align-items: center; justify-content: center;
+    font-size: 14px; color: #333;
+  }
+
+  /* ── 右下（地盤干）── */
+  .gc-di {
+    display: flex; flex-direction: row;
+    align-items: center; justify-content: center;
+    font-size: 14px; color: #333;
+  }
+
+  /* ── 中宮地支時鐘盤 ── */
+  .dz-corner { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; font-size: 9px; color: #aaa; width:100%; height:100%; }
+  .dz-corner span { display: flex; align-items: center; justify-content: center; }
+  .dz-edge { font-size: 9px; color: #aaa; display: flex; align-items: center; justify-content: center; width:100%; height:100%; }
+  .dz-wu  { align-items: flex-start !important; }
+  .dz-zi  { align-items: flex-end !important; }
+  .dz-mao { justify-content: flex-start !important; padding-left: 2px; }
+  .dz-you { justify-content: flex-end !important; padding-right: 2px; }
+  .dz-center { display: flex; align-items: center; justify-content: center; font-size: 13px; color: #bbb; width:100%; height:100%; }
+  .dz-active { color: #c0392b !important; font-weight: bold; }
+
+
+    /* ══════════════════════════════════
      輸入區
   ══════════════════════════════════ */
   hr.divider {
@@ -501,181 +503,124 @@
   <div class="yigan yigan-br"     id="yin-6"></div>
 
   <div class="grid">
-
-    <!-- 4 巽：下斷（下斷，中實，上實） -->
+    <!-- 4 巽 -->
     <div class="cell" data-gong="4">
-      <div class="cell-left">
-        <div class="palace-id"><span class="palace-num" style="color:#4caf50;">4</span><span class="palace-name" style="color:#4caf50;">巽</span></div>
-        <div class="bagua" style="--line-color:#4caf50;">
-          <div class="bline-full"></div>
-          <div class="bline-full"></div>
-          <div class="bline-broken"><span></span><span></span></div>
-        </div>
-      </div>
-      <div class="cell-left2"></div>
-      <div class="cell-shen" id="sh-4"></div>
-      <div class="cell-star" id="star-4"></div>
-      <div class="cell-gate" id="gate-4"></div>
-      <div class="cell-kong" id="kong-4"></div>
-      <div class="cell-tian" id="tian-4"></div>
-      <div class="cell-di" id="di-4"></div>
-      <div class="cell-ma" id="ma-4"></div>
+    <div id="g4r1c1" class="gc gc-left" style="grid-column:1;grid-row:1;"><div class="palace-id"><span class="palace-num" style="color:#4caf50;">4</span><span class="palace-name" style="color:#4caf50;">巽</span></div><div class="bagua" style="--line-color:#4caf50;"><div class="bline-full"></div><div class="bline-full"></div><div class="bline-broken"><span></span><span></span></div></div></div>
+    <div id="g4r1c2" class="gc gc-shen" style="grid-column:2;grid-row:1;"><span id="sh-4"></span></div>
+    <div id="g4r1c3" class="gc gc-kong" style="grid-column:3;grid-row:1;"><div id="kong-4"></div></div>
+    <div id="g4r2c1" class="gc gc-left2" style="grid-column:1;grid-row:2;"></div>
+    <div id="g4r2c2" class="gc gc-star" style="grid-column:2;grid-row:2;"><span id="star-4"></span></div>
+    <div id="g4r2c3" class="gc gc-tian" style="grid-column:3;grid-row:2;"><span id="tian-4"></span></div>
+    <div id="g4r3c1" class="gc gc-ma" style="grid-column:1;grid-row:3;"><div id="ma-4"></div></div>
+    <div id="g4r3c2" class="gc gc-gate" style="grid-column:2;grid-row:3;"><span id="gate-4"></span></div>
+    <div id="g4r3c3" class="gc gc-di" style="grid-column:3;grid-row:3;"><span id="di-4"></span></div>
     </div>
 
-    <!-- 9 離：中虛（下實，中斷，上實） -->
+    <!-- 9 離 -->
     <div class="cell" data-gong="9">
-      <div class="cell-left">
-        <div class="palace-id"><span class="palace-num" style="color:#c0392b;">9</span><span class="palace-name" style="color:#c0392b;">離</span></div>
-        <div class="bagua" style="--line-color:#c0392b;">
-          <div class="bline-full"></div>
-          <div class="bline-broken"><span></span><span></span></div>
-          <div class="bline-full"></div>
-        </div>
-      </div>
-      <div class="cell-left2"></div>
-      <div class="cell-shen" id="sh-9"></div>
-      <div class="cell-star" id="star-9"></div>
-      <div class="cell-gate" id="gate-9"></div>
-      <div class="cell-kong" id="kong-9"></div>
-      <div class="cell-tian" id="tian-9"></div>
-      <div class="cell-di" id="di-9"></div>
-      <div class="cell-ma" id="ma-9"></div>
+    <div id="g9r1c1" class="gc gc-left" style="grid-column:1;grid-row:1;"><div class="palace-id"><span class="palace-num" style="color:#c0392b;">9</span><span class="palace-name" style="color:#c0392b;">離</span></div><div class="bagua" style="--line-color:#c0392b;"><div class="bline-full"></div><div class="bline-broken"><span></span><span></span></div><div class="bline-full"></div></div></div>
+    <div id="g9r1c2" class="gc gc-shen" style="grid-column:2;grid-row:1;"><span id="sh-9"></span></div>
+    <div id="g9r1c3" class="gc gc-kong" style="grid-column:3;grid-row:1;"><div id="kong-9"></div></div>
+    <div id="g9r2c1" class="gc gc-left2" style="grid-column:1;grid-row:2;"></div>
+    <div id="g9r2c2" class="gc gc-star" style="grid-column:2;grid-row:2;"><span id="star-9"></span></div>
+    <div id="g9r2c3" class="gc gc-tian" style="grid-column:3;grid-row:2;"><span id="tian-9"></span></div>
+    <div id="g9r3c1" class="gc gc-ma" style="grid-column:1;grid-row:3;"><div id="ma-9"></div></div>
+    <div id="g9r3c2" class="gc gc-gate" style="grid-column:2;grid-row:3;"><span id="gate-9"></span></div>
+    <div id="g9r3c3" class="gc gc-di" style="grid-column:3;grid-row:3;"><span id="di-9"></span></div>
     </div>
 
-    <!-- 2 坤：六斷（全斷） -->
+    <!-- 2 坤 -->
     <div class="cell" data-gong="2">
-      <div class="cell-left">
-        <div class="palace-id"><span class="palace-num" style="color:#a0714f;">2</span><span class="palace-name" style="color:#a0714f;">坤</span></div>
-        <div class="bagua" style="--line-color:#a0714f;">
-          <div class="bline-broken"><span></span><span></span></div>
-          <div class="bline-broken"><span></span><span></span></div>
-          <div class="bline-broken"><span></span><span></span></div>
-        </div>
-      </div>
-      <div class="cell-left2"></div>
-      <div class="cell-shen" id="sh-2"></div>
-      <div class="cell-star" id="star-2"></div>
-      <div class="cell-gate" id="gate-2"></div>
-      <div class="cell-kong" id="kong-2"></div>
-      <div class="cell-tian" id="tian-2"></div>
-      <div class="cell-di" id="di-2"></div>
-      <div class="cell-ma" id="ma-2"></div>
+    <div id="g2r1c1" class="gc gc-left" style="grid-column:1;grid-row:1;"><div class="palace-id"><span class="palace-num" style="color:#a0714f;">2</span><span class="palace-name" style="color:#a0714f;">坤</span></div><div class="bagua" style="--line-color:#a0714f;"><div class="bline-broken"><span></span><span></span></div><div class="bline-broken"><span></span><span></span></div><div class="bline-broken"><span></span><span></span></div></div></div>
+    <div id="g2r1c2" class="gc gc-shen" style="grid-column:2;grid-row:1;"><span id="sh-2"></span></div>
+    <div id="g2r1c3" class="gc gc-kong" style="grid-column:3;grid-row:1;"><div id="kong-2"></div></div>
+    <div id="g2r2c1" class="gc gc-left2" style="grid-column:1;grid-row:2;"></div>
+    <div id="g2r2c2" class="gc gc-star" style="grid-column:2;grid-row:2;"><span id="star-2"></span></div>
+    <div id="g2r2c3" class="gc gc-tian" style="grid-column:3;grid-row:2;"><span id="tian-2"></span></div>
+    <div id="g2r3c1" class="gc gc-ma" style="grid-column:1;grid-row:3;"><div id="ma-2"></div></div>
+    <div id="g2r3c2" class="gc gc-gate" style="grid-column:2;grid-row:3;"><span id="gate-2"></span></div>
+    <div id="g2r3c3" class="gc gc-di" style="grid-column:3;grid-row:3;"><span id="di-2"></span></div>
     </div>
 
-    <!-- 3 震：仰盂（下實，中斷，上斷） -->
+    <!-- 3 震 -->
     <div class="cell" data-gong="3">
-      <div class="cell-left">
-        <div class="palace-id"><span class="palace-num" style="color:#1a7a1a;">3</span><span class="palace-name" style="color:#1a7a1a;">震</span></div>
-        <div class="bagua" style="--line-color:#1a7a1a;">
-          <div class="bline-broken"><span></span><span></span></div>
-          <div class="bline-broken"><span></span><span></span></div>
-          <div class="bline-full"></div>
-        </div>
-      </div>
-      <div class="cell-left2"></div>
-      <div class="cell-shen" id="sh-3"></div>
-      <div class="cell-star" id="star-3"></div>
-      <div class="cell-gate" id="gate-3"></div>
-      <div class="cell-kong" id="kong-3"></div>
-      <div class="cell-tian" id="tian-3"></div>
-      <div class="cell-di" id="di-3"></div>
-      <div class="cell-ma" id="ma-3"></div>
+    <div id="g3r1c1" class="gc gc-left" style="grid-column:1;grid-row:1;"><div class="palace-id"><span class="palace-num" style="color:#1a7a1a;">3</span><span class="palace-name" style="color:#1a7a1a;">震</span></div><div class="bagua" style="--line-color:#1a7a1a;"><div class="bline-broken"><span></span><span></span></div><div class="bline-broken"><span></span><span></span></div><div class="bline-full"></div></div></div>
+    <div id="g3r1c2" class="gc gc-shen" style="grid-column:2;grid-row:1;"><span id="sh-3"></span></div>
+    <div id="g3r1c3" class="gc gc-kong" style="grid-column:3;grid-row:1;"><div id="kong-3"></div></div>
+    <div id="g3r2c1" class="gc gc-left2" style="grid-column:1;grid-row:2;"></div>
+    <div id="g3r2c2" class="gc gc-star" style="grid-column:2;grid-row:2;"><span id="star-3"></span></div>
+    <div id="g3r2c3" class="gc gc-tian" style="grid-column:3;grid-row:2;"><span id="tian-3"></span></div>
+    <div id="g3r3c1" class="gc gc-ma" style="grid-column:1;grid-row:3;"><div id="ma-3"></div></div>
+    <div id="g3r3c2" class="gc gc-gate" style="grid-column:2;grid-row:3;"><span id="gate-3"></span></div>
+    <div id="g3r3c3" class="gc gc-di" style="grid-column:3;grid-row:3;"><span id="di-3"></span></div>
     </div>
 
-    <!-- 5 中宮：地支羅盤 -->
+    <!-- 5 中 -->
     <div class="cell center">
-      <div class="dz-corner"><span></span><span>巳</span><span>辰</span><span></span></div>
-      <div class="dz-edge dz-wu">午</div>
-      <div class="dz-corner"><span>未</span><span></span><span></span><span>申</span></div>
-      <div class="dz-edge dz-mao">卯</div>
-      <div class="dz-center">5中</div>
-      <div class="dz-edge dz-you">酉</div>
-      <div class="dz-corner"><span>寅</span><span></span><span></span><span>丑</span></div>
-      <div class="dz-edge dz-zi">子</div>
-      <div class="dz-corner"><span></span><span>戌</span><span>亥</span><span></span></div>
+    <div id="g5r1c1" class="gc gc-center" style="grid-column:1;grid-row:1;"><div class="dz-corner" data-gong-dz="巳辰"><span></span><span data-dz="巳">巳</span><span data-dz="辰">辰</span><span></span></div></div>
+    <div id="g5r1c2" class="gc gc-center" style="grid-column:2;grid-row:1;"><div class="dz-edge dz-wu" data-gong-dz="午" data-dz="午">午</div></div>
+    <div id="g5r1c3" class="gc gc-center" style="grid-column:3;grid-row:1;"><div class="dz-corner" data-gong-dz="未申"><span data-dz="未">未</span><span></span><span></span><span data-dz="申">申</span></div></div>
+    <div id="g5r2c1" class="gc gc-center" style="grid-column:1;grid-row:2;"><div class="dz-edge dz-mao" data-gong-dz="卯" data-dz="卯">卯</div></div>
+    <div id="g5r2c2" class="gc gc-center" style="grid-column:2;grid-row:2;"><div class="dz-center">5中</div></div>
+    <div id="g5r2c3" class="gc gc-center" style="grid-column:3;grid-row:2;"><div class="dz-edge dz-you" data-gong-dz="酉" data-dz="酉">酉</div></div>
+    <div id="g5r3c1" class="gc gc-center" style="grid-column:1;grid-row:3;"><div class="dz-corner" data-gong-dz="寅丑"><span data-dz="寅">寅</span><span></span><span></span><span data-dz="丑">丑</span></div></div>
+    <div id="g5r3c2" class="gc gc-center" style="grid-column:2;grid-row:3;"><div class="dz-edge dz-zi" data-gong-dz="子" data-dz="子">子</div></div>
+    <div id="g5r3c3" class="gc gc-center" style="grid-column:3;grid-row:3;"><div class="dz-corner" data-gong-dz="戌亥"><span></span><span data-dz="戌">戌</span><span data-dz="亥">亥</span><span></span></div></div>
     </div>
 
-    <!-- 7 兌：上缺（下實，中實，上斷） -->
+    <!-- 7 兌 -->
     <div class="cell" data-gong="7">
-      <div class="cell-left">
-        <div class="palace-id"><span class="palace-num" style="color:#999999;">7</span><span class="palace-name" style="color:#999999;">兌</span></div>
-        <div class="bagua" style="--line-color:#999999;">
-          <div class="bline-broken"><span></span><span></span></div>
-          <div class="bline-full"></div>
-          <div class="bline-full"></div>
-        </div>
-      </div>
-      <div class="cell-left2"></div>
-      <div class="cell-shen" id="sh-7"></div>
-      <div class="cell-star" id="star-7"></div>
-      <div class="cell-gate" id="gate-7"></div>
-      <div class="cell-kong" id="kong-7"></div>
-      <div class="cell-tian" id="tian-7"></div>
-      <div class="cell-di" id="di-7"></div>
-      <div class="cell-ma" id="ma-7"></div>
+    <div id="g7r1c1" class="gc gc-left" style="grid-column:1;grid-row:1;"><div class="palace-id"><span class="palace-num" style="color:#999999;">7</span><span class="palace-name" style="color:#999999;">兌</span></div><div class="bagua" style="--line-color:#999999;"><div class="bline-broken"><span></span><span></span></div><div class="bline-full"></div><div class="bline-full"></div></div></div>
+    <div id="g7r1c2" class="gc gc-shen" style="grid-column:2;grid-row:1;"><span id="sh-7"></span></div>
+    <div id="g7r1c3" class="gc gc-kong" style="grid-column:3;grid-row:1;"><div id="kong-7"></div></div>
+    <div id="g7r2c1" class="gc gc-left2" style="grid-column:1;grid-row:2;"></div>
+    <div id="g7r2c2" class="gc gc-star" style="grid-column:2;grid-row:2;"><span id="star-7"></span></div>
+    <div id="g7r2c3" class="gc gc-tian" style="grid-column:3;grid-row:2;"><span id="tian-7"></span></div>
+    <div id="g7r3c1" class="gc gc-ma" style="grid-column:1;grid-row:3;"><div id="ma-7"></div></div>
+    <div id="g7r3c2" class="gc gc-gate" style="grid-column:2;grid-row:3;"><span id="gate-7"></span></div>
+    <div id="g7r3c3" class="gc gc-di" style="grid-column:3;grid-row:3;"><span id="di-7"></span></div>
     </div>
 
-    <!-- 8 艮：覆碗（下斷，中斷，上實） -->
+    <!-- 8 艮 -->
     <div class="cell" data-gong="8">
-      <div class="cell-left">
-        <div class="palace-id"><span class="palace-num" style="color:#6b4423;">8</span><span class="palace-name" style="color:#6b4423;">艮</span></div>
-        <div class="bagua" style="--line-color:#6b4423;">
-          <div class="bline-full"></div>
-          <div class="bline-broken"><span></span><span></span></div>
-          <div class="bline-broken"><span></span><span></span></div>
-        </div>
-      </div>
-      <div class="cell-left2"></div>
-      <div class="cell-shen" id="sh-8"></div>
-      <div class="cell-star" id="star-8"></div>
-      <div class="cell-gate" id="gate-8"></div>
-      <div class="cell-kong" id="kong-8"></div>
-      <div class="cell-tian" id="tian-8"></div>
-      <div class="cell-di" id="di-8"></div>
-      <div class="cell-ma" id="ma-8"></div>
+    <div id="g8r1c1" class="gc gc-left" style="grid-column:1;grid-row:1;"><div class="palace-id"><span class="palace-num" style="color:#6b4423;">8</span><span class="palace-name" style="color:#6b4423;">艮</span></div><div class="bagua" style="--line-color:#6b4423;"><div class="bline-full"></div><div class="bline-broken"><span></span><span></span></div><div class="bline-broken"><span></span><span></span></div></div></div>
+    <div id="g8r1c2" class="gc gc-shen" style="grid-column:2;grid-row:1;"><span id="sh-8"></span></div>
+    <div id="g8r1c3" class="gc gc-kong" style="grid-column:3;grid-row:1;"><div id="kong-8"></div></div>
+    <div id="g8r2c1" class="gc gc-left2" style="grid-column:1;grid-row:2;"></div>
+    <div id="g8r2c2" class="gc gc-star" style="grid-column:2;grid-row:2;"><span id="star-8"></span></div>
+    <div id="g8r2c3" class="gc gc-tian" style="grid-column:3;grid-row:2;"><span id="tian-8"></span></div>
+    <div id="g8r3c1" class="gc gc-ma" style="grid-column:1;grid-row:3;"><div id="ma-8"></div></div>
+    <div id="g8r3c2" class="gc gc-gate" style="grid-column:2;grid-row:3;"><span id="gate-8"></span></div>
+    <div id="g8r3c3" class="gc gc-di" style="grid-column:3;grid-row:3;"><span id="di-8"></span></div>
     </div>
 
-    <!-- 1 坎：中滿（下斷，中實，上斷） -->
+    <!-- 1 坎 -->
     <div class="cell" data-gong="1">
-      <div class="cell-left">
-        <div class="palace-id"><span class="palace-num" style="color:#2471a3;">1</span><span class="palace-name" style="color:#2471a3;">坎</span></div>
-        <div class="bagua" style="--line-color:#2471a3;">
-          <div class="bline-broken"><span></span><span></span></div>
-          <div class="bline-full"></div>
-          <div class="bline-broken"><span></span><span></span></div>
-        </div>
-      </div>
-      <div class="cell-left2"></div>
-      <div class="cell-shen" id="sh-1"></div>
-      <div class="cell-star" id="star-1"></div>
-      <div class="cell-gate" id="gate-1"></div>
-      <div class="cell-kong" id="kong-1"></div>
-      <div class="cell-tian" id="tian-1"></div>
-      <div class="cell-di" id="di-1"></div>
-      <div class="cell-ma" id="ma-1"></div>
+    <div id="g1r1c1" class="gc gc-left" style="grid-column:1;grid-row:1;"><div class="palace-id"><span class="palace-num" style="color:#2471a3;">1</span><span class="palace-name" style="color:#2471a3;">坎</span></div><div class="bagua" style="--line-color:#2471a3;"><div class="bline-broken"><span></span><span></span></div><div class="bline-full"></div><div class="bline-broken"><span></span><span></span></div></div></div>
+    <div id="g1r1c2" class="gc gc-shen" style="grid-column:2;grid-row:1;"><span id="sh-1"></span></div>
+    <div id="g1r1c3" class="gc gc-kong" style="grid-column:3;grid-row:1;"><div id="kong-1"></div></div>
+    <div id="g1r2c1" class="gc gc-left2" style="grid-column:1;grid-row:2;"></div>
+    <div id="g1r2c2" class="gc gc-star" style="grid-column:2;grid-row:2;"><span id="star-1"></span></div>
+    <div id="g1r2c3" class="gc gc-tian" style="grid-column:3;grid-row:2;"><span id="tian-1"></span></div>
+    <div id="g1r3c1" class="gc gc-ma" style="grid-column:1;grid-row:3;"><div id="ma-1"></div></div>
+    <div id="g1r3c2" class="gc gc-gate" style="grid-column:2;grid-row:3;"><span id="gate-1"></span></div>
+    <div id="g1r3c3" class="gc gc-di" style="grid-column:3;grid-row:3;"><span id="di-1"></span></div>
     </div>
 
-    <!-- 6 乾：三連（全實） -->
+    <!-- 6 乾 -->
     <div class="cell" data-gong="6">
-      <div class="cell-left">
-        <div class="palace-id"><span class="palace-num" style="color:#555555;">6</span><span class="palace-name" style="color:#555555;">乾</span></div>
-        <div class="bagua" style="--line-color:#555555;">
-          <div class="bline-full"></div>
-          <div class="bline-full"></div>
-          <div class="bline-full"></div>
-        </div>
-      </div>
-      <div class="cell-left2"></div>
-      <div class="cell-shen" id="sh-6"></div>
-      <div class="cell-star" id="star-6"></div>
-      <div class="cell-gate" id="gate-6"></div>
-      <div class="cell-kong" id="kong-6"></div>
-      <div class="cell-tian" id="tian-6"></div>
-      <div class="cell-di" id="di-6"></div>
-      <div class="cell-ma" id="ma-6"></div>
+    <div id="g6r1c1" class="gc gc-left" style="grid-column:1;grid-row:1;"><div class="palace-id"><span class="palace-num" style="color:#555555;">6</span><span class="palace-name" style="color:#555555;">乾</span></div><div class="bagua" style="--line-color:#555555;"><div class="bline-full"></div><div class="bline-full"></div><div class="bline-full"></div></div></div>
+    <div id="g6r1c2" class="gc gc-shen" style="grid-column:2;grid-row:1;"><span id="sh-6"></span></div>
+    <div id="g6r1c3" class="gc gc-kong" style="grid-column:3;grid-row:1;"><div id="kong-6"></div></div>
+    <div id="g6r2c1" class="gc gc-left2" style="grid-column:1;grid-row:2;"></div>
+    <div id="g6r2c2" class="gc gc-star" style="grid-column:2;grid-row:2;"><span id="star-6"></span></div>
+    <div id="g6r2c3" class="gc gc-tian" style="grid-column:3;grid-row:2;"><span id="tian-6"></span></div>
+    <div id="g6r3c1" class="gc gc-ma" style="grid-column:1;grid-row:3;"><div id="ma-6"></div></div>
+    <div id="g6r3c2" class="gc gc-gate" style="grid-column:2;grid-row:3;"><span id="gate-6"></span></div>
+    <div id="g6r3c3" class="gc gc-di" style="grid-column:3;grid-row:3;"><span id="di-6"></span></div>
     </div>
 
-  </div>
+  </div><!-- end grid -->
 </div>
 
 
@@ -804,14 +749,102 @@ function setNow() {
 window.addEventListener('DOMContentLoaded', setNow);
 
 // ── 宮位點擊高亮 ──
+// grid排列: 4(1) 9(2) 2(3) / 3(4) 5(5) 7(6) / 8(7) 1(8) 6(9)
+const PALACE_NEIGHBORS = {
+  1:{right:2,bottom:4}, 2:{right:3,bottom:5}, 3:{bottom:6},
+  4:{right:5,bottom:7}, 5:{right:6,bottom:8}, 6:{bottom:9},
+  7:{right:8},          8:{right:9},           9:{}
+};
+const HIGHLIGHT_COLOR = '#e67e22';
+
+// 宮位 → 中宮對應小格 id
+const GONG_TO_DZ_CELL = {
+  4: 'g5r1c1', 9: 'g5r1c2', 2: 'g5r1c3',
+  3: 'g5r2c1',              7: 'g5r2c3',
+  8: 'g5r3c1', 1: 'g5r3c2', 6: 'g5r3c3',
+};
+
+function getPalaceCells() {
+  return [...document.querySelectorAll('.grid .cell')];
+}
+
+function clearHighlight() {
+  getPalaceCells().forEach(c => {
+    c.classList.remove('highlighted');
+    c.style.borderTopColor = c.style.borderBottomColor =
+    c.style.borderLeftColor = c.style.borderRightColor = '';
+  });
+  // 清除中宮小格邊框
+  document.querySelectorAll('.gc-center').forEach(gc => {
+    gc.style.borderTopColor = gc.style.borderLeftColor =
+    gc.style.borderRightColor = gc.style.borderBottomColor = '';
+  });
+}
+
 document.querySelectorAll('.cell[data-gong]').forEach(cell => {
   cell.addEventListener('click', function() {
     const already = this.classList.contains('highlighted');
-    document.querySelectorAll('.cell.highlighted').forEach(c => c.classList.remove('highlighted'));
-    if (!already) this.classList.add('highlighted');
+    clearHighlight();
+    if (!already) {
+      const cells = getPalaceCells();
+      const nth = cells.indexOf(this) + 1;
+      this.classList.add('highlighted');
+      this.style.borderTopColor = this.style.borderBottomColor =
+      this.style.borderLeftColor = this.style.borderRightColor = HIGHLIGHT_COLOR;
+
+      // 右側相鄰格左邊改橘
+      const r = PALACE_NEIGHBORS[nth]?.right;
+      if (r) cells[r-1].style.borderLeftColor = HIGHLIGHT_COLOR;
+      // 下側相鄰格上邊改橘
+      const b = PALACE_NEIGHBORS[nth]?.bottom;
+      if (b) cells[b-1].style.borderTopColor = HIGHLIGHT_COLOR;
+      // 左側相鄰格右邊改橘（反查）
+      const lk = Object.keys(PALACE_NEIGHBORS).find(k => PALACE_NEIGHBORS[k].right === nth);
+      if (lk) cells[+lk-1].style.borderRightColor = HIGHLIGHT_COLOR;
+      // 上側相鄰格下邊改橘（反查）
+      const tk = Object.keys(PALACE_NEIGHBORS).find(k => PALACE_NEIGHBORS[k].bottom === nth);
+      if (tk) cells[+tk-1].style.borderBottomColor = HIGHLIGHT_COLOR;
+
+      // 中宮對應地支格：改四邊顏色
+      const gong = parseInt(this.dataset.gong);
+      const dzId = GONG_TO_DZ_CELL[gong];
+      if (dzId) {
+        const gc = document.getElementById(dzId);
+        if (!gc) return;
+        const row = parseInt(dzId[3]);
+        const col = parseInt(dzId[5]);
+
+        // right：col1/2 改自身；col3 改自身（外框邊）
+        if (col < 3) {
+          gc.style.borderRightColor = HIGHLIGHT_COLOR;
+        } else {
+          gc.style.borderRightColor = HIGHLIGHT_COLOR; // 外框邊已是獨立 border
+        }
+
+        // bottom：row1/2 改自身；row3 改自身（外框邊）
+        if (row < 3) {
+          gc.style.borderBottomColor = HIGHLIGHT_COLOR;
+        } else {
+          gc.style.borderBottomColor = HIGHLIGHT_COLOR;
+        }
+
+        // top：row1 改自身 top（外框邊）；row2/3 改上方格 bottom
+        if (row === 1) {
+          gc.style.borderTopColor = HIGHLIGHT_COLOR;
+        } else {
+          document.getElementById(`g5r${row-1}c${col}`).style.borderBottomColor = HIGHLIGHT_COLOR;
+        }
+
+        // left：col1 改自身 left（外框邊）；col2/3 改左方格 right
+        if (col === 1) {
+          gc.style.borderLeftColor = HIGHLIGHT_COLOR;
+        } else {
+          document.getElementById(`g5r${row}c${col-1}`).style.borderRightColor = HIGHLIGHT_COLOR;
+        }
+      }
+    }
   });
 });
-
 
 // 自動跳格
 const INPUT_ORDER = ['year','month','day','hour','minute'];
@@ -939,6 +972,16 @@ const BRANCH_HOUSE = {
   '子':1, '丑':8, '寅':8, '卯':3, '辰':4, '巳':4,
   '午':9, '未':2, '申':2, '酉':7, '戌':6, '亥':6
 };
+
+// 宮位→地支對應表（由 BRANCH_HOUSE 反推）
+const GONG_DZ = (() => {
+  const map = {};
+  Object.entries(BRANCH_HOUSE).forEach(([dz, gong]) => {
+    if (!map[gong]) map[gong] = [];
+    map[gong].push(dz);
+  });
+  return map;
+})();
 
 // 馬星：時辰地支→馬星地支
 const HORSE_BRANCH_TABLE = {
@@ -1373,6 +1416,12 @@ function castChart() {
     document.getElementById('btn-capture-wrap').style.display = 'block';
   }
   document.getElementById('paipan-result').scrollIntoView({ behavior: 'smooth' });
+
+  // ── 中宮時辰高亮 ──
+  document.querySelectorAll('[data-dz]').forEach(el => el.classList.remove('dz-active'));
+  const _h = parseInt(document.getElementById('hour').value) || 0;
+  const hourBranch = hourToZhi(_h);
+  document.querySelectorAll(`[data-dz="${hourBranch}"]`).forEach(el => el.classList.add('dz-active'));
 }
 </script>
 
