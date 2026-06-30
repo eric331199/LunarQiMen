@@ -4,8 +4,12 @@
 <meta charset="UTF-8">
 <script src="https://cdn.jsdelivr.net/npm/lunar-javascript/lunar.js"></script>
 <link rel="apple-touch-icon" href="icon.PNG">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>陰盤奇門排盤</title>
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
 <style>
   /* ── Reset ── */
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -187,32 +191,32 @@
   /* row3：下邊（中宮外框下邊） */
   #g5r3c1, #g5r3c2, #g5r3c3 { border-bottom: 1px solid #999; }
   .tag { font-size: 11px; line-height: 1; margin-top: 1px; }
-  .tag.mu   { color: #999; font-size: 9px; line-height: 1; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); }
-  .tag.xing { color: #c0392b; font-size: 9px; line-height: 1; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); }
-  .tag.mu.has-xing  { left: 50%; transform: translateX(-100%); }
-  .tag.xing.has-mu  { left: 50%; transform: translateX(0%); right: auto; }
+  .tag.entombed   { color: #999; font-size: 9px; line-height: 1; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); }
+  .tag.penalized { color: #c0392b; font-size: 9px; line-height: 1; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); }
+  .tag.entombed.has-penalized  { left: 50%; transform: translateX(-100%); }
+  .tag.penalized.has-entombed  { left: 50%; transform: translateX(0%); right: auto; }
   .stem-mu  { display: inline-block; position: relative; }
   .stem-char { color: #aaa; }
-  .stem-char.xing { color: #c0392b; }
-  .tag.po   { color: #c0392b; font-size: 9px; line-height: 1; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); }
-  .tag.kong {
+  .stem-char.penalized { color: #c0392b; }
+  .tag.gate-constraint   { color: #c0392b; font-size: 9px; line-height: 1; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); }
+  .tag.void {
     color: #c0392b; font-size: 12px; line-height: 1;
     border: 1px solid #c0392b; border-radius: 50%;
     width: 22px; height: 22px;
     display: flex; align-items: center; justify-content: center;
   }
-  .tag.ma {
+  .tag.horse {
     color: #2471a3; font-size: 11px; line-height: 1;
     position: relative; display: inline-flex; align-items: center; justify-content: center;
   }
-  .tag.ma::before {
+  .tag.horse::before {
     content: '△';
     font-size: 27px;
     color: #2471a3;
     line-height: 1;
     position: absolute;
   }
-  .tag.ma span {
+  .tag.horse span {
     position: relative; z-index: 1;
     font-size: 10px; margin-top: 4px;
   }
@@ -231,9 +235,9 @@
     padding: 3px 1px;
     gap: 2px;
   }
-  .palace-id { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 2px; }
-  .palace-num  { font-size: 13px; font-weight: bold; color: #333; line-height: 1.2; }
-  .palace-name { font-size: 13px; color: #555; line-height: 1.2; }
+  .house-id { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 2px; }
+  .house-num  { font-size: 13px; font-weight: bold; color: #333; line-height: 1.2; }
+  .house-name { font-size: 13px; color: #555; line-height: 1.2; }
   .bagua { display: flex; flex-direction: column; gap: 2px; align-items: center; margin-top: 2px; }
   .bline-full { width: 16px; height: 2px; background: var(--line-color, #444); border-radius: 1px; }
   .bline-broken { display: flex; gap: 3px; }
@@ -243,7 +247,7 @@
   .gc-left2 {}
 
   /* ── 左下（馬）── */
-  .gc-ma {
+  .gc-horse {
     display: flex; flex-direction: row;
     align-items: center; justify-content: center; gap: 1px;
   }
@@ -267,7 +271,7 @@
   }
 
   /* ── 右上（空亡）── */
-  .gc-kong {
+  .gc-void {
     display: flex; flex-direction: row;
     align-items: center; justify-content: center; gap: 1px;
   }
@@ -438,7 +442,7 @@
   </div>
   <div class="input-buttons">
     <button class="btn-now" onclick="resetChart()">重置</button>
-    <button class="btn-start" onclick="castChart()">排盤</button>
+    <button class="btn-start" onclick="clearHighlight();castChart()">排盤</button>
     <button class="btn-now" onclick="setNow()">現時</button>
   </div>
   <div class="input-error-msg" id="input-error-msg"></div>
@@ -474,7 +478,7 @@
       <tr><td class="hl">起局</td><td class="hv" id="hb-qiju">—</td><td class="hl">類型</td><td class="hv" id="hb-fuyin">—</td></tr>
       <tr><td class="hl">旬首</td><td class="hv" id="hb-xun">—</td><td class="hl">符頭</td><td class="hv" id="hb-dutyStem">—</td></tr>
       <tr><td class="hl">值符</td><td class="hv" id="hb-zhifu">—</td><td class="hl">值使</td><td class="hv" id="hb-zhishi">—</td></tr>
-      <tr><td class="hl">空亡</td><td class="hv" id="hb-kongwang">—</td><td class="hl">驛馬</td><td class="hv" id="hb-yima">—</td></tr>
+      <tr><td class="hl">空亡</td><td class="hv" id="hb-voidBranches">—</td><td class="hl">驛馬</td><td class="hv" id="hb-travel-horse">—</td></tr>
     </table>
   </div>
   <div class="h-col-ref">
@@ -505,52 +509,52 @@
   <div class="grid">
     <!-- 4 巽 -->
     <div class="cell" data-gong="4">
-    <div id="g4r1c1" class="gc gc-left" style="grid-column:1;grid-row:1;"><div class="palace-id"><span class="palace-num" style="color:#4caf50;">4</span><span class="palace-name" style="color:#4caf50;">巽</span></div><div class="bagua" style="--line-color:#4caf50;"><div class="bline-full"></div><div class="bline-full"></div><div class="bline-broken"><span></span><span></span></div></div></div>
+    <div id="g4r1c1" class="gc gc-left" style="grid-column:1;grid-row:1;"><div class="house-id"><span class="house-num" style="color:#4caf50;">4</span><span class="house-name" style="color:#4caf50;">巽</span></div><div class="bagua" style="--line-color:#4caf50;"><div class="bline-full"></div><div class="bline-full"></div><div class="bline-broken"><span></span><span></span></div></div></div>
     <div id="g4r1c2" class="gc gc-shen" style="grid-column:2;grid-row:1;"><span id="sh-4"></span></div>
-    <div id="g4r1c3" class="gc gc-kong" style="grid-column:3;grid-row:1;"><div id="kong-4"></div></div>
+    <div id="g4r1c3" class="gc gc-void" style="grid-column:3;grid-row:1;"><div id="void-4"></div></div>
     <div id="g4r2c1" class="gc gc-left2" style="grid-column:1;grid-row:2;"></div>
     <div id="g4r2c2" class="gc gc-star" style="grid-column:2;grid-row:2;"><span id="star-4"></span></div>
     <div id="g4r2c3" class="gc gc-tian" style="grid-column:3;grid-row:2;"><span id="tian-4"></span></div>
-    <div id="g4r3c1" class="gc gc-ma" style="grid-column:1;grid-row:3;"><div id="ma-4"></div></div>
+    <div id="g4r3c1" class="gc gc-horse" style="grid-column:1;grid-row:3;"><div id="horse-4"></div></div>
     <div id="g4r3c2" class="gc gc-gate" style="grid-column:2;grid-row:3;"><span id="gate-4"></span></div>
     <div id="g4r3c3" class="gc gc-di" style="grid-column:3;grid-row:3;"><span id="di-4"></span></div>
     </div>
 
     <!-- 9 離 -->
     <div class="cell" data-gong="9">
-    <div id="g9r1c1" class="gc gc-left" style="grid-column:1;grid-row:1;"><div class="palace-id"><span class="palace-num" style="color:#c0392b;">9</span><span class="palace-name" style="color:#c0392b;">離</span></div><div class="bagua" style="--line-color:#c0392b;"><div class="bline-full"></div><div class="bline-broken"><span></span><span></span></div><div class="bline-full"></div></div></div>
+    <div id="g9r1c1" class="gc gc-left" style="grid-column:1;grid-row:1;"><div class="house-id"><span class="house-num" style="color:#c0392b;">9</span><span class="house-name" style="color:#c0392b;">離</span></div><div class="bagua" style="--line-color:#c0392b;"><div class="bline-full"></div><div class="bline-broken"><span></span><span></span></div><div class="bline-full"></div></div></div>
     <div id="g9r1c2" class="gc gc-shen" style="grid-column:2;grid-row:1;"><span id="sh-9"></span></div>
-    <div id="g9r1c3" class="gc gc-kong" style="grid-column:3;grid-row:1;"><div id="kong-9"></div></div>
+    <div id="g9r1c3" class="gc gc-void" style="grid-column:3;grid-row:1;"><div id="void-9"></div></div>
     <div id="g9r2c1" class="gc gc-left2" style="grid-column:1;grid-row:2;"></div>
     <div id="g9r2c2" class="gc gc-star" style="grid-column:2;grid-row:2;"><span id="star-9"></span></div>
     <div id="g9r2c3" class="gc gc-tian" style="grid-column:3;grid-row:2;"><span id="tian-9"></span></div>
-    <div id="g9r3c1" class="gc gc-ma" style="grid-column:1;grid-row:3;"><div id="ma-9"></div></div>
+    <div id="g9r3c1" class="gc gc-horse" style="grid-column:1;grid-row:3;"><div id="horse-9"></div></div>
     <div id="g9r3c2" class="gc gc-gate" style="grid-column:2;grid-row:3;"><span id="gate-9"></span></div>
     <div id="g9r3c3" class="gc gc-di" style="grid-column:3;grid-row:3;"><span id="di-9"></span></div>
     </div>
 
     <!-- 2 坤 -->
     <div class="cell" data-gong="2">
-    <div id="g2r1c1" class="gc gc-left" style="grid-column:1;grid-row:1;"><div class="palace-id"><span class="palace-num" style="color:#a0714f;">2</span><span class="palace-name" style="color:#a0714f;">坤</span></div><div class="bagua" style="--line-color:#a0714f;"><div class="bline-broken"><span></span><span></span></div><div class="bline-broken"><span></span><span></span></div><div class="bline-broken"><span></span><span></span></div></div></div>
+    <div id="g2r1c1" class="gc gc-left" style="grid-column:1;grid-row:1;"><div class="house-id"><span class="house-num" style="color:#a0714f;">2</span><span class="house-name" style="color:#a0714f;">坤</span></div><div class="bagua" style="--line-color:#a0714f;"><div class="bline-broken"><span></span><span></span></div><div class="bline-broken"><span></span><span></span></div><div class="bline-broken"><span></span><span></span></div></div></div>
     <div id="g2r1c2" class="gc gc-shen" style="grid-column:2;grid-row:1;"><span id="sh-2"></span></div>
-    <div id="g2r1c3" class="gc gc-kong" style="grid-column:3;grid-row:1;"><div id="kong-2"></div></div>
+    <div id="g2r1c3" class="gc gc-void" style="grid-column:3;grid-row:1;"><div id="void-2"></div></div>
     <div id="g2r2c1" class="gc gc-left2" style="grid-column:1;grid-row:2;"></div>
     <div id="g2r2c2" class="gc gc-star" style="grid-column:2;grid-row:2;"><span id="star-2"></span></div>
     <div id="g2r2c3" class="gc gc-tian" style="grid-column:3;grid-row:2;"><span id="tian-2"></span></div>
-    <div id="g2r3c1" class="gc gc-ma" style="grid-column:1;grid-row:3;"><div id="ma-2"></div></div>
+    <div id="g2r3c1" class="gc gc-horse" style="grid-column:1;grid-row:3;"><div id="horse-2"></div></div>
     <div id="g2r3c2" class="gc gc-gate" style="grid-column:2;grid-row:3;"><span id="gate-2"></span></div>
     <div id="g2r3c3" class="gc gc-di" style="grid-column:3;grid-row:3;"><span id="di-2"></span></div>
     </div>
 
     <!-- 3 震 -->
     <div class="cell" data-gong="3">
-    <div id="g3r1c1" class="gc gc-left" style="grid-column:1;grid-row:1;"><div class="palace-id"><span class="palace-num" style="color:#1a7a1a;">3</span><span class="palace-name" style="color:#1a7a1a;">震</span></div><div class="bagua" style="--line-color:#1a7a1a;"><div class="bline-broken"><span></span><span></span></div><div class="bline-broken"><span></span><span></span></div><div class="bline-full"></div></div></div>
+    <div id="g3r1c1" class="gc gc-left" style="grid-column:1;grid-row:1;"><div class="house-id"><span class="house-num" style="color:#1a7a1a;">3</span><span class="house-name" style="color:#1a7a1a;">震</span></div><div class="bagua" style="--line-color:#1a7a1a;"><div class="bline-broken"><span></span><span></span></div><div class="bline-broken"><span></span><span></span></div><div class="bline-full"></div></div></div>
     <div id="g3r1c2" class="gc gc-shen" style="grid-column:2;grid-row:1;"><span id="sh-3"></span></div>
-    <div id="g3r1c3" class="gc gc-kong" style="grid-column:3;grid-row:1;"><div id="kong-3"></div></div>
+    <div id="g3r1c3" class="gc gc-void" style="grid-column:3;grid-row:1;"><div id="void-3"></div></div>
     <div id="g3r2c1" class="gc gc-left2" style="grid-column:1;grid-row:2;"></div>
     <div id="g3r2c2" class="gc gc-star" style="grid-column:2;grid-row:2;"><span id="star-3"></span></div>
     <div id="g3r2c3" class="gc gc-tian" style="grid-column:3;grid-row:2;"><span id="tian-3"></span></div>
-    <div id="g3r3c1" class="gc gc-ma" style="grid-column:1;grid-row:3;"><div id="ma-3"></div></div>
+    <div id="g3r3c1" class="gc gc-horse" style="grid-column:1;grid-row:3;"><div id="horse-3"></div></div>
     <div id="g3r3c2" class="gc gc-gate" style="grid-column:2;grid-row:3;"><span id="gate-3"></span></div>
     <div id="g3r3c3" class="gc gc-di" style="grid-column:3;grid-row:3;"><span id="di-3"></span></div>
     </div>
@@ -570,52 +574,52 @@
 
     <!-- 7 兌 -->
     <div class="cell" data-gong="7">
-    <div id="g7r1c1" class="gc gc-left" style="grid-column:1;grid-row:1;"><div class="palace-id"><span class="palace-num" style="color:#999999;">7</span><span class="palace-name" style="color:#999999;">兌</span></div><div class="bagua" style="--line-color:#999999;"><div class="bline-broken"><span></span><span></span></div><div class="bline-full"></div><div class="bline-full"></div></div></div>
+    <div id="g7r1c1" class="gc gc-left" style="grid-column:1;grid-row:1;"><div class="house-id"><span class="house-num" style="color:#999999;">7</span><span class="house-name" style="color:#999999;">兌</span></div><div class="bagua" style="--line-color:#999999;"><div class="bline-broken"><span></span><span></span></div><div class="bline-full"></div><div class="bline-full"></div></div></div>
     <div id="g7r1c2" class="gc gc-shen" style="grid-column:2;grid-row:1;"><span id="sh-7"></span></div>
-    <div id="g7r1c3" class="gc gc-kong" style="grid-column:3;grid-row:1;"><div id="kong-7"></div></div>
+    <div id="g7r1c3" class="gc gc-void" style="grid-column:3;grid-row:1;"><div id="void-7"></div></div>
     <div id="g7r2c1" class="gc gc-left2" style="grid-column:1;grid-row:2;"></div>
     <div id="g7r2c2" class="gc gc-star" style="grid-column:2;grid-row:2;"><span id="star-7"></span></div>
     <div id="g7r2c3" class="gc gc-tian" style="grid-column:3;grid-row:2;"><span id="tian-7"></span></div>
-    <div id="g7r3c1" class="gc gc-ma" style="grid-column:1;grid-row:3;"><div id="ma-7"></div></div>
+    <div id="g7r3c1" class="gc gc-horse" style="grid-column:1;grid-row:3;"><div id="horse-7"></div></div>
     <div id="g7r3c2" class="gc gc-gate" style="grid-column:2;grid-row:3;"><span id="gate-7"></span></div>
     <div id="g7r3c3" class="gc gc-di" style="grid-column:3;grid-row:3;"><span id="di-7"></span></div>
     </div>
 
     <!-- 8 艮 -->
     <div class="cell" data-gong="8">
-    <div id="g8r1c1" class="gc gc-left" style="grid-column:1;grid-row:1;"><div class="palace-id"><span class="palace-num" style="color:#6b4423;">8</span><span class="palace-name" style="color:#6b4423;">艮</span></div><div class="bagua" style="--line-color:#6b4423;"><div class="bline-full"></div><div class="bline-broken"><span></span><span></span></div><div class="bline-broken"><span></span><span></span></div></div></div>
+    <div id="g8r1c1" class="gc gc-left" style="grid-column:1;grid-row:1;"><div class="house-id"><span class="house-num" style="color:#6b4423;">8</span><span class="house-name" style="color:#6b4423;">艮</span></div><div class="bagua" style="--line-color:#6b4423;"><div class="bline-full"></div><div class="bline-broken"><span></span><span></span></div><div class="bline-broken"><span></span><span></span></div></div></div>
     <div id="g8r1c2" class="gc gc-shen" style="grid-column:2;grid-row:1;"><span id="sh-8"></span></div>
-    <div id="g8r1c3" class="gc gc-kong" style="grid-column:3;grid-row:1;"><div id="kong-8"></div></div>
+    <div id="g8r1c3" class="gc gc-void" style="grid-column:3;grid-row:1;"><div id="void-8"></div></div>
     <div id="g8r2c1" class="gc gc-left2" style="grid-column:1;grid-row:2;"></div>
     <div id="g8r2c2" class="gc gc-star" style="grid-column:2;grid-row:2;"><span id="star-8"></span></div>
     <div id="g8r2c3" class="gc gc-tian" style="grid-column:3;grid-row:2;"><span id="tian-8"></span></div>
-    <div id="g8r3c1" class="gc gc-ma" style="grid-column:1;grid-row:3;"><div id="ma-8"></div></div>
+    <div id="g8r3c1" class="gc gc-horse" style="grid-column:1;grid-row:3;"><div id="horse-8"></div></div>
     <div id="g8r3c2" class="gc gc-gate" style="grid-column:2;grid-row:3;"><span id="gate-8"></span></div>
     <div id="g8r3c3" class="gc gc-di" style="grid-column:3;grid-row:3;"><span id="di-8"></span></div>
     </div>
 
     <!-- 1 坎 -->
     <div class="cell" data-gong="1">
-    <div id="g1r1c1" class="gc gc-left" style="grid-column:1;grid-row:1;"><div class="palace-id"><span class="palace-num" style="color:#2471a3;">1</span><span class="palace-name" style="color:#2471a3;">坎</span></div><div class="bagua" style="--line-color:#2471a3;"><div class="bline-broken"><span></span><span></span></div><div class="bline-full"></div><div class="bline-broken"><span></span><span></span></div></div></div>
+    <div id="g1r1c1" class="gc gc-left" style="grid-column:1;grid-row:1;"><div class="house-id"><span class="house-num" style="color:#2471a3;">1</span><span class="house-name" style="color:#2471a3;">坎</span></div><div class="bagua" style="--line-color:#2471a3;"><div class="bline-broken"><span></span><span></span></div><div class="bline-full"></div><div class="bline-broken"><span></span><span></span></div></div></div>
     <div id="g1r1c2" class="gc gc-shen" style="grid-column:2;grid-row:1;"><span id="sh-1"></span></div>
-    <div id="g1r1c3" class="gc gc-kong" style="grid-column:3;grid-row:1;"><div id="kong-1"></div></div>
+    <div id="g1r1c3" class="gc gc-void" style="grid-column:3;grid-row:1;"><div id="void-1"></div></div>
     <div id="g1r2c1" class="gc gc-left2" style="grid-column:1;grid-row:2;"></div>
     <div id="g1r2c2" class="gc gc-star" style="grid-column:2;grid-row:2;"><span id="star-1"></span></div>
     <div id="g1r2c3" class="gc gc-tian" style="grid-column:3;grid-row:2;"><span id="tian-1"></span></div>
-    <div id="g1r3c1" class="gc gc-ma" style="grid-column:1;grid-row:3;"><div id="ma-1"></div></div>
+    <div id="g1r3c1" class="gc gc-horse" style="grid-column:1;grid-row:3;"><div id="horse-1"></div></div>
     <div id="g1r3c2" class="gc gc-gate" style="grid-column:2;grid-row:3;"><span id="gate-1"></span></div>
     <div id="g1r3c3" class="gc gc-di" style="grid-column:3;grid-row:3;"><span id="di-1"></span></div>
     </div>
 
     <!-- 6 乾 -->
     <div class="cell" data-gong="6">
-    <div id="g6r1c1" class="gc gc-left" style="grid-column:1;grid-row:1;"><div class="palace-id"><span class="palace-num" style="color:#555555;">6</span><span class="palace-name" style="color:#555555;">乾</span></div><div class="bagua" style="--line-color:#555555;"><div class="bline-full"></div><div class="bline-full"></div><div class="bline-full"></div></div></div>
+    <div id="g6r1c1" class="gc gc-left" style="grid-column:1;grid-row:1;"><div class="house-id"><span class="house-num" style="color:#555555;">6</span><span class="house-name" style="color:#555555;">乾</span></div><div class="bagua" style="--line-color:#555555;"><div class="bline-full"></div><div class="bline-full"></div><div class="bline-full"></div></div></div>
     <div id="g6r1c2" class="gc gc-shen" style="grid-column:2;grid-row:1;"><span id="sh-6"></span></div>
-    <div id="g6r1c3" class="gc gc-kong" style="grid-column:3;grid-row:1;"><div id="kong-6"></div></div>
+    <div id="g6r1c3" class="gc gc-void" style="grid-column:3;grid-row:1;"><div id="void-6"></div></div>
     <div id="g6r2c1" class="gc gc-left2" style="grid-column:1;grid-row:2;"></div>
     <div id="g6r2c2" class="gc gc-star" style="grid-column:2;grid-row:2;"><span id="star-6"></span></div>
     <div id="g6r2c3" class="gc gc-tian" style="grid-column:3;grid-row:2;"><span id="tian-6"></span></div>
-    <div id="g6r3c1" class="gc gc-ma" style="grid-column:1;grid-row:3;"><div id="ma-6"></div></div>
+    <div id="g6r3c1" class="gc gc-horse" style="grid-column:1;grid-row:3;"><div id="horse-6"></div></div>
     <div id="g6r3c2" class="gc gc-gate" style="grid-column:2;grid-row:3;"><span id="gate-6"></span></div>
     <div id="g6r3c3" class="gc gc-di" style="grid-column:3;grid-row:3;"><span id="di-6"></span></div>
     </div>
@@ -626,26 +630,26 @@
 
 <script>
 // ── 入墓判定 ──
-const MU_TABLE = { '癸':2, '乙':6,'丙':6,'戊':6, '丁':8,'己':8,'庚':8, '辛':4,'壬':4 };
+const ENTOMBED_TABLE = { '癸':2, '乙':6,'丙':6,'戊':6, '丁':8,'己':8,'庚':8, '辛':4,'壬':4 };
 
 // ── 擊刑判定（六儀天干） ──
 // 庚在艮(8)、壬在巽(4) 同時符合入墓與擊刑，兩者皆標記，天干顯示為擊刑紅色
-const XING_TABLE = { '戊':3, '己':2, '庚':8, '辛':9, '壬':4, '癸':4 };
+const PENALIZED_TABLE = { '戊':3, '己':2, '庚':8, '辛':9, '壬':4, '癸':4 };
 
 // 渲染天干字串（含寄干），有入墓或擊刑則標記
 // isDutyHouse: 此格是否為符頭天干所在宮位（甲入墓判定用，天盤地盤皆適用）
 function renderStemHTML(stem, house, dutyStem, isDutyHouse) {
   if (!stem) return '';
   return stem.split('').map(ch => {
-    const isXing = !!XING_TABLE[ch] && XING_TABLE[ch] === house;
-    let isMu = MU_TABLE[ch] === house;
-    if (!isMu && isDutyHouse && house === 2 && ch === dutyStem) isMu = true;
+    const isPenalized = !!PENALIZED_TABLE[ch] && PENALIZED_TABLE[ch] === house;
+    let isEntombed = ENTOMBED_TABLE[ch] === house;
+    if (!isEntombed && isDutyHouse && house === 2 && ch === dutyStem) isEntombed = true;
 
-    if (isXing || isMu) {
-      const charClass = isXing ? 'stem-char xing' : 'stem-char';
-      const fontSize = (isXing && isMu) ? '7px' : '9px';
-      const muTag   = isMu   ? `<span class="tag mu${isXing ? ' has-xing' : ''}" style="font-size:${fontSize};">墓</span>` : '';
-      const xingTag = isXing ? `<span class="tag xing${isMu  ? ' has-mu'  : ''}" style="font-size:${fontSize};">刑</span>` : '';
+    if (isPenalized || isEntombed) {
+      const charClass = isPenalized ? 'stem-char penalized' : 'stem-char';
+      const fontSize = (isPenalized && isEntombed) ? '7px' : '9px';
+      const muTag   = isEntombed   ? `<span class="tag entombed${isPenalized ? ' has-penalized' : ''}" style="font-size:${fontSize};">墓</span>` : '';
+      const xingTag = isPenalized ? `<span class="tag penalized${isEntombed  ? ' has-entombed'  : ''}" style="font-size:${fontSize};">刑</span>` : '';
       return `<span class="stem-mu"><span class="${charClass}">${ch}</span>${muTag}${xingTag}</span>`;
     }
     return `<span>${ch}</span>`;
@@ -657,7 +661,7 @@ function captureChart() {
 }
 
 // ── 門迫判定 ──
-const PO_TABLE = {
+const GATE_CONSTRAINT_TABLE = {
   '休門': [9],
   '生門': [1],
   '傷門': [2, 8],
@@ -670,14 +674,15 @@ const PO_TABLE = {
 
 function renderGateHTML(gate, house) {
   if (!gate) return '';
-  const poHouses = PO_TABLE[gate] || [];
-  if (poHouses.includes(house)) {
-    return `<span style="position:relative;display:inline-block;color:#c0392b;">${gate}<span class="tag po">迫</span></span>`;
+  const constraintHouses = GATE_CONSTRAINT_TABLE[gate] || [];
+  if (constraintHouses.includes(house)) {
+    return `<span style="position:relative;display:inline-block;color:#c0392b;">${gate}<span class="tag gate-constraint">迫</span></span>`;
   }
   return gate;
 }
 
 function resetChart() {
+  clearHighlight();
   ['year','month','day','hour','minute'].forEach(id => {
     const el = document.getElementById(id);
     if (el) {
@@ -689,13 +694,13 @@ function resetChart() {
   if (msgEl) { msgEl.textContent = ''; msgEl.style.display = 'none'; }
   ['sy','sm','sd','st','ly','lm','ld','lt',
    'gz-y-gan','gz-y-zhi','gz-m-gan','gz-m-zhi','gz-d-gan','gz-d-zhi','gz-h-gan','gz-h-zhi',
-   'hb-qiju','hb-xun','hb-dutyStem','hb-kongwang','hb-yima','hb-zhifu','hb-zhishi'
+   'hb-qiju','hb-xun','hb-dutyStem','hb-voidBranches','hb-travel-horse','hb-zhifu','hb-zhishi'
   ].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.textContent = '—';
   });
   [1,2,3,4,6,7,8,9].forEach(g => {
-    ['sh-','star-','gate-','tian-','di-','kong-','ma-','yin-'].forEach(pre => {
+    ['sh-','star-','gate-','tian-','di-','void-','horse-','yin-'].forEach(pre => {
       const el = document.getElementById(pre + g);
       if (el) el.innerHTML = '';
     });
@@ -703,7 +708,6 @@ function resetChart() {
 }
 
 function getInputDate() {
-  const pad = n => String(n).padStart(2, '0');
   const y = parseInt(document.getElementById('year').value) || 0;
   const m = parseInt(document.getElementById('month').value) || 1;
   const d = parseInt(document.getElementById('day').value) || 1;
@@ -713,7 +717,6 @@ function getInputDate() {
 }
 
 function setInputDate(dt) {
-  const pad = n => String(n).padStart(2, '0');
   document.getElementById('year').value = dt.getFullYear();
   document.getElementById('month').value = pad(dt.getMonth() + 1);
   document.getElementById('day').value = pad(dt.getDate());
@@ -736,40 +739,46 @@ function shiftHour(hours) {
 }
 
 function setNow() {
-  const now = new Date();
-  const pad = n => String(n).padStart(2, '0');
-  document.getElementById('year').value = now.getFullYear();
-  document.getElementById('month').value = pad(now.getMonth() + 1);
-  document.getElementById('day').value = pad(now.getDate());
-  document.getElementById('hour').value = pad(now.getHours());
-  document.getElementById('minute').value = pad(now.getMinutes());
+  setInputDate(new Date());
 }
 
 // 頁面載入時自動填入當前時間
 window.addEventListener('DOMContentLoaded', setNow);
 
+const pad = n => String(n).padStart(2, '0');
+
 // ── 宮位點擊高亮 ──
 // grid排列: 4(1) 9(2) 2(3) / 3(4) 5(5) 7(6) / 8(7) 1(8) 6(9)
-const PALACE_NEIGHBORS = {
+const HOUSE_NEIGHBORS = {
   1:{right:2,bottom:4}, 2:{right:3,bottom:5}, 3:{bottom:6},
   4:{right:5,bottom:7}, 5:{right:6,bottom:8}, 6:{bottom:9},
   7:{right:8},          8:{right:9},           9:{}
 };
+// 預建反查表：left / top
+const HOUSE_LEFT  = {};
+const HOUSE_TOP   = {};
+Object.keys(HOUSE_NEIGHBORS).forEach(k => {
+  const n = HOUSE_NEIGHBORS[k];
+  if (n.right)  HOUSE_LEFT[n.right]  = +k;
+  if (n.bottom) HOUSE_TOP[n.bottom]  = +k;
+});
 const HIGHLIGHT_COLOR = '#e67e22';
 
 // 宮位 → 中宮對應小格 id
-const GONG_TO_DZ_CELL = {
+const HOUSE_TO_DZ_CELL = {
   4: 'g5r1c1', 9: 'g5r1c2', 2: 'g5r1c3',
   3: 'g5r2c1',              7: 'g5r2c3',
   8: 'g5r3c1', 1: 'g5r3c2', 6: 'g5r3c3',
 };
 
-function getPalaceCells() {
-  return [...document.querySelectorAll('.grid .cell')];
+let _houseCells = null;
+function getHouseCells() {
+  if (!_houseCells) _houseCells = [...document.querySelectorAll('.grid .cell')];
+  return _houseCells;
 }
 
 function clearHighlight() {
-  getPalaceCells().forEach(c => {
+  getHouseCells().forEach(c => {
     c.classList.remove('highlighted');
     c.style.borderTopColor = c.style.borderBottomColor =
     c.style.borderLeftColor = c.style.borderRightColor = '';
@@ -786,47 +795,37 @@ document.querySelectorAll('.cell[data-gong]').forEach(cell => {
     const already = this.classList.contains('highlighted');
     clearHighlight();
     if (!already) {
-      const cells = getPalaceCells();
+      const cells = getHouseCells();
       const nth = cells.indexOf(this) + 1;
       this.classList.add('highlighted');
       this.style.borderTopColor = this.style.borderBottomColor =
       this.style.borderLeftColor = this.style.borderRightColor = HIGHLIGHT_COLOR;
 
       // 右側相鄰格左邊改橘
-      const r = PALACE_NEIGHBORS[nth]?.right;
+      const r = HOUSE_NEIGHBORS[nth]?.right;
       if (r) cells[r-1].style.borderLeftColor = HIGHLIGHT_COLOR;
       // 下側相鄰格上邊改橘
-      const b = PALACE_NEIGHBORS[nth]?.bottom;
+      const b = HOUSE_NEIGHBORS[nth]?.bottom;
       if (b) cells[b-1].style.borderTopColor = HIGHLIGHT_COLOR;
-      // 左側相鄰格右邊改橘（反查）
-      const lk = Object.keys(PALACE_NEIGHBORS).find(k => PALACE_NEIGHBORS[k].right === nth);
-      if (lk) cells[+lk-1].style.borderRightColor = HIGHLIGHT_COLOR;
-      // 上側相鄰格下邊改橘（反查）
-      const tk = Object.keys(PALACE_NEIGHBORS).find(k => PALACE_NEIGHBORS[k].bottom === nth);
-      if (tk) cells[+tk-1].style.borderBottomColor = HIGHLIGHT_COLOR;
+      // 左側相鄰格右邊改橘
+      const lk = HOUSE_LEFT[nth];
+      if (lk) cells[lk-1].style.borderRightColor = HIGHLIGHT_COLOR;
+      // 上側相鄰格下邊改橘
+      const tk = HOUSE_TOP[nth];
+      if (tk) cells[tk-1].style.borderBottomColor = HIGHLIGHT_COLOR;
 
       // 中宮對應地支格：改四邊顏色
       const gong = parseInt(this.dataset.gong);
-      const dzId = GONG_TO_DZ_CELL[gong];
+      const dzId = HOUSE_TO_DZ_CELL[gong];
       if (dzId) {
         const gc = document.getElementById(dzId);
         if (!gc) return;
         const row = parseInt(dzId[3]);
         const col = parseInt(dzId[5]);
 
-        // right：col1/2 改自身；col3 改自身（外框邊）
-        if (col < 3) {
-          gc.style.borderRightColor = HIGHLIGHT_COLOR;
-        } else {
-          gc.style.borderRightColor = HIGHLIGHT_COLOR; // 外框邊已是獨立 border
-        }
-
-        // bottom：row1/2 改自身；row3 改自身（外框邊）
-        if (row < 3) {
-          gc.style.borderBottomColor = HIGHLIGHT_COLOR;
-        } else {
-          gc.style.borderBottomColor = HIGHLIGHT_COLOR;
-        }
+        // right / bottom：直接改自身
+        gc.style.borderRightColor  = HIGHLIGHT_COLOR;
+        gc.style.borderBottomColor = HIGHLIGHT_COLOR;
 
         // top：row1 改自身 top（外框邊）；row2/3 改上方格 bottom
         if (row === 1) {
@@ -875,7 +874,7 @@ INPUT_ORDER.forEach((id, idx) => {
 });
 
 // 地支序數
-const EARTHLY_BRANCHES_REF = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+const EARTH_BRANCH_LIST = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
 
 // 數字根（各位數相加到一位數，0視為9）
 function digitalRoot(n) {
@@ -886,10 +885,10 @@ function digitalRoot(n) {
 }
 
 // 取時辰地支
-function hourToZhi(h) {
+function hourToBranch(h) {
   // 子=23-1, 丑=1-3, ..., 亥=21-23
   const idx = Math.floor((h + 1) / 2) % 12;
-  return EARTHLY_BRANCHES_REF[idx];
+  return EARTH_BRANCH_LIST[idx];
 }
 
 // 判斷陰陽遁：找開盤時間前最近的冬至或夏至
@@ -920,15 +919,15 @@ function getSolsticeType(y, m, d, h) {
 
 // 計算局數
 function getChartNumber(lunar, h, ec) {
-  const yearZhi = ec.getYear()[1];       // 年支（節氣換年，取四柱年柱地支）
+  const yearBranch = ec.getYear()[1];       // 年支（節氣換年，取四柱年柱地支）
   const lunarMonth = Math.abs(lunar.getMonth()); // 農曆月
   const lunarDay = lunar.getDay();       // 農曆日
-  const hourZhi = hourToZhi(h);         // 時支
+  const hourBranch = hourToBranch(h);         // 時支
 
-  const yearZhiIdx = EARTHLY_BRANCHES_REF.indexOf(yearZhi) + 1;
-  const hourZhiIdx = EARTHLY_BRANCHES_REF.indexOf(hourZhi) + 1;
+  const yearBranchIdx = EARTH_BRANCH_LIST.indexOf(yearBranch) + 1;
+  const hourBranchIdx = EARTH_BRANCH_LIST.indexOf(hourBranch) + 1;
 
-  const sum = yearZhiIdx + lunarMonth + lunarDay + hourZhiIdx;
+  const sum = yearBranchIdx + lunarMonth + lunarDay + hourBranchIdx;
   return digitalRoot(sum);
 }
 
@@ -948,11 +947,11 @@ function placeInOrder(startHouse, order, items, headIdx = 0) {
 }
 
 // 六儀三奇順序
-const EARTH_PLATE_STEM_ORDER = ['戊','己','庚','辛','壬','癸','丁','丙','乙'];
+const EARTH_STEM_ORDER = ['戊','己','庚','辛','壬','癸','丁','丙','乙'];
 
 // 九宮完整順序（含5，供路中判斷用）
-const HOUSE_NUM_ASC_FULL  = [1, 2, 3, 4, 5, 6, 7, 8, 9]; // 順時針含中宮
-const HOUSE_NUM_DESC_FULL = [9, 8, 7, 6, 5, 4, 3, 2, 1]; // 逆時針含中宮
+const HOUSE_FLY_ASC  = [1, 2, 3, 4, 5, 6, 7, 8, 9]; // 順時針含中宮
+const HOUSE_FLY_DESC = [9, 8, 7, 6, 5, 4, 3, 2, 1]; // 逆時針含中宮
 
 // 地盤固定對應：宮位→九星名稱、八門名稱
 const HOUSE_STAR = { 1:'天蓬', 2:'天芮', 3:'天沖', 4:'天輔', 6:'天心', 7:'天柱', 8:'天任', 9:'天英' };
@@ -968,15 +967,15 @@ function getSpiritMap(timeStemHouse, solsticeType) {
 }
 
 // 地支→宮位對應表
-const BRANCH_HOUSE = {
+const BRANCH_TO_HOUSE = {
   '子':1, '丑':8, '寅':8, '卯':3, '辰':4, '巳':4,
   '午':9, '未':2, '申':2, '酉':7, '戌':6, '亥':6
 };
 
-// 宮位→地支對應表（由 BRANCH_HOUSE 反推）
-const GONG_DZ = (() => {
+// 宮位→地支對應表（由 BRANCH_TO_HOUSE 反推）
+const HOUSE_DZ = (() => {
   const map = {};
-  Object.entries(BRANCH_HOUSE).forEach(([dz, gong]) => {
+  Object.entries(BRANCH_TO_HOUSE).forEach(([dz, gong]) => {
     if (!map[gong]) map[gong] = [];
     map[gong].push(dz);
   });
@@ -984,7 +983,7 @@ const GONG_DZ = (() => {
 })();
 
 // 馬星：時辰地支→馬星地支
-const HORSE_BRANCH_TABLE = {
+const TRAVEL_HORSE_TABLE = {
   '申':'寅', '子':'寅', '辰':'寅',
   '寅':'申', '午':'申', '戌':'申',
   '巳':'亥', '酉':'亥', '丑':'亥',
@@ -998,15 +997,15 @@ const EIGHT_GATES = ['休門','生門','傷門','杜門','景門','死門','驚�
 const HOUSE_GATE_IDX = { 1:0, 2:5, 3:2, 4:3, 6:7, 7:6, 8:1, 9:4 };
 
 // 時干序數
-const HEAVENLY_STEMS_REF = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+const HEAVEN_STEM_LIST = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
 
 // 排八門：從地盤值使門宮位走步，落點放值使門，其餘實際順時針放入
 function getGateMap(dutyGateHouse, solsticeType, timeStem) {
   dutyGateHouse = parseInt(dutyGateHouse);
   // 時干序數（甲=1…癸=10），起點算第一步，所以走 steps-1 步
-  const steps = HEAVENLY_STEMS_REF.indexOf(timeStem) + 1;
+  const steps = HEAVEN_STEM_LIST.indexOf(timeStem) + 1;
   // 走步用含中宮的九宮數字順序（中宮5為獨立計數站，不可提前併入坤2）
-  const walkOrder = solsticeType === '陽' ? HOUSE_NUM_ASC_FULL : HOUSE_NUM_DESC_FULL;
+  const walkOrder = solsticeType === '陽' ? HOUSE_FLY_ASC : HOUSE_FLY_DESC;
   const startIdx = walkOrder.indexOf(dutyGateHouse);
   // 走 steps-1 步（起點算第一步）
   let landGong = walkOrder[(startIdx + steps - 1) % 9];
@@ -1052,7 +1051,7 @@ function getHidingStemMap(dutyGateLandHouse, earthStemMap, earthStemSeq, timeSte
 
   let guidingMap;
   if (isTripleSame) {
-    const stemOrder = EARTH_PLATE_STEM_ORDER; // 戊己庚辛壬癸丁丙乙
+    const stemOrder = EARTH_STEM_ORDER; // 戊己庚辛壬癸丁丙乙
     const walkFull = solsticeType === '陽'
       ? [5,6,7,8,9,1,2,3,4]
       : [5,4,3,2,1,9,8,7,6];
@@ -1123,14 +1122,14 @@ function getHeavenStemMap(timeStemHouse, earthStemSeq, dutyStem) {
 // 回傳 { 宮位數: 天干 }，例如 { 1:'丙', 2:'戊乙', ... }
 function getEarthStemMap(solsticeType, chartNum) {
   const result = {};
-  const order9 = solsticeType === '陽' ? HOUSE_NUM_ASC_FULL : HOUSE_NUM_DESC_FULL; // 含5，9格
+  const order9 = solsticeType === '陽' ? HOUSE_FLY_ASC : HOUSE_FLY_DESC; // 含5，9格
 
   // 找戊的起始宮位在9格順序中的 index
   const startIdx = order9.indexOf(chartNum);
 
   // 9個天干依序排入9格（含中宮5）
   for (let i = 0; i < 9; i++) {
-    const gan = EARTH_PLATE_STEM_ORDER[i];
+    const gan = EARTH_STEM_ORDER[i];
     const gong = order9[(startIdx + i) % 9];
     if (result[gong]) {
       result[gong] = result[gong] + gan;
@@ -1152,21 +1151,21 @@ function getEarthStemMap(solsticeType, chartNum) {
 
 // 根據時柱干支找旬首資料（用完整干支配對）
 function getDecInfo(timeStem, timeBranch) {
-  const ganIdx = HEAVENLY_STEMS_REF.indexOf(timeStem);
-  const zhiIdx = EARTHLY_BRANCHES_REF.indexOf(timeBranch);
-  const posInXun = ganIdx; // 在旬中的位置就是天干序號（甲=0, 乙=1, ...）
-  const xunFirstZhiIdx = (zhiIdx - posInXun + 12) % 12;
-  const xunFirstZhi = EARTHLY_BRANCHES_REF[xunFirstZhiIdx];
+  const stemIdx = HEAVEN_STEM_LIST.indexOf(timeStem);
+  const branchIdx = EARTH_BRANCH_LIST.indexOf(timeBranch);
+  const posInXun = stemIdx; // 在旬中的位置就是天干序號（甲=0, 乙=1, ...）
+  const decFirstBranchIdx = (branchIdx - posInXun + 12) % 12;
+  const decFirstBranch = EARTH_BRANCH_LIST[decFirstBranchIdx];
 
-  const xunMap = {
-    '子': { xun: '甲子旬', dutyStem: '戊', kongwang: ['戌','亥'] },
-    '戌': { xun: '甲戌旬', dutyStem: '己', kongwang: ['申','酉'] },
-    '申': { xun: '甲申旬', dutyStem: '庚', kongwang: ['午','未'] },
-    '午': { xun: '甲午旬', dutyStem: '辛', kongwang: ['辰','巳'] },
-    '辰': { xun: '甲辰旬', dutyStem: '壬', kongwang: ['寅','卯'] },
-    '寅': { xun: '甲寅旬', dutyStem: '癸', kongwang: ['子','丑'] },
+  const decMap = {
+    '子': { xun: '甲子旬', dutyStem: '戊', voidBranches: ['戌','亥'] },
+    '戌': { xun: '甲戌旬', dutyStem: '己', voidBranches: ['申','酉'] },
+    '申': { xun: '甲申旬', dutyStem: '庚', voidBranches: ['午','未'] },
+    '午': { xun: '甲午旬', dutyStem: '辛', voidBranches: ['辰','巳'] },
+    '辰': { xun: '甲辰旬', dutyStem: '壬', voidBranches: ['寅','卯'] },
+    '寅': { xun: '甲寅旬', dutyStem: '癸', voidBranches: ['子','丑'] },
   };
-  return xunMap[xunFirstZhi] || null;
+  return decMap[decFirstBranch] || null;
 }
 
 // 驗證年月日時分是否為合理數字，不合理則標紅對應欄位並顯示訊息
@@ -1272,45 +1271,44 @@ function castChart() {
   // 地盤天干寫入將在後面取得 dutyStemHouse 後統一處理（入墓判定需要）
 
   // 旬首 / 符頭 / 空亡
-  const xunInfo = getDecInfo(hGZ[0], hGZ[1]);
-  if (xunInfo) {
-    document.getElementById('hb-xun').textContent = xunInfo.xun;
-    document.getElementById('hb-dutyStem').textContent = xunInfo.dutyStem;
-    document.getElementById('hb-kongwang').textContent = xunInfo.kongwang.join('、');
+  const decInfo = getDecInfo(hGZ[0], hGZ[1]);
+  if (decInfo) {
+    document.getElementById('hb-xun').textContent = decInfo.xun;
+    document.getElementById('hb-dutyStem').textContent = decInfo.dutyStem;
+    document.getElementById('hb-voidBranches').textContent = decInfo.voidBranches.join('、');
 
     // 清除所有 kong 與 ma
     [1,2,3,4,6,7,8,9].forEach(g => {
-      const kongEl = document.getElementById('kong-' + g);
+      const kongEl = document.getElementById('void-' + g);
       if (kongEl) kongEl.innerHTML = '';
-      const maEl = document.getElementById('ma-' + g);
+      const maEl = document.getElementById('horse-' + g);
       if (maEl) maEl.innerHTML = '';
     });
 
     // 先計算馬和空的宮位
-    const maZhi = HORSE_BRANCH_TABLE[hGZ[1]];
-    const maGong = maZhi ? BRANCH_HOUSE[maZhi] : null;
-    const kongGongs = xunInfo.kongwang.map(zhi => BRANCH_HOUSE[zhi]);
+    const horseZhi = TRAVEL_HORSE_TABLE[hGZ[1]];
+    const horseHouse = horseZhi ? BRANCH_TO_HOUSE[horseZhi] : null;
 
-    // 馬先放（放入 ma- 格）
-    if (maGong) {
-      const el = document.getElementById('ma-' + maGong);
-      if (el) el.innerHTML = '<span class="tag ma"><span>馬</span></span>';
-      document.getElementById('hb-yima').textContent = maZhi;
+    // 馬先放（放入 horse- 格）
+    if (horseHouse) {
+      const el = document.getElementById('horse-' + horseHouse);
+      if (el) el.innerHTML = '<span class="tag horse"><span>馬</span></span>';
+      document.getElementById('hb-travel-horse').textContent = horseZhi;
     }
 
     // 空後放（空在右）
     const marked = new Set();
-    xunInfo.kongwang.forEach(zhi => {
-      const g = BRANCH_HOUSE[zhi];
-      const el = document.getElementById('kong-' + g);
+    decInfo.voidBranches.forEach(zhi => {
+      const g = BRANCH_TO_HOUSE[zhi];
+      const el = document.getElementById('void-' + g);
       if (el && !marked.has(g)) {
-        el.innerHTML += '<span class="tag kong">空</span>';
+        el.innerHTML += '<span class="tag void">空</span>';
         marked.add(g);
       }
     });
 
     // 值符宮：符頭天干在地盤的宮位
-    const dutyStemHouse = Object.keys(earthStemMap).find(g => earthStemMap[g].includes(xunInfo.dutyStem));
+    const dutyStemHouse = Object.keys(earthStemMap).find(g => earthStemMap[g].includes(decInfo.dutyStem));
 
     if (dutyStemHouse) {
       const dutyStar = HOUSE_STAR[dutyStemHouse];
@@ -1331,12 +1329,12 @@ function castChart() {
           // 地盤天干序列（實際順時針讀出，8個位置，寄干宮保留兩個天干）－供天盤天干、引干共用，避免重複計算
           const earthStemSeq = HOUSE_CW.map(g => earthStemMap[g] || '');
           // 排天盤天干
-          const heavenStemMap = getHeavenStemMap(timeStemHouse, earthStemSeq, xunInfo.dutyStem);
+          const heavenStemMap = getHeavenStemMap(timeStemHouse, earthStemSeq, decInfo.dutyStem);
           // 排八門：值使門地盤宮位
           // 走步起點需用「寄坤前」的原始宮位──若符頭天干恰為中宮5寄坤前的原始天干，
           // 數字走步（含中宮）的起點應為5本身，不可用已合併到坤2的位置（5與2在九宮數字
           // 循環中是不同的計數站，提前合併會讓起點算錯）
-          const dutyStemHouseForGate = (houseFiveStem && xunInfo.dutyStem === houseFiveStem) ? 5 : dutyStemHouse;
+          const dutyStemHouseForGate = (houseFiveStem && decInfo.dutyStem === houseFiveStem) ? 5 : dutyStemHouse;
           const gateMap = getGateMap(dutyStemHouseForGate, solsticeType, hGZ[0]);
           // 找值使門落宮（天盤使門所在宮位）
           const shimenName = HOUSE_GATE[dutyStemHouse];
@@ -1348,7 +1346,7 @@ function castChart() {
 
           // 排引干
           const guidingResult = dutyGateLandHouse
-            ? getHidingStemMap(dutyGateLandHouse, earthStemMap, earthStemSeq, hGZ[0], xunInfo.dutyStem, solsticeType, timeStemHouse, dutyStemHouse)
+            ? getHidingStemMap(dutyGateLandHouse, earthStemMap, earthStemSeq, hGZ[0], decInfo.dutyStem, solsticeType, timeStemHouse, dutyStemHouse)
             : { guidingMap: {}, isStarFrozen: false, isGateFrozen: false, isStarReversed: false };
           const hidingStemMap = guidingResult.guidingMap;
 
@@ -1381,13 +1379,13 @@ function castChart() {
             // 天盤天干（入墓判定，含甲入墓特例）
             if (tianEl) {
               const isDutyHouse = String(g) === String(timeStemHouse);
-              tianEl.innerHTML = renderStemHTML(heavenStemMap[g] || '', g, xunInfo.dutyStem, isDutyHouse);
+              tianEl.innerHTML = renderStemHTML(heavenStemMap[g] || '', g, decInfo.dutyStem, isDutyHouse);
             }
             if (gateEl) gateEl.innerHTML = renderGateHTML(gateMap[g] || '', g);
             // 地盤天干（入墓判定，含甲入墓特例）
             if (diEl) {
               const isDutyHouse = String(g) === String(dutyStemHouse);
-              diEl.innerHTML = renderStemHTML(earthStemMap[g] || '', g, xunInfo.dutyStem, isDutyHouse);
+              diEl.innerHTML = renderStemHTML(earthStemMap[g] || '', g, decInfo.dutyStem, isDutyHouse);
             }
             // 引干（不判定四害）
             if (yinEl) {
@@ -1420,8 +1418,9 @@ function castChart() {
   // ── 中宮時辰高亮 ──
   document.querySelectorAll('[data-dz]').forEach(el => el.classList.remove('dz-active'));
   const _h = parseInt(document.getElementById('hour').value) || 0;
-  const hourBranch = hourToZhi(_h);
+  const hourBranch = hourToBranch(_h);
   document.querySelectorAll(`[data-dz="${hourBranch}"]`).forEach(el => el.classList.add('dz-active'));
+  clearHighlight();
 }
 </script>
 
