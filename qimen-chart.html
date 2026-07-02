@@ -33,6 +33,7 @@
     padding: 10px 12px 32px;
     display: flex;
     flex-direction: column;
+    position: relative;
   }
   /* ══════════════════════════════════
      盤頭 Header  (3欄: 50 / 25 / 25)
@@ -416,12 +417,220 @@
     color: #fff;
     cursor: pointer;
   }
+
+  /* ── 盤面紀錄 ── */
+  .btn-records {
+    position: absolute;
+    top: 6px;
+    right: 12px;
+    padding: 5px 12px;
+    border: 1px solid #ddd;
+    border-radius: 16px;
+    background: #fff;
+    color: #666;
+    font-size: 12px;
+    font-family: inherit;
+    letter-spacing: .05em;
+    cursor: pointer;
+  }
+  .records-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.35);
+    z-index: 100;
+  }
+  .records-overlay.open { display: block; }
+  .records-panel {
+    position: absolute;
+    top: 0; right: 0;
+    width: min(360px, 92vw);
+    height: 100%;
+    background: #fff;
+    box-shadow: -2px 0 10px rgba(0,0,0,.15);
+    display: flex;
+    flex-direction: column;
+    font-size: 14px;
+  }
+  .records-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    border-bottom: 1px solid #eee;
+    font-weight: bold;
+    letter-spacing: .1em;
+    color: #333;
+  }
+  .records-panel-close {
+    border: none;
+    background: none;
+    font-size: 18px;
+    color: #999;
+    cursor: pointer;
+    padding: 0 4px;
+  }
+  .records-panel-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 14px 24px;
+  }
+  .records-section-title {
+    font-size: 12px;
+    color: #999;
+    letter-spacing: .1em;
+    margin: 14px 0 6px;
+  }
+  .rec-field { margin-bottom: 10px; }
+  .rec-field label {
+    display: block;
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 4px;
+  }
+  .rec-field textarea {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 6px 8px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 56px;
+  }
+  .rec-choice { display: flex; gap: 6px; flex-wrap: wrap; }
+  .rec-choice button {
+    padding: 5px 14px;
+    border: 1px solid #ddd;
+    border-radius: 16px;
+    background: #fff;
+    color: #666;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .rec-choice button.active {
+    background: #444;
+    border-color: #444;
+    color: #fff;
+  }
+  .rec-save-btn {
+    width: 100%;
+    margin-top: 4px;
+    padding: 9px;
+    border: none;
+    border-radius: 4px;
+    background: #444;
+    color: #fff;
+    font-size: 14px;
+    font-family: inherit;
+    letter-spacing: .1em;
+    cursor: pointer;
+  }
+  .rec-msg {
+    font-size: 12px;
+    margin-top: 6px;
+    min-height: 16px;
+  }
+  .rec-msg.ok { color: #2e7d32; }
+  .rec-msg.err { color: #c0392b; }
+  .rec-item {
+    border: 1px solid #eee;
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+  }
+  .rec-item-time { font-size: 12px; color: #999; }
+  .rec-item-q {
+    margin: 3px 0 4px;
+    color: #333;
+    word-break: break-all;
+  }
+  .rec-item-meta { font-size: 12px; color: #888; }
+  .rec-item-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+  }
+  .rec-item-actions button {
+    padding: 3px 12px;
+    border: 1px solid #ddd;
+    border-radius: 14px;
+    background: #fff;
+    font-size: 12px;
+    font-family: inherit;
+    color: #666;
+    cursor: pointer;
+  }
+  .rec-item-actions .rec-del { color: #c0392b; border-color: #f0d5d0; }
+  .rec-empty { color: #bbb; font-size: 13px; text-align: center; padding: 12px 0; }
+  .predictor-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .predictor-row .rec-choice button { padding: 4px 12px; font-size: 12px; }
 </style>
 </head>
 <body>
 <div class="page">
 <!-- 標題 -->
 <div style="text-align:center; font-size:18px; font-weight:bold; color:#333; margin: 8px 0 12px; letter-spacing:2px;">陰盤奇門排盤</div>
+<button class="btn-records" onclick="openRecordsPanel()">紀錄</button>
+
+<!-- 盤面紀錄面板 -->
+<div class="records-overlay" id="records-overlay" onclick="if(event.target===this)closeRecordsPanel()">
+  <div class="records-panel">
+    <div class="records-panel-head">
+      <span>盤面紀錄</span>
+      <button class="records-panel-close" onclick="closeRecordsPanel()">✕</button>
+    </div>
+    <div class="records-panel-body">
+
+      <div class="records-section-title">儲存目前盤面</div>
+      <div class="rec-field">
+        <label>盤面時間（自動帶入）</label>
+        <div id="rec-chart-time" style="color:#333;">—</div>
+      </div>
+      <div class="rec-field">
+        <label>問題描述</label>
+        <textarea id="rec-question" placeholder="輸入問題描述"></textarea>
+      </div>
+      <div class="rec-field">
+        <label>案主</label>
+        <div class="rec-choice" id="rec-client-gender">
+          <button data-val="男" onclick="pickClientChoice(this)">男</button>
+          <button data-val="女" onclick="pickClientChoice(this)">女</button>
+          <button data-val="自測" onclick="pickClientChoice(this)">自測</button>
+        </div>
+      </div>
+      <div class="rec-field">
+        <label>測法</label>
+        <div class="rec-choice" id="rec-method">
+          <button data-val="面測" onclick="pickChoice(this)">面測</button>
+          <button data-val="遠測" onclick="pickChoice(this)">遠測</button>
+          <button data-val="代測" onclick="pickChoice(this)">代測</button>
+        </div>
+      </div>
+      <button class="rec-save-btn" onclick="saveRecord()">儲存</button>
+      <div class="rec-msg" id="rec-msg"></div>
+
+      <div class="records-section-title">預測師設定</div>
+      <div class="predictor-row">
+        <span style="font-size:13px;color:#666;">預測師性別</span>
+        <div class="rec-choice" id="rec-predictor-gender">
+          <button data-val="男" onclick="setPredictorGender('男')">男</button>
+          <button data-val="女" onclick="setPredictorGender('女')">女</button>
+        </div>
+      </div>
+
+      <div class="records-section-title">已存紀錄</div>
+      <div id="rec-list"></div>
+
+    </div>
+  </div>
+</div>
 <!-- 輸入區 -->
 <div class="input-area">
   <div class="input-title">起盤時間</div>
@@ -1428,6 +1637,213 @@ function castChart() {
   const hourBranch = hourToBranch(_h);
   document.querySelectorAll(`[data-dz="${hourBranch}"]`).forEach(el => el.classList.add('dz-active'));
   clearHighlight();
+}
+
+// ══════════════════════════════════
+// 盤面紀錄（localStorage）
+// ══════════════════════════════════
+const RECORDS_KEY = 'qimenRecords';
+const PREDICTOR_KEY = 'qimenPredictorProfile';
+
+function getPredictorProfile() {
+  try { return JSON.parse(localStorage.getItem(PREDICTOR_KEY)) || null; }
+  catch { return null; }
+}
+
+function setPredictorGender(gender) {
+  localStorage.setItem(PREDICTOR_KEY, JSON.stringify({ gender }));
+  renderPredictorGender();
+}
+
+function renderPredictorGender() {
+  const profile = getPredictorProfile();
+  document.querySelectorAll('#rec-predictor-gender button').forEach(b => {
+    b.classList.toggle('active', !!profile && b.dataset.val === profile.gender);
+  });
+}
+
+function getRecords() {
+  try { return JSON.parse(localStorage.getItem(RECORDS_KEY)) || []; }
+  catch { return []; }
+}
+
+function saveRecords(list) {
+  localStorage.setItem(RECORDS_KEY, JSON.stringify(list));
+}
+
+function pickChoice(btn) {
+  btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// 案主選擇連動：自測＝面測（日干宮位為主），測法自動帶入並鎖定
+function pickClientChoice(btn) {
+  pickChoice(btn);
+  const isSelf = btn.dataset.val === '自測';
+  document.querySelectorAll('#rec-method button').forEach(b => {
+    if (isSelf) {
+      b.classList.toggle('active', b.dataset.val === '面測');
+      b.disabled = b.dataset.val !== '面測';
+      b.style.opacity = b.disabled ? '.35' : '';
+    } else {
+      b.disabled = false;
+      b.style.opacity = '';
+    }
+  });
+}
+
+function getChoice(groupId) {
+  const el = document.querySelector('#' + groupId + ' button.active');
+  return el ? el.dataset.val : null;
+}
+
+function currentChartTimeStr() {
+  const y  = document.getElementById('year').value;
+  const m  = document.getElementById('month').value;
+  const d  = document.getElementById('day').value;
+  const h  = document.getElementById('hour').value;
+  const mn = document.getElementById('minute').value;
+  if (!y || !m || !d || h === '' || mn === '') return null;
+  return `${y}-${pad(+m)}-${pad(+d)} ${pad(+h)}:${pad(+mn)}`;
+}
+
+function openRecordsPanel() {
+  const t = currentChartTimeStr();
+  document.getElementById('rec-chart-time').textContent = t || '（尚未排盤）';
+  renderPredictorGender();
+  renderRecordList();
+  setRecMsg('', '');
+  document.getElementById('records-overlay').classList.add('open');
+}
+
+function closeRecordsPanel() {
+  document.getElementById('records-overlay').classList.remove('open');
+}
+
+function setRecMsg(text, type) {
+  const el = document.getElementById('rec-msg');
+  el.textContent = text;
+  el.className = 'rec-msg' + (type ? ' ' + type : '');
+}
+
+function saveRecord() {
+  const chartTime = currentChartTimeStr();
+  if (!chartTime) { setRecMsg('請先排盤，再儲存紀錄', 'err'); return; }
+
+  const question = document.getElementById('rec-question').value.trim();
+  const clientChoice = getChoice('rec-client-gender');
+  const method = getChoice('rec-method');
+
+  if (!question) { setRecMsg('請輸入問題描述', 'err'); return; }
+  if (!clientChoice) { setRecMsg('請選擇案主（男／女／自測）', 'err'); return; }
+  if (!method) { setRecMsg('請選擇測法', 'err'); return; }
+
+  // 預測師性別：第一次使用時需先於「預測師設定」選擇
+  const profile = getPredictorProfile();
+  if (!profile) {
+    setRecMsg('第一次使用，請先在下方「預測師設定」選擇預測師性別', 'err');
+    return;
+  }
+
+  const isSelf = clientChoice === '自測';
+  const record = {
+    id: Date.now(),
+    chartTime,
+    question,
+    clientGender: isSelf ? profile.gender : clientChoice,
+    isSelf,
+    method,
+    predictorGender: profile.gender,
+    createdAt: new Date().toISOString()
+  };
+
+  const list = getRecords();
+  list.unshift(record);
+  saveRecords(list);
+
+  document.getElementById('rec-question').value = '';
+  document.querySelectorAll('#rec-client-gender button, #rec-method button')
+    .forEach(b => { b.classList.remove('active'); b.disabled = false; b.style.opacity = ''; });
+  setRecMsg('已儲存', 'ok');
+  renderRecordList();
+}
+
+function renderRecordList() {
+  const list = getRecords();
+  const wrap = document.getElementById('rec-list');
+  if (!list.length) {
+    wrap.innerHTML = '<div class="rec-empty">尚無紀錄</div>';
+    return;
+  }
+  wrap.innerHTML = list.map(r => {
+    const client = r.isSelf ? `自測（${r.clientGender}）` : `案主：${r.clientGender}`;
+    return `<div class="rec-item" id="rec-item-${r.id}">
+      <div class="rec-item-time">${r.chartTime}</div>
+      <div class="rec-item-q">${escapeHtml(r.question)}</div>
+      <div class="rec-item-meta">${client}　${r.method}　預測師：${r.predictorGender}</div>
+      <div class="rec-item-actions">
+        <button onclick="askLoadRecord(${r.id})">載入盤面</button>
+        <button class="rec-del" onclick="askDeleteRecord(${r.id})">刪除</button>
+      </div>
+      <div class="rec-item-confirm" id="rec-confirm-${r.id}"></div>
+    </div>`;
+  }).join('');
+}
+
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({
+    '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+  })[c]);
+}
+
+function clearAllConfirms() {
+  document.querySelectorAll('.rec-item-confirm').forEach(el => el.innerHTML = '');
+}
+
+function askLoadRecord(id) {
+  clearAllConfirms();
+  const el = document.getElementById('rec-confirm-' + id);
+  if (!el) return;
+  el.innerHTML = `<div style="margin-top:6px;padding:8px;background:#f7f5f2;border-radius:4px;font-size:12px;color:#555;">
+    載入此盤面？目前盤面將被切換。
+    <div style="display:flex;gap:8px;margin-top:6px;">
+      <button onclick="loadRecord(${id})" style="padding:3px 14px;border:none;border-radius:14px;background:#444;color:#fff;font-family:inherit;font-size:12px;cursor:pointer;">確認載入</button>
+      <button onclick="clearAllConfirms()" style="padding:3px 14px;border:1px solid #ddd;border-radius:14px;background:#fff;color:#666;font-family:inherit;font-size:12px;cursor:pointer;">取消</button>
+    </div>
+  </div>`;
+}
+
+function loadRecord(id) {
+  const r = getRecords().find(x => x.id === id);
+  if (!r) return;
+  const m = r.chartTime.match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})$/);
+  if (!m) return;
+  document.getElementById('year').value = m[1];
+  document.getElementById('month').value = m[2];
+  document.getElementById('day').value = m[3];
+  document.getElementById('hour').value = m[4];
+  document.getElementById('minute').value = m[5];
+  closeRecordsPanel();
+  clearHighlight();
+  castChart();
+}
+
+function askDeleteRecord(id) {
+  clearAllConfirms();
+  const el = document.getElementById('rec-confirm-' + id);
+  if (!el) return;
+  el.innerHTML = `<div style="margin-top:6px;padding:8px;background:#faf3f2;border-radius:4px;font-size:12px;color:#a33;">
+    確定刪除此筆紀錄？
+    <div style="display:flex;gap:8px;margin-top:6px;">
+      <button onclick="deleteRecord(${id})" style="padding:3px 14px;border:none;border-radius:14px;background:#c0392b;color:#fff;font-family:inherit;font-size:12px;cursor:pointer;">確認刪除</button>
+      <button onclick="clearAllConfirms()" style="padding:3px 14px;border:1px solid #ddd;border-radius:14px;background:#fff;color:#666;font-family:inherit;font-size:12px;cursor:pointer;">取消</button>
+    </div>
+  </div>`;
+}
+
+function deleteRecord(id) {
+  saveRecords(getRecords().filter(x => x.id !== id));
+  renderRecordList();
 }
 </script>
 
