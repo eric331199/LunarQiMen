@@ -418,11 +418,30 @@
     cursor: pointer;
   }
 
+  /* ── 標題列（標題置中、紀錄按鈕置右） ── */
+  .title-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    margin: 8px 0 12px;
+    width: calc(100% - 12px);
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .title-row-text {
+    grid-column: 2;
+    text-align: center;
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+    letter-spacing: 2px;
+    white-space: nowrap;
+  }
+
   /* ── 盤面紀錄 ── */
   .btn-records {
-    position: absolute;
-    top: 6px;
-    right: 12px;
+    grid-column: 3;
+    justify-self: end;
     padding: 5px 12px;
     border: 1px solid #ddd;
     border-radius: 16px;
@@ -444,7 +463,7 @@
   .records-panel {
     position: absolute;
     top: 0; right: 0;
-    width: min(360px, 92vw);
+    width: min(240px, 70vw);
     height: 100%;
     background: #fff;
     box-shadow: -2px 0 10px rgba(0,0,0,.15);
@@ -480,6 +499,7 @@
     color: #999;
     letter-spacing: .1em;
     margin: 14px 0 6px;
+    text-align: center;
   }
   .rec-field { margin-bottom: 10px; }
   .rec-field label {
@@ -487,6 +507,7 @@
     font-size: 12px;
     color: #666;
     margin-bottom: 4px;
+    text-align: center;
   }
   .rec-field textarea {
     width: 100%;
@@ -496,10 +517,14 @@
     padding: 6px 8px;
     font-size: 14px;
     font-family: inherit;
+    text-align: left;
     resize: vertical;
     min-height: 56px;
   }
-  .rec-choice { display: flex; gap: 6px; flex-wrap: wrap; }
+  .rec-field textarea::placeholder {
+    text-align: center;
+  }
+  .rec-choice { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
   .rec-choice button {
     padding: 5px 14px;
     border: 1px solid #ddd;
@@ -527,11 +552,13 @@
     font-family: inherit;
     letter-spacing: .1em;
     cursor: pointer;
+    text-align: center;
   }
   .rec-msg {
     font-size: 12px;
     margin-top: 6px;
     min-height: 16px;
+    text-align: center;
   }
   .rec-msg.ok { color: #2e7d32; }
   .rec-msg.err { color: #c0392b; }
@@ -547,11 +574,12 @@
     color: #333;
     word-break: break-all;
   }
-  .rec-item-meta { font-size: 12px; color: #888; }
+  .rec-item-meta { font-size: 12px; color: #888; text-align: center; }
   .rec-item-actions {
     display: flex;
     gap: 8px;
     margin-top: 6px;
+    justify-content: center;
   }
   .rec-item-actions button {
     padding: 3px 12px;
@@ -568,6 +596,7 @@
   .predictor-row {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 10px;
   }
   .predictor-row .rec-choice button { padding: 4px 12px; font-size: 12px; }
@@ -576,8 +605,10 @@
 <body>
 <div class="page">
 <!-- 標題 -->
-<div style="text-align:center; font-size:18px; font-weight:bold; color:#333; margin: 8px 0 12px; letter-spacing:2px;">陰盤奇門排盤</div>
-<button class="btn-records" onclick="openRecordsPanel()">紀錄</button>
+<div class="title-row">
+  <div class="title-row-text">陰盤奇門排盤</div>
+  <button class="btn-records" onclick="openRecordsPanel()">紀錄</button>
+</div>
 
 <!-- 盤面紀錄面板 -->
 <div class="records-overlay" id="records-overlay" onclick="if(event.target===this)closeRecordsPanel()">
@@ -591,7 +622,7 @@
       <div class="records-section-title">儲存目前盤面</div>
       <div class="rec-field">
         <label>盤面時間（自動帶入）</label>
-        <div id="rec-chart-time" style="color:#333;">—</div>
+        <div id="rec-chart-time" style="color:#333; text-align:center;">—</div>
       </div>
       <div class="rec-field">
         <label>問題描述</label>
@@ -600,8 +631,8 @@
       <div class="rec-field">
         <label>案主</label>
         <div class="rec-choice" id="rec-client-gender">
-          <button data-val="男" onclick="pickClientChoice(this)">男</button>
-          <button data-val="女" onclick="pickClientChoice(this)">女</button>
+          <button data-val="男" onclick="pickClientChoice(this)">男性</button>
+          <button data-val="女" onclick="pickClientChoice(this)">女性</button>
           <button data-val="自測" onclick="pickClientChoice(this)">自測</button>
         </div>
       </div>
@@ -616,12 +647,11 @@
       <button class="rec-save-btn" onclick="saveRecord()">儲存</button>
       <div class="rec-msg" id="rec-msg"></div>
 
-      <div class="records-section-title">預測師設定</div>
+      <div class="records-section-title">預測師性別</div>
       <div class="predictor-row">
-        <span style="font-size:13px;color:#666;">預測師性別</span>
         <div class="rec-choice" id="rec-predictor-gender">
-          <button data-val="男" onclick="setPredictorGender('男')">男</button>
-          <button data-val="女" onclick="setPredictorGender('女')">女</button>
+          <button data-val="男" onclick="setPredictorGender('男')">男性</button>
+          <button data-val="女" onclick="setPredictorGender('女')">女性</button>
         </div>
       </div>
 
@@ -1738,10 +1768,10 @@ function saveRecord() {
   if (!clientChoice) { setRecMsg('請選擇案主（男／女／自測）', 'err'); return; }
   if (!method) { setRecMsg('請選擇測法', 'err'); return; }
 
-  // 預測師性別：第一次使用時需先於「預測師設定」選擇
+  // 預測師性別：第一次使用時需先於「預測師性別」選擇
   const profile = getPredictorProfile();
   if (!profile) {
-    setRecMsg('第一次使用，請先在下方「預測師設定」選擇預測師性別', 'err');
+    setRecMsg('第一次使用，請先在下方「預測師性別」選擇', 'err');
     return;
   }
 
@@ -1776,7 +1806,7 @@ function renderRecordList() {
     return;
   }
   wrap.innerHTML = list.map(r => {
-    const client = r.isSelf ? `自測（${r.clientGender}）` : `案主：${r.clientGender}`;
+    const client = r.isSelf ? '自測' : `案主：${r.clientGender}`;
     return `<div class="rec-item" id="rec-item-${r.id}">
       <div class="rec-item-time">${r.chartTime}</div>
       <div class="rec-item-q">${escapeHtml(r.question)}</div>
