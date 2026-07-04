@@ -228,12 +228,6 @@
     position: relative; z-index: 1;
     font-size: 10px; margin-top: 4px;
   }
-  .zhifu-badge {
-    font-size: 9px; color: #c0392b;
-    border: 1px solid #c0392b;
-    padding: 0 2px; border-radius: 2px;
-  }
-
   /* ── 左上格（宮號＋八卦）── */
   .gc-left {
     display: flex;
@@ -472,16 +466,22 @@
     font-size: 14px;
   }
   .records-panel-head {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    justify-content: space-between;
     padding: 12px 14px;
     border-bottom: 1px solid #eee;
     font-weight: bold;
     letter-spacing: .1em;
     color: #333;
   }
+  .records-panel-head span {
+    grid-column: 2;
+    text-align: center;
+  }
   .records-panel-close {
+    grid-column: 3;
+    justify-self: end;
     border: none;
     background: none;
     font-size: 18px;
@@ -569,9 +569,31 @@
     margin-bottom: 8px;
   }
   .rec-item-time { font-size: 12px; color: #999; }
+  .rec-item-timegrid {
+    font-size: 12px;
+    color: #999;
+  }
+  .rec-item-timegrid .tg-wrap {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+  }
+  .rec-item-timegrid .tg-grid {
+    display: grid;
+    grid-template-columns: repeat(4, auto);
+    column-gap: 14px;
+    row-gap: 2px;
+    justify-items: center;
+  }
+  .rec-item-timegrid .tg-pillar {
+    font-size: 11px;
+    color: #b3b3b3;
+    letter-spacing: 1px;
+  }
   .rec-item-q {
     margin: 3px 0 4px;
     color: #333;
+    text-align: center;
     word-break: break-all;
   }
   .rec-item-meta { font-size: 12px; color: #888; text-align: center; }
@@ -598,6 +620,63 @@
     align-items: center;
     justify-content: center;
     gap: 10px;
+  }
+  .records-section-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 14px 0 6px;
+  }
+  .export-btn {
+    padding: 3px 12px;
+    border: 1px solid #ddd;
+    border-radius: 14px;
+    background: #fff;
+    color: #666;
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .export-preview {
+    display: none;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 10px;
+    background: #fafafa;
+  }
+  .export-preview.open { display: block; }
+  .export-preview pre {
+    max-height: 200px;
+    overflow: auto;
+    font-size: 11px;
+    color: #444;
+    white-space: pre-wrap;
+    word-break: break-all;
+    margin: 0 0 8px;
+  }
+  .export-preview-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+  }
+  .export-preview-actions button {
+    padding: 4px 14px;
+    border: 1px solid #ddd;
+    border-radius: 14px;
+    background: #fff;
+    color: #666;
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .export-preview-msg {
+    font-size: 11px;
+    color: #2e7d32;
+    text-align: center;
+    margin-top: 6px;
+    min-height: 14px;
   }
   .predictor-row .rec-choice button { padding: 4px 12px; font-size: 12px; }
 </style>
@@ -655,7 +734,11 @@
         </div>
       </div>
 
-      <div class="records-section-title">已存紀錄</div>
+      <div class="records-section-title-row">
+        <span class="records-section-title" style="margin:0;">已存紀錄</span>
+        <button class="export-btn" onclick="toggleExportPreview()">匯出</button>
+      </div>
+      <div class="export-preview" id="export-preview"></div>
       <div id="rec-list"></div>
 
     </div>
@@ -1737,9 +1820,61 @@ function currentChartTimeStr() {
   return `${y}-${pad(+m)}-${pad(+d)} ${pad(+h)}:${pad(+mn)}`;
 }
 
+// 四柱計算核心：套用與 performChart 相同的子時跨日規則，供多處呼叫共用
+function computeFourPillars(y, m, d, h, mn) {
+  if (!y || !m || !d || isNaN(h) || isNaN(mn)) return null;
+
+  let lunarY = y, lunarM = m, lunarD = d, lunarH = h;
+  if (h === 23) {
+    const nextDay = new Date(y, m - 1, d + 1);
+    lunarY = nextDay.getFullYear();
+    lunarM = nextDay.getMonth() + 1;
+    lunarD = nextDay.getDate();
+    lunarH = 0;
+  }
+
+  try {
+    const solar = Solar.fromYmdHms(lunarY, lunarM, lunarD, lunarH, mn, 0);
+    const ec = solar.getLunar().getEightChar();
+    const yGZ = ec.getYear(), mGZ = ec.getMonth(), dGZ = ec.getDay(), hGZ = ec.getTime();
+    return `${yGZ}　${mGZ}　${dGZ}　${hGZ}`;
+  } catch (e) {
+    return null;
+  }
+}
+
+// 依紀錄存的 chartTime（"YYYY-MM-DD HH:mm"）反推四柱八字，只存 chartTime、不重複存四柱
+function fourPillarsFromChartTime(chartTime) {
+  const match = /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})$/.exec(chartTime || '');
+  if (!match) return null;
+  const [, y, m, d, h, mn] = match.map(Number);
+  return computeFourPillars(y, m, d, h, mn);
+}
+
+// 時間＋四柱上下對齊顯示：兩列四欄 grid，數字對齊其下方對應的柱
+function buildTimePillarsGrid(chartTime) {
+  const match = /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})$/.exec(chartTime || '');
+  const pillars = fourPillarsFromChartTime(chartTime);
+  if (!match || !pillars) return null;
+  const cols = pillars.split('　');
+  if (cols.length !== 4) return null;
+  const dateParts = [match[1], match[2], match[3], `${match[4]}${match[5]}`];
+  const topRow = dateParts.map(t => `<span class="tg-date">${t}</span>`).join('');
+  const bottomRow = cols.map(p => `<span class="tg-pillar">${p}</span>`).join('');
+  return `<div class="tg-wrap"><div class="tg-side"></div><div class="tg-grid">${topRow}${bottomRow}</div><div class="tg-side"></div></div>`;
+}
+
 function openRecordsPanel() {
   const t = currentChartTimeStr();
-  document.getElementById('rec-chart-time').textContent = t || '（尚未排盤）';
+  const timeEl = document.getElementById('rec-chart-time');
+  if (t) {
+    const timeGrid = buildTimePillarsGrid(t);
+    timeEl.innerHTML = timeGrid
+      ? `<div class="rec-item-timegrid" style="font-size:14px;color:#333;display:inline-block;text-align:left;">${timeGrid}</div>`
+      : t;
+  } else {
+    timeEl.textContent = '（尚未排盤）';
+  }
   renderPredictorGender();
   renderRecordList();
   setRecMsg('', '');
@@ -1798,6 +1933,64 @@ function saveRecord() {
   renderRecordList();
 }
 
+// 匯出紀錄：面板內預覽純文字（可複製／下載），非原生對話框
+function buildExportText() {
+  const list = getRecords();
+  return list.map(r => {
+    const client = r.isSelf ? '自測' : `案主：${r.clientGender}`;
+    return `${r.chartTime}\n${r.question}\n${client}　${r.method}　預測師：${r.predictorGender}`;
+  }).join('\n\n');
+}
+
+function toggleExportPreview() {
+  const box = document.getElementById('export-preview');
+  if (box.classList.contains('open')) {
+    box.classList.remove('open');
+    box.innerHTML = '';
+    return;
+  }
+  const list = getRecords();
+  if (!list.length) {
+    box.innerHTML = '<div class="export-preview-msg" style="color:#bbb;">尚無紀錄可匯出</div>';
+    box.classList.add('open');
+    return;
+  }
+  const text = buildExportText();
+  box.innerHTML = `
+    <pre id="export-text">${escapeHtml(text)}</pre>
+    <div class="export-preview-actions">
+      <button onclick="copyExportText()">複製</button>
+      <button onclick="downloadExportText()">下載文字檔</button>
+    </div>
+    <div class="export-preview-msg" id="export-preview-msg"></div>
+  `;
+  box.classList.add('open');
+}
+
+function copyExportText() {
+  const text = document.getElementById('export-text').textContent;
+  const msg = document.getElementById('export-preview-msg');
+  navigator.clipboard.writeText(text)
+    .then(() => { msg.textContent = '已複製到剪貼簿'; })
+    .catch(() => { msg.textContent = '複製失敗，請手動選取文字複製'; msg.style.color = '#c0392b'; });
+}
+
+function downloadExportText() {
+  const text = document.getElementById('export-text').textContent;
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const blob = new Blob([text], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `qimen-records-${dateStr}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  const msg = document.getElementById('export-preview-msg');
+  if (msg) msg.textContent = '已下載檔案';
+}
+
 function renderRecordList() {
   const list = getRecords();
   const wrap = document.getElementById('rec-list');
@@ -1807,8 +2000,12 @@ function renderRecordList() {
   }
   wrap.innerHTML = list.map(r => {
     const client = r.isSelf ? '自測' : `案主：${r.clientGender}`;
+    const timeGrid = buildTimePillarsGrid(r.chartTime);
+    const timeHtml = timeGrid
+      ? `<div class="rec-item-timegrid">${timeGrid}</div>`
+      : `<div class="rec-item-time">${r.chartTime}</div>`;
     return `<div class="rec-item" id="rec-item-${r.id}">
-      <div class="rec-item-time">${r.chartTime}</div>
+      ${timeHtml}
       <div class="rec-item-q">${escapeHtml(r.question)}</div>
       <div class="rec-item-meta">${client}　${r.method}　預測師：${r.predictorGender}</div>
       <div class="rec-item-actions">
