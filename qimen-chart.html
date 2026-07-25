@@ -222,8 +222,19 @@
   /* 中宮小格：全部自己負責四邊 */
   .gc-center {
     background: transparent;
-    border: none;
+    border-top: none;
+    border-left: none;
+    border-right: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
   }
+  /* col1：加左邊（中宮外框左邊） */
+  #g5r1c1, #g5r2c1, #g5r3c1 { border-left: 1px solid #999; }
+  /* row1：加上邊（中宮外框上邊） */
+  #g5r1c1, #g5r1c2, #g5r1c3 { border-top: 1px solid #999; }
+  /* col3：右邊（中宮外框右邊） */
+  #g5r1c3, #g5r2c3, #g5r3c3 { border-right: 1px solid #999; }
+  /* row3：下邊（中宮外框下邊） */
+  #g5r3c1, #g5r3c2, #g5r3c3 { border-bottom: 1px solid #999; }
   /* col1：加左邊（中宮外框左邊） */
   #g5r1c1, #g5r2c1, #g5r3c1 { border-left: 1px solid #999; }
   /* row1：加上邊（中宮外框上邊） */
@@ -1102,52 +1113,35 @@ function clearChangsheng() {
   });
 }
 
-let _activeChangshengStem = null;
+let _activeChangshengHouse = null;
+let _activeChangshengIndex = -1;
 
-document.addEventListener('click', function(e) {
-  // 值符 → 代表甲（甲遁伏於符頭下，不會直接顯示在天盤，故用值符觸發甲的長生位）
-  const shenContainer = e.target.closest('.gc-shen');
+// 取得該宮位可觸發十二長生的候選清單：天盤天干（寄干則有兩個，左→右）→ 值符（若本宮為值符宮，代表甲）
+function getHouseChangshengCandidates(cellEl) {
+  const candidates = [];
+  const tianContainer = cellEl.querySelector('.gc-tian');
+  if (tianContainer) {
+    const tianEl = tianContainer.querySelector('[id^="tian-"]') || tianContainer;
+    const wrapperSpans = [...tianEl.querySelectorAll(':scope > span')];
+    wrapperSpans.forEach(w => {
+      const span = w.classList.contains('stem-mu') ? (w.querySelector('.stem-char') || w) : w;
+      if (!span || span.classList.contains('tag')) return;
+      const stem = (span.textContent || '').trim();
+      if (stem && CHANGSHENG_STEM_BRANCHES[stem]) {
+        candidates.push({ span, stem });
+      }
+    });
+  }
+  const shenContainer = cellEl.querySelector('.gc-shen');
   if (shenContainer) {
     const shenSpan = shenContainer.querySelector('span');
     if (shenSpan && (shenSpan.textContent || '').trim() === '值符') {
-      document.querySelectorAll('.gc-tian .stem-active, .gc-shen .stem-active').forEach(s => s.classList.remove('stem-active'));
-      if (_activeChangshengStem === '甲') {
-        _activeChangshengStem = null;
-        clearChangsheng();
-        return;
-      }
-      _activeChangshengStem = '甲';
-      shenSpan.classList.add('stem-active');
-      renderChangsheng('甲');
+      candidates.push({ span: shenSpan, stem: '甲' });
     }
-    return;
   }
+  return candidates;
+}
 
-  const tianContainer = e.target.closest('.gc-tian');
-  if (!tianContainer) return;
-
-  let charSpan = e.target.closest('span');
-  if (!charSpan) return;
-  if (charSpan.classList.contains('stem-mu')) {
-    charSpan = charSpan.querySelector('.stem-char') || charSpan;
-  }
-  if (charSpan.classList.contains('tag')) return;
-
-  const stem = (charSpan.textContent || '').trim();
-  if (!stem || !CHANGSHENG_STEM_BRANCHES[stem]) return;
-
-  document.querySelectorAll('.gc-tian .stem-active, .gc-shen .stem-active').forEach(s => s.classList.remove('stem-active'));
-
-  if (_activeChangshengStem === stem) {
-    _activeChangshengStem = null;
-    clearChangsheng();
-    return;
-  }
-
-  _activeChangshengStem = stem;
-  charSpan.classList.add('stem-active');
-  renderChangsheng(stem);
-});
 
 function captureChart() {
   alert('請直接使用手機截圖儲存。');
@@ -1283,58 +1277,87 @@ function clearHighlight() {
   });
 }
 
+function applyHouseHighlight(cellEl) {
+  const cells = getHouseCells();
+  const nth = cells.indexOf(cellEl) + 1;
+  if (nth === 0) return;
+  cellEl.classList.add('highlighted');
+  cellEl.style.borderTopColor = cellEl.style.borderBottomColor =
+  cellEl.style.borderLeftColor = cellEl.style.borderRightColor = HIGHLIGHT_COLOR;
+
+  // 右側相鄰格左邊改橘
+  const r = HOUSE_NEIGHBORS[nth]?.right;
+  if (r) cells[r-1].style.borderLeftColor = HIGHLIGHT_COLOR;
+  // 下側相鄰格上邊改橘
+  const b = HOUSE_NEIGHBORS[nth]?.bottom;
+  if (b) cells[b-1].style.borderTopColor = HIGHLIGHT_COLOR;
+  // 左側相鄰格右邊改橘
+  const lk = HOUSE_LEFT[nth];
+  if (lk) cells[lk-1].style.borderRightColor = HIGHLIGHT_COLOR;
+  // 上側相鄰格下邊改橘
+  const tk = HOUSE_TOP[nth];
+  if (tk) cells[tk-1].style.borderBottomColor = HIGHLIGHT_COLOR;
+
+  // 中宮對應地支格：改四邊顏色
+  const gong = parseInt(cellEl.dataset.gong);
+  const dzId = HOUSE_TO_DZ_CELL[gong];
+  if (dzId) {
+    const gc = document.getElementById(dzId);
+    if (!gc) return;
+    const row = parseInt(dzId[3]);
+    const col = parseInt(dzId[5]);
+
+    // right / bottom：直接改自身
+    gc.style.borderRightColor  = HIGHLIGHT_COLOR;
+    gc.style.borderBottomColor = HIGHLIGHT_COLOR;
+
+    // top：row1 改自身 top（外框邊）；row2/3 改上方格 bottom
+    if (row === 1) {
+      gc.style.borderTopColor = HIGHLIGHT_COLOR;
+    } else {
+      document.getElementById(`g5r${row-1}c${col}`).style.borderBottomColor = HIGHLIGHT_COLOR;
+    }
+
+    // left：col1 改自身 left（外框邊）；col2/3 改左方格 right
+    if (col === 1) {
+      gc.style.borderLeftColor = HIGHLIGHT_COLOR;
+    } else {
+      document.getElementById(`g5r${row}c${col-1}`).style.borderRightColor = HIGHLIGHT_COLOR;
+    }
+  }
+}
+
 document.querySelectorAll('.cell[data-gong]').forEach(cell => {
   cell.addEventListener('click', function() {
-    const already = this.classList.contains('highlighted');
-    clearHighlight();
-    if (!already) {
-      const cells = getHouseCells();
-      const nth = cells.indexOf(this) + 1;
-      this.classList.add('highlighted');
-      this.style.borderTopColor = this.style.borderBottomColor =
-      this.style.borderLeftColor = this.style.borderRightColor = HIGHLIGHT_COLOR;
+    const candidates = getHouseChangshengCandidates(this);
+    if (candidates.length === 0) return;
 
-      // 右側相鄰格左邊改橘
-      const r = HOUSE_NEIGHBORS[nth]?.right;
-      if (r) cells[r-1].style.borderLeftColor = HIGHLIGHT_COLOR;
-      // 下側相鄰格上邊改橘
-      const b = HOUSE_NEIGHBORS[nth]?.bottom;
-      if (b) cells[b-1].style.borderTopColor = HIGHLIGHT_COLOR;
-      // 左側相鄰格右邊改橘
-      const lk = HOUSE_LEFT[nth];
-      if (lk) cells[lk-1].style.borderRightColor = HIGHLIGHT_COLOR;
-      // 上側相鄰格下邊改橘
-      const tk = HOUSE_TOP[nth];
-      if (tk) cells[tk-1].style.borderBottomColor = HIGHLIGHT_COLOR;
-
-      // 中宮對應地支格：改四邊顏色
-      const gong = parseInt(this.dataset.gong);
-      const dzId = HOUSE_TO_DZ_CELL[gong];
-      if (dzId) {
-        const gc = document.getElementById(dzId);
-        if (!gc) return;
-        const row = parseInt(dzId[3]);
-        const col = parseInt(dzId[5]);
-
-        // right / bottom：直接改自身
-        gc.style.borderRightColor  = HIGHLIGHT_COLOR;
-        gc.style.borderBottomColor = HIGHLIGHT_COLOR;
-
-        // top：row1 改自身 top（外框邊）；row2/3 改上方格 bottom
-        if (row === 1) {
-          gc.style.borderTopColor = HIGHLIGHT_COLOR;
-        } else {
-          document.getElementById(`g5r${row-1}c${col}`).style.borderBottomColor = HIGHLIGHT_COLOR;
-        }
-
-        // left：col1 改自身 left（外框邊）；col2/3 改左方格 right
-        if (col === 1) {
-          gc.style.borderLeftColor = HIGHLIGHT_COLOR;
-        } else {
-          document.getElementById(`g5r${row}c${col-1}`).style.borderRightColor = HIGHLIGHT_COLOR;
-        }
-      }
+    const sameHouse = (_activeChangshengHouse === this);
+    let nextIndex;
+    if (!sameHouse) {
+      nextIndex = 0;
+    } else if (_activeChangshengIndex === candidates.length - 1) {
+      nextIndex = -1;
+    } else {
+      nextIndex = _activeChangshengIndex + 1;
     }
+
+    document.querySelectorAll('.gc-tian .stem-active, .gc-shen .stem-active').forEach(s => s.classList.remove('stem-active'));
+    clearHighlight();
+    clearChangsheng();
+
+    if (nextIndex === -1) {
+      _activeChangshengHouse = null;
+      _activeChangshengIndex = -1;
+      return;
+    }
+
+    const chosen = candidates[nextIndex];
+    chosen.span.classList.add('stem-active');
+    renderChangsheng(chosen.stem);
+    applyHouseHighlight(this);
+    _activeChangshengHouse = this;
+    _activeChangshengIndex = nextIndex;
   });
 });
 
@@ -1712,6 +1735,13 @@ function castChart() {
   if (!validateDateInputs(y, m, d, h, min)) {
     return;
   }
+
+  // 重新排盤時清除上一次的長生高亮與宮位高亮，避免底線與標籤殘留舊資料
+  _activeChangshengHouse = null;
+  _activeChangshengIndex = -1;
+  clearChangsheng();
+  clearHighlight();
+  document.querySelectorAll('.gc-tian .stem-active, .gc-shen .stem-active').forEach(s => s.classList.remove('stem-active'));
 
   // 子時跨日：23:00-23:59 屬於隔日子時，農曆換算需 +1 天，時辰改為 0
   let lunarD = d, lunarM = m, lunarY = y, lunarH = h;
