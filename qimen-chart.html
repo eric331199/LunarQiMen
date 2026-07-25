@@ -219,7 +219,8 @@
 
   /* 中宮 */
   .cell.center { background: #eeebe3; cursor: default; border: none; }
-  /* 中宮小格：全部自己負責四邊 */
+  /* 中宮小格：全部自己負責四邊；顏色用#ccc（比其他宮位的#ddd深一點），
+     因為中宮底色是#eeebe3（比其他宮位的白底#fff深），這樣線在視覺對比上才跟其他宮位一致 */
   .gc-center {
     background: transparent;
     border-top: none;
@@ -227,14 +228,9 @@
     border-right: 1px solid #ccc;
     border-bottom: 1px solid #ccc;
   }
-  /* col1：加左邊（中宮外框左邊） */
-  #g5r1c1, #g5r2c1, #g5r3c1 { border-left: 1px solid #999; }
-  /* row1：加上邊（中宮外框上邊） */
-  #g5r1c1, #g5r1c2, #g5r1c3 { border-top: 1px solid #999; }
-  /* col3：右邊（中宮外框右邊） */
-  #g5r1c3, #g5r2c3, #g5r3c3 { border-right: 1px solid #999; }
-  /* row3：下邊（中宮外框下邊） */
-  #g5r3c1, #g5r3c2, #g5r3c3 { border-bottom: 1px solid #999; }
+  /* 每宮最右欄、最下列不畫線（外框已經有線了），寫法比照 .gc */
+  .gc-center[style*="grid-column:3;"] { border-right:  none; }
+  .gc-center[style*="grid-row:3;"]    { border-bottom: none; }
   /* col1：加左邊（中宮外框左邊） */
   #g5r1c1, #g5r2c1, #g5r3c1 { border-left: 1px solid #999; }
   /* row1：加上邊（中宮外框上邊） */
@@ -342,11 +338,52 @@
   .dz9-cell { display: flex; align-items: center; justify-content: center; overflow: visible; min-width: 0; min-height: 0; }
   .dz9-cell.align-left  { justify-content: flex-start; }
   .dz9-cell.align-right { justify-content: flex-end; }
-  .dz9-cell.align-top    { align-items: flex-start; }
-  .dz9-cell.align-bottom { align-items: flex-end; }
   .dz9-branch { font-size: 26.7cqi; color: #333; display: inline-block; line-height: 1; white-space: nowrap; }
   .dz9-label { font-size: 26.7cqi; line-height: 1; white-space: nowrap; }
-  .dz-center { display: flex; align-items: center; justify-content: center; font-size: 13px; color: #bbb; width:100%; height:100%; }
+  .dz-center { display: flex; align-items: center; justify-content: center; font-size: 13px; color: #bbb; width:100%; height:100%; cursor: pointer; }
+  .compass-ring {
+    position: relative;
+    width: 78%;
+    aspect-ratio: 1 / 1;
+    border-radius: 50%;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+    transition: transform 0.15s linear;
+  }
+  .compass-needle {
+    position: absolute;
+    left: 50%;
+    top: 6%;
+    bottom: 6%;
+    width: 42%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    filter: drop-shadow(0 0 0.5px #999);
+  }
+  .needle-half {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    box-sizing: border-box;
+    font-size: 6px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .needle-s {
+    background: #fff;
+    color: #333;
+    clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+    align-items: flex-end;
+    padding-bottom: 1px;
+  }
+  .needle-n {
+    background: #c0392b;
+    color: #fff;
+    clip-path: polygon(0% 0%, 100% 0%, 50% 100%);
+    align-items: flex-start;
+    padding-top: 1px;
+  }
 
   /* ── 十二長生標籤 ── */
   .dz9-label.stage-mu    { color: #d6408e; }
@@ -964,7 +1001,12 @@
       <div class="dz9-cell" style="grid-column:1;grid-row:2;"><span class="dz9-branch" data-dz="卯">卯</span></div>
       <div class="dz9-cell align-left" style="grid-column:2 / span 2;grid-row:2;"><span class="dz9-label" data-dz-label="卯"></span></div>
     </div></div>
-    <div id="g5r2c2" class="gc gc-center" style="grid-column:2;grid-row:2;"><div class="dz-center">5中</div></div>
+    <div id="g5r2c2" class="gc gc-center" style="grid-column:2;grid-row:2;"><div class="dz-center" id="compassCell" title="點擊啟用指南針">
+      <div class="compass-ring" id="compassRing"><div class="compass-needle">
+        <div class="needle-half needle-s">S</div>
+        <div class="needle-half needle-n">N</div>
+      </div></div>
+    </div></div>
     <div id="g5r2c3" class="gc gc-center" style="grid-column:3;grid-row:2;"><div class="dz9">
       <div class="dz9-cell" style="grid-column:3;grid-row:2;"><span class="dz9-branch" data-dz="酉">酉</span></div>
       <div class="dz9-cell align-right" style="grid-column:1 / span 2;grid-row:2;"><span class="dz9-label" data-dz-label="酉"></span></div>
@@ -1146,6 +1188,59 @@ function getHouseChangshengCandidates(cellEl) {
 function captureChart() {
   alert('請直接使用手機截圖儲存。');
 }
+
+// ── 指南針（中5宮正中央格）──
+(function() {
+  const compassCell = document.getElementById('compassCell');
+  const compassRing = document.getElementById('compassRing');
+  if (!compassCell || !compassRing) return;
+
+  let compassActive = false;
+
+  function applyHeading(heading) {
+    // 排盤圖是離9(南)在上方，不是一般地圖的北在上方，所以這裡要對準「南」而非「北」
+    const southHeading = (heading + 180) % 360;
+    compassRing.style.transform = `rotate(${-southHeading}deg)`;
+  }
+
+  function handleOrientation(e) {
+    let heading = null;
+    if (typeof e.webkitCompassHeading === 'number') {
+      // iOS：webkitCompassHeading 已經是真實方位角，數值越準確
+      heading = e.webkitCompassHeading;
+    } else if (e.alpha !== null && e.alpha !== undefined) {
+      // Android：alpha 為裝置朝向與磁北的夾角，近似換算
+      heading = 360 - e.alpha;
+    }
+    if (heading !== null) applyHeading(heading);
+  }
+
+  function startCompass() {
+    if (compassActive) return;
+    compassActive = true;
+    window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+    window.addEventListener('deviceorientation', handleOrientation, true);
+  }
+
+  compassCell.addEventListener('click', function() {
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+      DeviceOrientationEvent.requestPermission().then(function(state) {
+        if (state === 'granted') {
+          startCompass();
+        } else {
+          alert('未取得方向感測器權限，指南針無法使用。');
+        }
+      }).catch(function(err) {
+        alert('無法啟用指南針：' + err.message);
+      });
+    } else if (typeof DeviceOrientationEvent !== 'undefined') {
+      // Android 等不需要額外授權的瀏覽器
+      startCompass();
+    } else {
+      alert('此裝置或瀏覽器不支援方向感測器。');
+    }
+  });
+})();
 
 // ── 門迫判定 ──
 const GATE_CONSTRAINT_TABLE = {
