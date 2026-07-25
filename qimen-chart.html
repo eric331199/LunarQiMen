@@ -329,16 +329,28 @@
     font-size: 14px; color: #333;
   }
 
-  /* ── 中宮地支時鐘盤 ── */
-  .dz-corner { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; font-size: 9px; color: #aaa; width:100%; height:100%; }
-  .dz-corner span { display: flex; align-items: center; justify-content: center; }
-  .dz-edge { font-size: 9px; color: #aaa; display: flex; align-items: center; justify-content: center; width:100%; height:100%; }
-  .dz-wu  { align-items: flex-start !important; }
-  .dz-zi  { align-items: flex-end !important; }
-  .dz-mao { justify-content: flex-start !important; padding-left: 2px; }
-  .dz-you { justify-content: flex-end !important; padding-right: 2px; }
+  /* ── 中宮地支時鐘盤：每宮內部真正的 3x3 小格 ── */
+  .dz9 { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); width:100%; height:100%; }
+  .dz9-cell { display: flex; align-items: center; justify-content: center; overflow: visible; min-width: 0; min-height: 0; }
+  .dz9-branch { font-size: 7px; color: #333; display: inline-block; white-space: nowrap; }
+  .dz9-label { font-size: 7px; line-height: 1; white-space: nowrap; }
+  .dz9-branch.nudge-left         { transform: translateX(-3px); }
+  .dz9-branch.nudge-right        { transform: translateX(3px); }
+  .dz9-branch.nudge-top          { transform: translateY(-3px); }
+  .dz9-branch.nudge-bottom       { transform: translateY(3px); }
+  .dz9-branch.nudge-bottom-left  { transform: translate(-1.5px, 1.5px); }
+  .dz9-branch.nudge-top-right    { transform: translate(1.5px, -1.5px); }
+  .dz9-branch.nudge-top-left     { transform: translate(-1.5px, -1.5px); }
+  .dz9-branch.nudge-bottom-right { transform: translate(1.5px, 1.5px); }
+  .dz9-label.nudge-top    { transform: translateY(-1.5px); }
+  .dz9-label.nudge-bottom { transform: translateY(1.5px); }
   .dz-center { display: flex; align-items: center; justify-content: center; font-size: 13px; color: #bbb; width:100%; height:100%; }
-  .dz-active { color: #c0392b !important; font-weight: bold; }
+
+  /* ── 十二長生標籤 ── */
+  .dz9-label.stage-mu    { color: #d6408e; }
+  .dz9-label.stage-good  { color: #2e7d32; }
+  .dz9-label.stage-neutral { color: #999; }
+  .stem-active { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 1px; }
 
 
     /* ══════════════════════════════════
@@ -930,15 +942,95 @@
 
     <!-- 5 中 -->
     <div class="cell center">
-    <div id="g5r1c1" class="gc gc-center" style="grid-column:1;grid-row:1;"><div class="dz-corner" data-gong-dz="巳辰"><span></span><span data-dz="巳">巳</span><span data-dz="辰">辰</span><span></span></div></div>
-    <div id="g5r1c2" class="gc gc-center" style="grid-column:2;grid-row:1;"><div class="dz-edge dz-wu" data-gong-dz="午" data-dz="午">午</div></div>
-    <div id="g5r1c3" class="gc gc-center" style="grid-column:3;grid-row:1;"><div class="dz-corner" data-gong-dz="未申"><span data-dz="未">未</span><span></span><span></span><span data-dz="申">申</span></div></div>
-    <div id="g5r2c1" class="gc gc-center" style="grid-column:1;grid-row:2;"><div class="dz-edge dz-mao" data-gong-dz="卯" data-dz="卯">卯</div></div>
+    <div id="g5r1c1" class="gc gc-center" style="grid-column:1;grid-row:1;"><div class="dz9">
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"><span class="dz9-label nudge-bottom" data-dz-label="巳"></span></div>
+      <div class="dz9-cell"><span class="dz9-branch nudge-bottom-left" data-dz="巳">巳</span></div>
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"><span class="dz9-branch nudge-top-right" data-dz="辰">辰</span></div>
+      <div class="dz9-cell"><span class="dz9-label nudge-top" data-dz-label="辰"></span></div>
+      <div class="dz9-cell"></div>
+    </div></div>
+    <div id="g5r1c2" class="gc gc-center" style="grid-column:2;grid-row:1;"><div class="dz9">
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"><span class="dz9-branch" data-dz="午">午</span></div>
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"><span class="dz9-label nudge-top" data-dz-label="午"></span></div>
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"></div>
+    </div></div>
+    <div id="g5r1c3" class="gc gc-center" style="grid-column:3;grid-row:1;"><div class="dz9">
+      <div class="dz9-cell"><span class="dz9-branch nudge-bottom-right" data-dz="未">未</span></div>
+      <div class="dz9-cell"><span class="dz9-label nudge-bottom" data-dz-label="未"></span></div>
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"><span class="dz9-label nudge-top" data-dz-label="申"></span></div>
+      <div class="dz9-cell"><span class="dz9-branch nudge-top-left" data-dz="申">申</span></div>
+    </div></div>
+    <div id="g5r2c1" class="gc gc-center" style="grid-column:1;grid-row:2;"><div class="dz9">
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"><span class="dz9-branch" data-dz="卯">卯</span></div>
+      <div class="dz9-cell"><span class="dz9-label" data-dz-label="卯"></span></div>
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"></div>
+    </div></div>
     <div id="g5r2c2" class="gc gc-center" style="grid-column:2;grid-row:2;"><div class="dz-center">5中</div></div>
-    <div id="g5r2c3" class="gc gc-center" style="grid-column:3;grid-row:2;"><div class="dz-edge dz-you" data-gong-dz="酉" data-dz="酉">酉</div></div>
-    <div id="g5r3c1" class="gc gc-center" style="grid-column:1;grid-row:3;"><div class="dz-corner" data-gong-dz="寅丑"><span data-dz="寅">寅</span><span></span><span></span><span data-dz="丑">丑</span></div></div>
-    <div id="g5r3c2" class="gc gc-center" style="grid-column:2;grid-row:3;"><div class="dz-edge dz-zi" data-gong-dz="子" data-dz="子">子</div></div>
-    <div id="g5r3c3" class="gc gc-center" style="grid-column:3;grid-row:3;"><div class="dz-corner" data-gong-dz="戌亥"><span></span><span data-dz="戌">戌</span><span data-dz="亥">亥</span><span></span></div></div>
+    <div id="g5r2c3" class="gc gc-center" style="grid-column:3;grid-row:2;"><div class="dz9">
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"><span class="dz9-label" data-dz-label="酉"></span></div>
+      <div class="dz9-cell"><span class="dz9-branch" data-dz="酉">酉</span></div>
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"></div>
+    </div></div>
+    <div id="g5r3c1" class="gc gc-center" style="grid-column:1;grid-row:3;"><div class="dz9">
+      <div class="dz9-cell"><span class="dz9-branch nudge-bottom-right" data-dz="寅">寅</span></div>
+      <div class="dz9-cell"><span class="dz9-label nudge-bottom" data-dz-label="寅"></span></div>
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"><span class="dz9-label nudge-top" data-dz-label="丑"></span></div>
+      <div class="dz9-cell"><span class="dz9-branch nudge-top-left" data-dz="丑">丑</span></div>
+    </div></div>
+    <div id="g5r3c2" class="gc gc-center" style="grid-column:2;grid-row:3;"><div class="dz9">
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"><span class="dz9-label nudge-bottom" data-dz-label="子"></span></div>
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"><span class="dz9-branch" data-dz="子">子</span></div>
+      <div class="dz9-cell"></div>
+    </div></div>
+    <div id="g5r3c3" class="gc gc-center" style="grid-column:3;grid-row:3;"><div class="dz9">
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"><span class="dz9-label nudge-bottom" data-dz-label="戌"></span></div>
+      <div class="dz9-cell"><span class="dz9-branch nudge-bottom-left" data-dz="戌">戌</span></div>
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"></div>
+      <div class="dz9-cell"><span class="dz9-branch nudge-top-right" data-dz="亥">亥</span></div>
+      <div class="dz9-cell"><span class="dz9-label nudge-top" data-dz-label="亥"></span></div>
+      <div class="dz9-cell"></div>
+    </div></div>
     </div>
 
     <!-- 7 兌 -->
@@ -1024,6 +1116,77 @@ function renderStemHTML(stem, house, dutyStem, isDutyHouse) {
     return `<span>${ch}</span>`;
   }).join('');
 }
+
+// ── 十二長生（點擊天盤天干顯示） ──
+const CHANGSHENG_STAGE_ORDER = ['長生','沐浴','冠帶','臨官','帝旺','衰','病','死','墓','絕','胎','養'];
+const CHANGSHENG_STEM_BRANCHES = {
+  '甲': ['亥','子','丑','寅','卯','辰','巳','午','未','申','酉','戌'],
+  '乙': ['午','巳','辰','卯','寅','丑','子','亥','戌','酉','申','未'],
+  '丙': ['寅','卯','辰','巳','午','未','申','酉','戌','亥','子','丑'],
+  '丁': ['酉','申','未','午','巳','辰','卯','寅','丑','子','亥','戌'],
+  '戊': ['寅','卯','辰','巳','午','未','申','酉','戌','亥','子','丑'],
+  '己': ['酉','申','未','午','巳','辰','卯','寅','丑','子','亥','戌'],
+  '庚': ['巳','午','未','申','酉','戌','亥','子','丑','寅','卯','辰'],
+  '辛': ['子','亥','戌','酉','申','未','午','巳','辰','卯','寅','丑'],
+  '壬': ['申','酉','戌','亥','子','丑','寅','卯','辰','巳','午','未'],
+  '癸': ['卯','寅','丑','子','亥','戌','酉','申','未','午','巳','辰'],
+};
+
+function changshengStageColorClass(stage) {
+  if (stage === '沐浴') return 'stage-mu';
+  if (stage === '長生' || stage === '臨官') return 'stage-good';
+  return 'stage-neutral';
+}
+
+function renderChangsheng(stem) {
+  const branches = CHANGSHENG_STEM_BRANCHES[stem];
+  if (!branches) return;
+  const branchToStage = {};
+  branches.forEach((b, i) => { branchToStage[b] = CHANGSHENG_STAGE_ORDER[i]; });
+  document.querySelectorAll('.dz9-label[data-dz-label]').forEach(el => {
+    const branch = el.dataset.dzLabel;
+    const stage = branchToStage[branch] || '';
+    el.textContent = stage;
+    el.classList.remove('stage-mu', 'stage-good', 'stage-neutral');
+    if (stage) el.classList.add(changshengStageColorClass(stage));
+  });
+}
+
+function clearChangsheng() {
+  document.querySelectorAll('.dz9-label[data-dz-label]').forEach(el => {
+    el.textContent = '';
+    el.classList.remove('stage-mu', 'stage-good', 'stage-neutral');
+  });
+}
+
+let _activeChangshengStem = null;
+
+document.addEventListener('click', function(e) {
+  const tianContainer = e.target.closest('.gc-tian');
+  if (!tianContainer) return;
+
+  let charSpan = e.target.closest('span');
+  if (!charSpan) return;
+  if (charSpan.classList.contains('stem-mu')) {
+    charSpan = charSpan.querySelector('.stem-char') || charSpan;
+  }
+  if (charSpan.classList.contains('tag')) return;
+
+  const stem = (charSpan.textContent || '').trim();
+  if (!stem || !CHANGSHENG_STEM_BRANCHES[stem]) return;
+
+  document.querySelectorAll('.gc-tian .stem-active').forEach(s => s.classList.remove('stem-active'));
+
+  if (_activeChangshengStem === stem) {
+    _activeChangshengStem = null;
+    clearChangsheng();
+    return;
+  }
+
+  _activeChangshengStem = stem;
+  charSpan.classList.add('stem-active');
+  renderChangsheng(stem);
+});
 
 function captureChart() {
   alert('請直接使用手機截圖儲存。');
@@ -1784,11 +1947,6 @@ function castChart() {
   }
   document.getElementById('paipan-result').scrollIntoView({ behavior: 'smooth' });
 
-  // ── 中宮時辰高亮 ──
-  document.querySelectorAll('[data-dz]').forEach(el => el.classList.remove('dz-active'));
-  const _h = parseInt(document.getElementById('hour').value) || 0;
-  const hourBranch = hourToBranch(_h);
-  document.querySelectorAll(`[data-dz="${hourBranch}"]`).forEach(el => el.classList.add('dz-active'));
   clearHighlight();
 }
 
