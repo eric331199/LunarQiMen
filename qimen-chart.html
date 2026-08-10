@@ -5,7 +5,7 @@
 <script src="https://cdn.jsdelivr.net/npm/lunar-javascript/lunar.js"></script>
 <link rel="apple-touch-icon" href="icon.PNG">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>陰盤奇門排盤</title>
+<title>奇門遁甲九宮排盤</title>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-VKV3FP5CRB"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
@@ -18,7 +18,8 @@
 </script>
 <script defer src="/_vercel/insights/script.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@300;400;500&family=MPLUS1Code:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@300;400;500&family=MPLUS1Code:wght@300;400;500&family=Noto+Serif+TC:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
   /* ── Reset ── */
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -42,7 +43,7 @@
   ══════════════════════════════════ */
   .header {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr;
+    grid-template-columns: 1fr;
     grid-template-rows: auto auto;
     border: 2px solid #111;
     border-radius: 12px;
@@ -55,10 +56,9 @@
     margin-right: auto;
   }
 
-  .h-col-left  { grid-column: 1; grid-row: 1; border-right: 1px solid #ddd; padding: 6px 8px; }
-  .h-col-mid   { grid-column: 2 / 4; grid-row: 1; padding: 6px 8px; }
+  .h-col-top { grid-column: 1; grid-row: 1; padding: 6px 8px; }
   .h-col-combined {
-    grid-column: 1 / 4;
+    grid-column: 1 / -1;
     grid-row: 2;
     border-top: 2px solid #111;
     padding: 0;
@@ -117,7 +117,6 @@
   .h-table td.hl {
     color: #aaa;
     text-align: center;
-    width: 2.5em;
   }
   /* 內容欄（置中） */
   .h-table td.hv {
@@ -155,6 +154,21 @@
   .yigan-tr { top: -20px; right: -16px; }
   .yigan-bl { bottom: -20px; left: -16px; }
   .yigan-br { bottom: -20px; right: -16px; }
+
+  /* 命盤模式：12地支固定位置（每邊3個），取代8個引干位置。字級較小以容納2-3字宮位名稱 */
+  .mingpan-label { font-size: 14px; white-space: nowrap; }
+  .rg-top-l    { top: -20px; left: 16.67%; transform: translateX(-50%); }
+  .rg-top-c    { top: -20px; left: 50%;    transform: translateX(-50%); }
+  .rg-top-r    { top: -20px; left: 83.33%; transform: translateX(-50%); }
+  .rg-bottom-l { bottom: -20px; left: 16.67%; transform: translateX(-50%); }
+  .rg-bottom-c { bottom: -20px; left: 50%;    transform: translateX(-50%); }
+  .rg-bottom-r { bottom: -20px; left: 83.33%; transform: translateX(-50%); }
+  .rg-left-t   { top: 16.67%; left: -18px; transform: translateY(-50%); flex-direction: column; line-height: 1.2; }
+  .rg-left-c   { top: 50%;    left: -18px; transform: translateY(-50%); flex-direction: column; line-height: 1.2; }
+  .rg-left-b   { top: 83.33%; left: -18px; transform: translateY(-50%); flex-direction: column; line-height: 1.2; }
+  .rg-right-t  { top: 16.67%; right: -18px; transform: translateY(-50%); flex-direction: column; line-height: 1.2; }
+  .rg-right-c  { top: 50%;    right: -18px; transform: translateY(-50%); flex-direction: column; line-height: 1.2; }
+  .rg-right-b  { top: 83.33%; right: -18px; transform: translateY(-50%); flex-direction: column; line-height: 1.2; }
 
   /* ══════════════════════════════════
      九宮 Grid  (3×3 cell wrapper)
@@ -203,12 +217,12 @@
   /* 高亮 */
   .cell.highlighted { border-color: #e67e22 !important; background: #fffaf5; }
 
-  /* 每個小格：只畫右邊和下邊 */
+  /* 每個小格：內格線已依需求清除，只留每宮外框（.cell 的 2px 外框線） */
   .gc {
     border-top: none;
     border-left: none;
-    border-right: 1px solid #ddd;
-    border-bottom: 1px solid #ddd;
+    border-right: none;
+    border-bottom: none;
     background: transparent;
     box-sizing: border-box;
     overflow: hidden;
@@ -220,15 +234,15 @@
   .gc[style*="grid-row:3;"]    { border-bottom: none; }
 
   /* 中宮 */
-  .cell.center { background: #eeebe3; cursor: default; border: none; }
-  /* 中宮小格：全部自己負責四邊；顏色用#ccc（比其他宮位的#ddd深一點），
-     因為中宮底色是#eeebe3（比其他宮位的白底#fff深），這樣線在視覺對比上才跟其他宮位一致 */
+  /* 中宮：改成 relative 定位基準，讓吉凶標記提醒（.travel-marking-banner）可以疊在中宮正中央 */
+  .cell.center { background: #eeebe3; cursor: default; border: none; position: relative; }
+  /* 中宮小格：內格線已依需求清除，四邊外框線（#g5r*c* 那組）維持，負責拼出中宮外框 */
   .gc-center {
     background: transparent;
     border-top: none;
     border-left: none;
-    border-right: 1px solid #ccc;
-    border-bottom: 1px solid #ccc;
+    border-right: none;
+    border-bottom: none;
   }
   /* 每宮最右欄、最下列不畫線（外框已經有線了），寫法比照 .gc */
   .gc-center[style*="grid-column:3;"] { border-right:  none; }
@@ -250,6 +264,7 @@
   .stem-char { color: #aaa; }
   .stem-char.penalized { color: #c0392b; }
   .tag.gate-constraint   { color: #c0392b; font-size: 9px; line-height: 1; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); }
+  .tag.gate-suppress   { color: #999; font-size: 9px; line-height: 1; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); }
   .tag.void {
     color: #c0392b; font-size: 12px; line-height: 1;
     border: 1px solid #c0392b; border-radius: 50%;
@@ -262,14 +277,14 @@
   }
   .tag.horse::before {
     content: '△';
-    font-size: 27px;
+    font-size: 28px;
     color: #2471a3;
     line-height: 1;
     position: absolute;
   }
   .tag.horse span {
     position: relative; z-index: 1;
-    font-size: 10px; margin-top: 4px;
+    font-size: 9px; margin-top: 5px;
   }
   /* ── 左上格（宮號＋八卦）── */
   .gc-left {
@@ -288,8 +303,37 @@
   .bline-broken { display: flex; gap: 3px; }
   .bline-broken span { width: 6px; height: 2px; background: var(--line-color, #444); border-radius: 1px; display: block; }
 
-  /* ── 左中（空白）── */
-  .gc-left2 {}
+  /* ── 左中（命盤模式：大限歲數區間，平時空白）── 三行堆疊、全部置中，中間夾一條斜線 */
+  .gc-left2 { display: flex; align-items: center; justify-content: center; padding: 2px 3px; }
+  .gc-daxian {
+    display: flex; flex-direction: column; align-items: center;
+    font-size: 11px; color: #999; line-height: 1.15;
+    font-family: "MPLUS1Code", monospace;
+  }
+  .gc-daxian .dx-mid { font-size: 6px; font-weight: 900; -webkit-text-stroke: 0.4px currentColor; }
+  .gc-daxian .dx-end { position: relative; width: 100%; height: 1.15em; }
+  .gc-daxian .dx-num { position: absolute; left: 50%; top: 0; transform: translateX(-50%); }
+  .gc-daxian .dx-suffix { position: absolute; left: 50%; top: 3px; transform: translateX(8px); font-size: 8px; }
+
+  /* 出行訣：吉凶標記顯示在 c1r2／gc-left2 這格（跟命盤大限互斥），但點擊改成整個宮位都能觸發（見下方 JS 綁定） */
+  .cell[data-gong].travel-marking-active { cursor: pointer; }
+  /* 地圖模式下按「盤」鈕顯示盤面時，整個宮位也能點擊修改吉凶（見 travelMarkEditable） */
+  .outer.travel-map-mode.board-visible .cell[data-gong] { cursor: pointer; }
+  .travel-mark-label {
+    font-size: 13px; font-weight: bold;
+    font-family: "M PLUS Rounded 1c", sans-serif;
+  }
+  /* 光暈感只在扇形羅盤（.travel-compass-gua/dir）顯示，這裡（九宮格內的標記）維持純色，不加光暈 */
+  .travel-mark-label.mark-lucky   { color: #FFB700; }
+  .travel-mark-label.mark-unlucky { color: #c0392b; }
+  /* 未標記時的提示：拿掉「吉/凶」斜線，改成上下兩行——吉靠左、凶靠右；字體大小跟已選取時一樣（13px），只用灰色跟實際標記色區分 */
+  .travel-mark-label.mark-placeholder {
+    display: flex; flex-direction: column; align-items: stretch;
+    width: 100%; /* 撐滿 .gc-left2 的寬度，text-align:left/right 才有位移空間可以看出差異 */
+    line-height: 1.05; color: #bbb;
+  }
+  .travel-mark-label.mark-placeholder .travel-mark-line-lucky   { text-align: left; }
+  .travel-mark-label.mark-placeholder .travel-mark-line-unlucky { text-align: right; }
 
   /* ── 左下（馬）── */
   .gc-horse {
@@ -297,9 +341,9 @@
     align-items: center; justify-content: center; gap: 1px;
   }
 
-  /* ── 中上（神）── */
+  /* ── 中上（神）── 2026.08：垂直改貼下緣對齊（跟中中的星、中下的門三格拉近視覺距離），水平仍置中 */
   .gc-shen {
-    display: flex; align-items: center; justify-content: center;
+    display: flex; align-items: flex-end; justify-content: center;
     font-size: 14px; color: #333;
   }
 
@@ -309,9 +353,9 @@
     font-size: 14px; color: #333; gap: 2px;
   }
 
-  /* ── 中下（門）── */
+  /* ── 中下（門）── 2026.08：垂直改貼上緣對齊，呼應c2r1（神）貼下緣，水平仍置中 */
   .gc-gate {
-    display: flex; align-items: center; justify-content: center;
+    display: flex; align-items: flex-start; justify-content: center;
     font-size: 14px; color: #333;
   }
 
@@ -342,7 +386,12 @@
   .dz9-cell.align-right { justify-content: flex-end; }
   .dz9-branch { font-size: 26.7cqi; color: #333; display: inline-block; line-height: 1; white-space: nowrap; }
   .dz9-label { font-size: 26.7cqi; line-height: 1; white-space: nowrap; }
-  .dz-center { display: flex; align-items: center; justify-content: center; font-size: 13px; color: #bbb; width:100%; height:100%; cursor: pointer; }
+  .dz-center { position: relative; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #bbb; width:100%; height:100%; cursor: pointer; }
+  /* 出行訣旋轉：指針左右各一個小箭頭，2026.08 從獨立的⟳按鈕併入中宮指針（見下方 travel-map-mode 顯示規則） */
+  .compass-rotate-bracket { position: absolute; top: 50%; width: 82.5%; height: 112.5%; transform: translateY(-50%); opacity: 0; transition: opacity .2s ease, color .3s ease; pointer-events: none; color: #999; } /* 弧形括弧＋箭頭，分放指針左右兩側；靠 .gc-center 的 overflow:visible（見下方）才擋不住往外延伸的部分；數值來自調整工具(compass-bracket-tuner.html)手動調校結果 */
+  .compass-rotate-bracket.left  { right: 37%; }
+  .compass-rotate-bracket.right { left: 37%; }
+  .compass-rotate-bracket svg { width: 100%; height: 100%; display: block; }
   .compass-ring {
     position: relative;
     width: 100%;
@@ -359,7 +408,8 @@
     transform: translateX(-50%);
     display: flex;
     flex-direction: column;
-    filter: drop-shadow(0 0 0.5px #999);
+    /* 2026.08：改回單層、灰色（不用黑色），濃度降低，柔和暈開即可 */
+    filter: drop-shadow(0 0 1px #888);
   }
   .needle-half {
     flex: 1;
@@ -423,6 +473,44 @@
     gap: 6px;
     margin-bottom: 12px;
   }
+  .plate-toggle {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .plate-btn {
+    flex: 1;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: #f5f5f5;
+    color: #888;
+    font-size: 12px;
+    padding: 5px 4px;
+    cursor: pointer;
+  }
+  .plate-btn.active {
+    background: #f5f5f5;
+    border: 2px solid #333;
+    color: #333;
+  }
+  .plate-subtoggle {
+    margin-top: -6px;
+  }
+  .plate-subtoggle .plate-btn {
+    background: #fafafa;
+    color: #999;
+  }
+  .plate-subtoggle .plate-btn.active {
+    background: #fafafa;
+    border: 2px solid #666;
+    color: #666;
+  }
+  #plate-yin-row .plate-btn.active {
+    background: #333;
+    border-color: #333;
+    color: #fff;
+  }
   .input-row {
     display: flex;
     flex-direction: column;
@@ -465,7 +553,7 @@
   .btn-now {
     background: #fff;
     border: 1.5px solid #888;
-    border-radius: 4px;
+    border-radius: 6px;
     padding: 8px;
     font-size: 15px;
     font-family: inherit;
@@ -489,10 +577,15 @@
     gap: 8px;
     margin: 10px 0 0;
   }
+  .btn-quick-spacer {
+    flex: 1;
+    visibility: hidden;
+    pointer-events: none;
+  }
   .btn-start {
     background: #444;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     padding: 8px;
     font-size: 15px;
     font-family: inherit;
@@ -770,13 +863,336 @@
     min-height: 14px;
   }
   .predictor-row .rec-choice button { padding: 4px 12px; font-size: 12px; }
+
+  /* ══════════════════════════════════
+     出行羅盤模式：地圖、方位盤與既有方盤各自渲染，以淡出／淡入製造方變圓的過渡。
+     吉方選取規則尚待確認；此版僅建立可接收宮位選取狀態的羅盤層。
+  ══════════════════════════════════ */
+  .travel-overlay { position: fixed; inset: 0; z-index: 5000; visibility: hidden; opacity: 0; transition: opacity .26s ease, visibility 0s linear .26s; background: #f7f7f7; }
+  .travel-overlay.is-open { visibility: visible; opacity: 1; transition: opacity .26s ease; }
+  /* Leaflet 內部 pane 的 z-index 很高；此層必須建立自己的堆疊環境，不能覆蓋羅盤。 */
+  .travel-map { position: absolute; inset: 0; z-index: 0; opacity: 0; transition: opacity .32s ease .08s; }
+  .travel-overlay.is-open .travel-map { opacity: 1; }
+  .travel-board-layer { position: absolute; inset: 0; z-index: 2; display: flex; align-items: center; justify-content: center; pointer-events: none; opacity: 0; transform: scale(.82); transition: opacity .2s ease, transform .28s ease; }
+  .travel-overlay.board-visible .travel-board-layer { opacity: 1; transform: scale(1); }
+  /* pointer-events:none：盤面搬進出行羅盤疊層後純粹是過場視覺用，opacity 淡出後底層不可再被誤觸（原本 pointer-events:auto 會讓十二長生等互動在地圖模式下被意外觸發）。 */
+  .travel-board-layer .outer { width: min(82vmin, 520px); margin: 0; pointer-events: none; transition: opacity .22s ease, transform .26s ease; }
+  /* 修補：openTravelMode() 是把 .outer 節點直接搬進本層（非複製），travel-map-mode/board-visible
+     這兩個 class 會原樣跟著搬過來。.outer.travel-map-mode.board-visible .cell[data-gong] 那條
+     pointer-events:auto 規則特定性較高，會蓋掉上面這行的 none，讓框內嵌地圖「顯示盤面」狀態下
+     展開全螢幕時，看不見的九宮格仍可被點擊觸發吉凶標記互動。本層純粹是過場快照，任何情況下都
+     不該接收點擊，用 !important 強制擋回去。 */
+  .travel-board-layer .cell[data-gong] { pointer-events: none !important; }
+  .travel-overlay.is-opening .travel-board-layer .outer { opacity: 0; transform: scale(.88); }
+  /* left/top 不設 transition：錨定後不論地圖拖曳、縮放、或拖手把調整錨點，圓心都要跟座標即時同步，
+     不能有動畫內插——否則拖曳中會延遲落後、放開後才追上，看起來像「被干擾又自己跳回去」 */
+  .travel-compass { position: absolute; z-index: 3; left: 50%; top: 50%; display: flex; align-items: center; justify-content: center; pointer-events: none; opacity: 0; transform: translate(-50%,-50%) scale(.82); transition: opacity .28s ease .11s, transform .34s ease .11s; }
+  .travel-overlay.is-open .travel-compass { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+  /* 用 vmax（螢幕長邊）作為基準，橫向裝置放大時才會覆蓋左右與四角。 */
+  .travel-compass-disc { width: var(--travel-compass-size, 45vmax); height: var(--travel-compass-size, 45vmax); flex: 0 0 auto; max-width: none; max-height: none; transition: transform .08s linear; }
+  .travel-compass-disc .travel-compass-gua,
+  .travel-compass-disc .travel-compass-dir,
+  .travel-compass-disc .travel-compass-dot,
+  .travel-compass-disc .travel-compass-gate,
+  .travel-compass-disc .travel-compass-gate-dot { display: none; }
+  .travel-compass-disc .travel-compass-center { display: none; }
+  /* 文字獨立為固定內圈：圓盤放大時不跟著放大，仍維持在圓心附近。 */
+  .travel-compass-label-disc { position: absolute; width: min(60vmin, 380px); height: min(60vmin, 380px); flex: 0 0 auto; transition: transform .08s linear; }
+  /* 起點水滴：跟 travel-compass-disc／label-disc 平行的兄弟節點，不隨扇形旋轉；
+     left/top:50% 相對 .travel-compass 自身盒子（尺寸＝disc），跟 disc 的 SVG 幾何圓心天然對齊，
+     不需要另外算座標。transform 讓水滴「尖端」對準這個 50%,50% 的點，而非水滴的幾何中心 */
+  .travel-compass-start-pin {
+    position: absolute; left: 50%; top: 50%; z-index: 1; display: none;
+    transform: translate(-50%, -100%);
+    line-height: 0; pointer-events: none;
+    filter: drop-shadow(0 1px 3px rgba(0,0,0,.35));
+  }
+  .travel-compass-start-pin svg { display: block; }
+  /* 階段三：圓圈扇形設計參考 地圖方位_10.html——飽和色扇形（五行配色）＋白色細分隔線＋外圈邊框 */
+  .travel-compass-sector { fill-opacity: .4; stroke: #fff; stroke-width: 1.2; }
+  .travel-compass-ring { fill: none; stroke: #fff; stroke-width: 1.2; }
+  /* 文字：黑字＋宋體，白色描邊(paint-order:stroke)讓文字在任何底色扇形上都清楚可讀 */
+  .travel-compass-gua, .travel-compass-dir, .travel-compass-dot, .travel-compass-gate, .travel-compass-gate-dot {
+    font-family: "Noto Serif TC", "PMingLiU", serif;
+    font-weight: 500; text-anchor: middle; dominant-baseline: central;
+    paint-order: stroke; stroke-linejoin: round;
+  }
+  /* 內層：卦名（靠圓心） */
+  .travel-compass-gua { font-size: 10.9px; stroke: rgba(255,255,255,.95); stroke-width: 3px; }
+  /* 外層：方位字（靠圓周），字體比卦名大 */
+  .travel-compass-dir { font-size: 14.25px; stroke: rgba(255,255,255,.9); stroke-width: 2.5px; }
+  /* 卦名與方位字中間的分隔點，r 介於兩者之間 */
+  .travel-compass-dot { font-size: 7.6px; stroke: rgba(255,255,255,.9); stroke-width: 2px; }
+  /* 門名單字：只有宮位被標記吉凶時才會有內容（見 updateTravelCompassSectorMarks），平常是空字串不佔視覺；
+     2026.08定案：字級24px（原12.35px太小），y座標182（原176）；用preview-compass-live.html工具
+     試過幾種間距組合後定案，跟其他文字同一套粗細（500），不再另外加粗 */
+  .travel-compass-gate { font-size: 24px; stroke: rgba(255,255,255,.95); stroke-width: 3px; }
+  /* 方位字與門名單字中間的分隔點，比照 .travel-compass-dot 的做法，同樣只在標記時才有內容；
+     2026.08定案：y座標166（原164），跟門名一起用調整工具試出來的間距 */
+  .travel-compass-gate-dot { font-size: 7.6px; stroke: rgba(255,255,255,.9); stroke-width: 2px; }
+  /* 吉凶標記：標色文字（金＝吉、黑背景下凶改用紅避免混淆），不再整片扇形描邊 */
+  .travel-compass-gua.mark-lucky,   .travel-compass-dir.mark-lucky,   .travel-compass-dot.mark-lucky,   .travel-compass-gate.mark-lucky,   .travel-compass-gate-dot.mark-lucky   { fill: #FFB700; stroke: #fff; stroke-width: 3.5px; }
+  .travel-compass-gua.mark-unlucky, .travel-compass-dir.mark-unlucky, .travel-compass-dot.mark-unlucky, .travel-compass-gate.mark-unlucky, .travel-compass-gate-dot.mark-unlucky { fill: #c0392b; stroke: #fff; stroke-width: 3.5px; }
+  /* 光暈感：疊兩層 drop-shadow（貼近的窄光＋外圍的散光），用 currentColor 自動跟著金/紅走 */
+  .travel-compass-gua.mark-lucky,   .travel-compass-dir.mark-lucky,   .travel-compass-dot.mark-lucky,   .travel-compass-gate.mark-lucky,   .travel-compass-gate-dot.mark-lucky,
+  .travel-compass-gua.mark-unlucky, .travel-compass-dir.mark-unlucky, .travel-compass-dot.mark-unlucky, .travel-compass-gate.mark-unlucky, .travel-compass-gate-dot.mark-unlucky {
+    filter: drop-shadow(0 0 1.5px currentColor) drop-shadow(0 0 4px currentColor);
+  }
+  .travel-toolbar { position: absolute; z-index: 4; top: max(14px, env(safe-area-inset-top)); left: 14px; display: flex; gap: 8px; pointer-events: none; }
+  .travel-toolbar button { pointer-events: auto; border: none; border-radius: 18px; padding: 9px 13px; color: #333; background: rgba(255,255,255,.94); font: 13px "M PLUS Rounded 1c", sans-serif; }
+  /* 2026.08：狀態泡泡與「啟用羅盤」提示卡合併為同一顆泡泡，移到下方（原本啟用卡片的位置）。
+     兩者原本各自獨立顯示／隱藏，但實際上是「先後接續」關係（先解決羅盤授權、才輪到平常狀態訊息），
+     不是「可能同時顯示」的關係，分成兩顆反而會在畫面上打架。合併後：
+     - 平常（travelOrientationState==='idle'）：只顯示文字，按鈕隱藏，行為等同原本的 setTravelStatus
+     - 尚待授權／授權失敗（'pending'／'error'）：顯示提示或錯誤文字＋啟用鈕，此時 setTravelStatus 的
+       呼叫會被暫時忽略（見 setTravelStatus 判斷），避免蓋掉尚未解決的授權提示；解決後由
+       startTravelCompass() 主動呼叫 setTravelStatus() 補上最新狀態文字，不會有訊息卡住不更新的問題
+     2026.08再修正：整套按鈕群間距統一為14px單位（離邊緣14px、彼此之間也14px）。
+     泡泡與按鈕列的間距目前是0（貼齊）：58 = 泡泡margin(14) + 泡泡固定高度(44) + 間距(0)。
+     泡泡高度已改成固定44px（見下方.travel-status），不會再因為有沒有按鈕而忽高忽低，
+     這個算式現在才是真正穩定可靠的，不用再依實機微調 */
+  .travel-status { position: absolute; z-index: 5; left: 14px; right: 14px; bottom: max(14px, env(safe-area-inset-bottom)); height: 44px; display: flex; align-items: center; gap: 10px; border-radius: 12px; padding: 0 14px; background: rgba(255,255,255,.96); color: #333; font-size: 13px; pointer-events: auto; }
+  .travel-status #travel-status-text { flex: 1; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* 2026.08修正：泡泡高度改固定44px（原本用min-height只設下限，「啟用」按鈕比文字內容撐得更高，
+     導致兩種狀態實際渲染高度不一樣，見實機截圖回饋比對）。按鈕改用inline-flex＋固定28px高度置中在
+     這個固定高度容器內，垂直padding從泡泡本身移除（改交給align-items:center處理），
+     這樣不管有沒有按鈕，泡泡高度都是同一個44px，不會再忽高忽低 */
+  .travel-status #travel-orientation-btn { display: none; flex: 0 0 auto; align-items: center; justify-content: center; height: 28px; border: none; border-radius: 8px; padding: 0 12px; background: #555; color: #fff; font: 13px "M PLUS Rounded 1c", sans-serif; }
+  .travel-status.show-btn #travel-orientation-btn { display: inline-flex; }
+  /* 改用跟交通工具/點位（.expand-control）同一套橫向展開手感，
+     從觸發鈕左側彈出一個高度固定44px（跟按鈕齊平）的膠囊條，文字＋滑桿同一行 */
+  .travel-size-expand { position: absolute; z-index: 4; right: calc(14px + 44px + 14px); bottom: calc(max(14px, env(safe-area-inset-bottom)) + 58px); display: flex; align-items: center; flex-direction: row-reverse; gap: 0; }
+  .travel-size-options { display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 14px; margin-right: 14px; border-radius: 22px; background: rgba(255,255,255,.94); box-shadow: 0 2px 8px rgba(0,0,0,.18); font: 12px "M PLUS Rounded 1c", sans-serif; color: #333; white-space: nowrap; overflow: hidden; max-width: 0; opacity: 0; pointer-events: none; transition: max-width .28s ease, opacity .2s ease; }
+  .travel-size-expand.is-open .travel-size-options { max-width: 200px; opacity: 1; pointer-events: auto; }
+  .travel-size-options span { flex: 0 0 auto; }
+  .travel-size-options input { flex: 0 0 auto; width: 110px; accent-color: #555; }
+  /* 觸發鈕：白底圓，跟其他浮動按鈕（定位/交通工具/點位）同款；中間放一個模仿羅盤配色的小彩色圓點（8色，
+     對應扇形羅盤的水彩色票，見fan compass色票討論），跟旁邊的箭頭定位鈕（.travel-locate-btn）同一列 */
+  .travel-size-trigger { width: 44px; height: 44px; flex: 0 0 auto; border-radius: 50%; border: none; background: rgba(255,255,255,.94); box-shadow: 0 2px 8px rgba(0,0,0,.18); display: flex; align-items: center; justify-content: center; pointer-events: auto; position: relative; z-index: 2; }
+  .travel-size-trigger:active { background: #eee; }
+  .travel-size-trigger .mini-compass-dot { width: 22px; height: 22px; border-radius: 50%; background: conic-gradient(#5EC4E0 0deg 45deg, #C97D3E 45deg 90deg, #8BC34A 90deg 135deg, #C5D96C 135deg 180deg, #FF7597 180deg 225deg, #E8B88A 225deg 270deg, #F5F0E6 270deg 315deg, #C7C4BC 315deg 360deg); box-shadow: inset 0 0 0 1px rgba(255,255,255,.6); opacity: .55; }
+  /* 回到目前位置按鈕：跟羅盤大小觸發鈕同一列（見.travel-size-expand），bottom offset需保持一致 */
+  .travel-locate-btn { position: absolute; z-index: 4; right: 14px; bottom: calc(max(14px, env(safe-area-inset-bottom)) + 58px); width: 44px; height: 44px; border-radius: 50%; border: none; font-size: 18px; background: rgba(255,255,255,.94); color: #2471a3; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,.18); pointer-events: auto; }
+  /* 右上角小羅盤：定位在 leaflet 內建縮放鈕（topright，見 .leaflet-top.leaflet-right）下方，避免疊在一起；
+     本體不接收點擊（純顯示用），故 pointer-events:none。
+     跟縮放鈕的垂直間距依實機回饋下調7px（81→95）：95 = 縮放鈕top(14) + 縮放鈕高度(約60) + 間距(21，已依實機校正) */
+  .travel-mini-compass { position: absolute; z-index: 4; top: calc(max(14px, env(safe-area-inset-top)) + 95px); right: 14px; width: 44px; height: 44px; pointer-events: auto; cursor: pointer; }
+  /* 圓底樣式對齊 .travel-locate-btn（同一批浮動圓形按鈕），視覺統一；鎖定中加藍色外框呼應「已固定」狀態 */
+  .mini-compass-plate { width: 100%; height: 100%; border-radius: 50%; overflow: hidden; position: relative; background: rgba(255,255,255,.94); box-shadow: 0 2px 8px rgba(0,0,0,.18); transition: box-shadow .15s ease; }
+  .travel-mini-compass.is-locked .mini-compass-plate { box-shadow: 0 0 0 2px #2471a3, 0 2px 8px rgba(0,0,0,.18); }
+  .travel-mini-compass:active .mini-compass-plate { background: #eee; }
+  /* 指針本體直接沿用 #compassCell 的 .compass-ring／.compass-needle／.needle-half／.needle-s／.needle-n（見上方原始定義），
+     這裡只多包一層獨立的旋轉容器（同 .compass-ring 語意，但用不同 id 避免跟九宮中心那顆互相干擾），
+     角度公式在一般的 (360-heading) 之外再加 180°：素材靜止時 S在上、N在下（原本是為了配合九宮南上北下的畫面設計），
+     這裡拿來做獨立的正常羅盤（面北時N朝上）要多轉半圈基準 */
+  /* 預設180deg＝北上靜止姿勢（見 renderTravelMiniCompass 公式），素材原始姿勢是給九宮南上北下用的，
+     不加這個預設值的話，還沒收到任何朝向事件前會先閃一下素材原本的姿勢，跟「預設鎖定北上」矛盾 */
+  .mini-compass-ring { position: relative; width: 100%; height: 100%; box-sizing: border-box; transition: transform 0.15s linear; transform: rotate(180deg); }
+  /* 縮小指針：只在小羅盤這個實例套用，九宮中心原本那顆不受影響（選擇器多一層 .mini-compass-ring 限定範圍）；
+     比例參考其他浮動圓鈕內的圖示大小（約落在44px圓底裡的一半左右），縮小後維持原本的長寬比例 */
+  .mini-compass-ring .compass-needle { top: 22%; bottom: 22%; width: 18%; }
+  .travel-locate-btn:active { background: #eee; }
+  /* 縮放控制搬到右邊，跟定位鈕同一側靠邊 */
+  .travel-overlay .leaflet-top.leaflet-right { top: 14px; }
+
+  /* ══════════════════════════════════
+     出行訣：路線導航＋圓心錨定，收合式控制鈕，只在全螢幕扇形羅盤模式提供
+     交通工具、點位/錨定 兩顆觸發鈕收合貼右側，點了向左展開；右側跟定位鈕、羅盤大小面板同一欄，維持既有堆疊順序
+  ══════════════════════════════════ */
+  .expand-control { position: absolute; z-index: 4; right: 14px; display: flex; align-items: center; flex-direction: row-reverse; gap: 0; }
+  .expand-trigger {
+    width: 44px; height: 44px; flex: 0 0 auto; border-radius: 50%; border: none;
+    background: rgba(255,255,255,.94); box-shadow: 0 2px 8px rgba(0,0,0,.18);
+    display: flex; align-items: center; justify-content: center; font-size: 19px; color: #333;
+    pointer-events: auto; position: relative; z-index: 2;
+  }
+  .expand-trigger:active { background: #eee; }
+  .expand-options { display: flex; flex-direction: row-reverse; gap: 8px; margin-right: 14px; overflow: hidden; max-width: 0; opacity: 0; transition: max-width .28s ease, opacity .2s ease; }
+  .expand-control.is-open .expand-options { max-width: 260px; opacity: 1; }
+  .expand-options button {
+    width: 40px; height: 40px; flex: 0 0 auto; border-radius: 50%; border: none;
+    background: rgba(255,255,255,.94); box-shadow: 0 2px 6px rgba(0,0,0,.16);
+    display: flex; align-items: center; justify-content: center; font-size: 17px;
+    pointer-events: auto;
+  }
+  .expand-options button:active { background: #eee; }
+  .expand-options button.armed { background: #2471a3; color: #fff; }
+  .expand-options button.disabled { opacity: .35; pointer-events: none; } /* 未設起點前鎖住中途點/終點；起點/終點各自設過一次後鎖住自己，需刪除才能重設 */
+  /* 2026.08：整套按鈕群間距統一14px，三顆鈕(定位58/點位116/交通工具174)兩兩間隔都是14
+     （58+44+14=116，116+44+14=174）；定位鈕跟下方泡泡貼齊、無額外間距，見.travel-status附近註解 */
+  #transport-control { bottom: calc(max(14px, env(safe-area-inset-bottom)) + 174px); }
+  #pin-control { bottom: calc(max(14px, env(safe-area-inset-bottom)) + 116px); }
+
+  /* 刪除確認小泡泡：點地圖上已放置的圖釘會跳出，取代原本面板裡的「刪除最後一點/清除全部」按鈕 */
+  .remove-popup { display: none; position: absolute; z-index: 6; transform: translate(-50%, calc(-100% - 32px)); background: rgba(255,255,255,.98); border-radius: 12px; padding: 10px 12px; box-shadow: 0 4px 14px rgba(0,0,0,.22); text-align: center; font: 12px "M PLUS Rounded 1c", sans-serif; color: #333; pointer-events: auto; }
+  .remove-popup.is-visible { display: block; }
+  .remove-popup .btn-row { display: flex; gap: 8px; margin-top: 6px; justify-content: center; }
+  .remove-popup button { border: none; border-radius: 8px; width: 32px; height: 28px; font-size: 14px; }
+  .remove-popup .btn-cancel { background: #eee; color: #666; }
+  .remove-popup .btn-confirm { background: #e74c3c; color: #fff; }
+  /* 地圖上的起點/中途點/終點圖釘（L.divIcon），色碼跟展開選單裡的選項一致 */
+  .travel-route-marker { pointer-events: auto; filter: drop-shadow(0 1px 3px rgba(0,0,0,.35)); }
+  .travel-route-marker svg { display: block; }
+  /* 起點圖釘可拖曳（見 createTravelRouteMarker），Leaflet 會自動加上這個 class，用來提示可抓取 */
+  .leaflet-marker-draggable.travel-route-marker { cursor: grab; }
+  .leaflet-marker-draggable.travel-route-marker:active { cursor: grabbing; }
+  /* 起點的真正 L.marker 只留互動（拖曳/點擊移除），視覺上隱形——看得到的水滴是畫在扇形羅盤裡面
+     那個固定在圓心的版本（#travel-compass-start-pin），兩者位置理論上完全重合，只是這個看不見 */
+  .travel-route-marker-ghost { opacity: 0; }
+
+  /* ══════════════════════════════════
+     出行訣：所有提示/確認都用同一種小型泡泡，疊在中宮正中央（.cell.center 是定位基準），不使用原生 confirm()
+  ══════════════════════════════════ */
+  .travel-marking-banner {
+    position: absolute; inset: 8%; z-index: 50; display: none;
+    flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+    background: rgba(255,255,255,.97); border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,.25);
+    padding: 10px 8px;
+    font-family: "M PLUS Rounded 1c", sans-serif; font-size: 12px; color: #555;
+  }
+  .travel-marking-banner.is-open { display: flex; }
+  .travel-marking-banner span { white-space: normal; text-align: center; line-height: 1.4; }
+  .travel-marking-banner .travel-marking-actions { display: flex; gap: 8px; }
+  .travel-marking-banner button {
+    border: none; border-radius: 50%; width: 30px; height: 30px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: bold; cursor: pointer; font-family: inherit; flex-shrink: 0;
+  }
+  .travel-marking-confirm { background: #2e7d32; color: #fff; }
+  .travel-marking-cancel  { background: #eee; color: #555; }
+
+  /* ══════════════════════════════════
+     出行訣 階段二 2a：方框內嵌地圖
+     .outer 本身固定在原九宮框範圍內；地圖填滿整個 .outer，九宮格線／r1c1標籤疊在地圖之上。
+  ══════════════════════════════════ */
+  .travel-inline-map-wrap { position: absolute; inset: 0; z-index: 0; border-radius: 12px; overflow: hidden; }
+  .travel-inline-map { position: absolute; inset: 0; transform: rotate(180deg); transition: transform .5s ease; /* 預設南上北下，配合盤面慣例；旋轉按鈕（2b）平滑轉為北上南下 */ }
+  /* 2b 旋轉狀態：地圖轉正（北上南下）。宮位內容對調（4↔6、9↔1、2↔8、7↔3）由 JS 直接搬動 DOM 節點完成，不靠 CSS。 */
+  .outer.travel-map-mode.travel-map-rotated .travel-inline-map { transform: rotate(0deg); }
+  /* 工具列（原本放方框上方置中的「盤」按鈕，已改移到右上角、疊在全螢幕鈕正下方，見下方角落按鈕樣式）*/
+  .travel-inline-exit, .travel-inline-locate, .travel-inline-board-toggle, .travel-inline-fullscreen {
+    width: 30px; height: 30px; border-radius: 50%;
+    border: none; background: rgba(255,255,255,.92); color: #333;
+    font-size: 15px; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,.2); flex-shrink: 0;
+  }
+  .travel-inline-board-toggle { font-size: 12px; }
+  .travel-inline-board-toggle.active { background: #2471a3; color: #fff; }
+  .travel-inline-board-toggle .eye-open, .travel-inline-board-toggle .eye-closed { display: none; }
+  .travel-inline-board-toggle .eye-closed { display: block; }
+  .travel-inline-board-toggle.active .eye-closed { display: none; }
+  .travel-inline-board-toggle.active .eye-open { display: block; }
+  .travel-inline-locate { position: absolute; z-index: 2; bottom: 8px; right: 8px; color: #2471a3; }
+  /* 階段三：全螢幕展開鈕，方框右上角，只在地圖模式（.travel-map-mode）常駐顯示，跟旋轉/盤面狀態無關 */
+  .travel-inline-fullscreen { display: none; position: absolute; z-index: 5; top: -8px; right: -8px; font-size: 13px; }
+  .outer.travel-map-mode .travel-inline-fullscreen { display: flex; }
+  /* 眼睛鈕（顯示/隱藏盤面）：改成跟 ←、⛶ 同一種「疊在方框邊框上、獨立浮動」做法，z-index:5，
+     不能放進 travel-inline-map-wrap（z-index:0）內部——該容器的堆疊層級整體低於九宮格（z-index:1），
+     即使內部元件自訂z-index也救不回來，會被盤面點擊層蓋住點不到。放在右上角、疊在全螢幕鈕正下方 */
+  .travel-inline-board-toggle { display: none; position: absolute; z-index: 5; top: 30px; right: -8px; }
+  .outer.travel-map-mode .travel-inline-board-toggle { display: flex; }
+  /* 返回鈕：本質是「跳出地圖模式」，移到方框左上角，與右上角的全螢幕展開鈕對稱 */
+  .travel-inline-exit { display: none; position: absolute; z-index: 5; top: -8px; left: -8px; font-size: 13px; }
+  .outer.travel-map-mode .travel-inline-exit { display: flex; }
+  .travel-inline-exit:active, .travel-inline-locate:active, .travel-inline-board-toggle:active, .travel-inline-fullscreen:active { opacity: .85; }
+
+  /* 地圖模式：九宮格線（.cell 邊框）與 r1c1 宮位標籤留在畫面上，其餘內容透明化／隱藏，讓地圖從縫間透出 */
+  .outer.travel-map-mode .grid { position: relative; z-index: 1; pointer-events: none; }
+  /* 盤面顯示時，整個宮位都要能點擊修改吉凶（見 travelMarkEditable）——.grid 整體 pointer-events:none 會連帶擋掉，這裡單獨救回來 */
+  .outer.travel-map-mode.board-visible .cell[data-gong] { pointer-events: auto; }
+  .outer.travel-map-mode .cell { background: transparent; }
+  .outer.travel-map-mode .gc-shen,
+  .outer.travel-map-mode .gc-star,
+  .outer.travel-map-mode .gc-gate,
+  .outer.travel-map-mode .gc-void,
+  .outer.travel-map-mode .gc-tian,
+  .outer.travel-map-mode .gc-horse,
+  .outer.travel-map-mode .gc-di,
+  .outer.travel-map-mode .gc-left2 {
+    visibility: hidden;
+  }
+  /* 中宮比較特殊：.cell.center 本身 border:none，外框線是靠中宮內部 9 個小格(.gc-center)各自的邊框拼出來的，
+     所以中宮不能整格 visibility:hidden（會連邊框一起藏掉），只藏裡面的內容（地支時鐘、指南針） */
+  .outer.travel-map-mode .yigan {
+    visibility: hidden; /* 出行訣用不到引干，地圖模式下先藏起來；「盤」開關開啟時屬於盤面資訊的一部分，一併現形 */
+  }
+  .outer.travel-map-mode.board-visible .yigan {
+    visibility: visible;
+  }
+  .outer.travel-map-mode .gc-center .dz9 {
+    visibility: hidden; /* 地支時鐘文字地圖模式用不到；指針(.dz-center)則保留顯示，見下方「指針」區塊 */
+  }
+  /* 中宮內部本來還有一圈#ccc細格線（地支時鐘的分格線），地圖模式下一併拿掉，只留外框（外框走ID選擇器，優先度較高不受影響） */
+  .outer.travel-map-mode .gc-center {
+    border-right: none;
+    border-bottom: none;
+    overflow: visible; /* 讓旋轉圖示可以放大到蓋過整個中宮範圍，不被指針所在的那一小格裁掉；外圍仍有 .cell.center 的 overflow:hidden 擋著，不會溢出中宮 */
+  }
+  .outer.travel-map-mode .gc-left {
+    background: rgba(255,255,255,.74); border-radius: 0 0 8px 0;
+  }
+  /* 指針(.dz-center)在地圖模式下維持顯示，讓使用者知道上方離9是南、下方坎1是北（跟九宮方位對照），
+     跟地圖是疊在一起的兩層投影片：指針固定跟九宮同步，不跟即時裝置朝向連動，只有點中宮（＝旋轉）時才一起翻轉
+     （見 JS setTravelCompassOrientation／travelCompassFrozen）。藍點（目前位置）另外保留，兩者並存。
+     過渡時間拉長跟地圖的 0.5s 同步，翻轉手感一致。 */
+  .outer.travel-map-mode .compass-ring { transition: transform .5s ease; }
+  /* 旋轉箭頭：只在方框內嵌地圖模式顯示（不含全螢幕扇形羅盤，見需求）；
+     用 #paipan-result 限定原始位置，出行訣全螢幕會把 .outer 節點暫時搬進 #travel-board-layer，
+     搬過去後這條規則自然不再命中，順便讓中宮在全螢幕快照期間維持不可點擊，不需要另外加 JS 判斷 */
+  #paipan-result .outer.travel-map-mode .compass-rotate-bracket { opacity: .8; }
+  #paipan-result .outer.travel-map-mode.travel-map-rotated .compass-rotate-bracket { color: #2471a3; }
+  /* 中宮點擊：地圖模式下 .grid 整體 pointer-events:none（見上方規則），這裡單獨救回中宮指針，讓點擊可以觸發旋轉 */
+  #paipan-result .outer.travel-map-mode .dz-center { pointer-events: auto; }
+
+  /* 盤面顯示/隱藏：點右上角「盤」鈕切換，半透明疊加在地圖上方，固定在同一塊九宮框內，不出框 */
+  .outer.travel-map-mode.board-visible .cell {
+    background: rgba(255,255,255,.70);
+  }
+  .outer.travel-map-mode.board-visible .gc-shen,
+  .outer.travel-map-mode.board-visible .gc-star,
+  .outer.travel-map-mode.board-visible .gc-gate,
+  .outer.travel-map-mode.board-visible .gc-void,
+  .outer.travel-map-mode.board-visible .gc-tian,
+  .outer.travel-map-mode.board-visible .gc-horse,
+  .outer.travel-map-mode.board-visible .gc-di,
+  .outer.travel-map-mode.board-visible .gc-left2,
+  .outer.travel-map-mode.board-visible .gc-center .dz9 {
+    visibility: visible;
+  }
+  /* 2026.08：原本「已標記宮位強制顯示門名/吉凶小字」的做法，改成合併顯示一個大字（見下方 .travel-mark-big）。
+     只在「未開盤（收起盤面看地圖）」時生效；開盤時（.board-visible）維持顯示宮位原本的完整資訊
+     （門/星/神/天干/地支等，跟未標記宮位一視同仁），大字這時反而要消失，見下方 .travel-mark-big 預設 display:none，
+     只有 :not(.board-visible) 且已標記時才亮出來，兩者互斥不會同時出現。 */
+  .travel-mark-big {
+    display: none;
+    align-items: center; justify-content: center;
+    pointer-events: none; /* 不擋點擊，標記循環／地圖操作仍由 .cell 本身承接 */
+    background: rgba(255,255,255,.6);
+  }
+  /* 2026.08修正：字體樣式搬到內層span，外層div只留背景色。
+     原本filter直接放在帶背景色的外層div上，drop-shadow會把整個半透明白底矩形的輪廓也算進陰影範圍，
+     導致暈開成整片色塊；內層span沒有背景，效果才會只落在文字筆畫本身。
+     陰影：單純做出立體感（曾試過同色光暈，在偏白地圖底色上對比不足看不太出來，改回一般陰影） */
+  .travel-mark-big span {
+    font-family: "Noto Serif TC", "PMingLiU", serif;
+    font-weight: 400; /* 2026.08：原本700，但Google Fonts只有載入300/400/500三種字重(見<head>連結)，
+       700其實是瀏覽器合成的假粗體，改400後是真正有載入、渲染會比較穩定的字重 */
+    font-size: 60px;
+    line-height: 1;
+    text-shadow: 2px 1.5px 3px rgba(130,130,130,0.45);
+  }
+  .travel-mark-big.mark-lucky span   { color: #FFB700; }
+  .travel-mark-big.mark-unlucky span { color: #c0392b; }
+  .outer.travel-map-mode:not(.board-visible) .cell.travel-marked .travel-mark-big {
+    display: flex;
+  }
 </style>
 </head>
 <body>
 <div class="page">
 <!-- 標題 -->
 <div class="title-row">
-  <div class="title-row-text">陰盤奇門排盤</div>
+  <div class="title-row-text">奇門遁甲九宮排盤</div>
   <button class="btn-records" onclick="openRecordsPanel()">紀錄</button>
 </div>
 
@@ -860,6 +1276,23 @@
       <input type="tel" id="minute"  maxlength="2" inputmode="numeric">
     </div>
   </div>
+  <div class="plate-toggle" id="plate-toggle">
+    <button type="button" class="plate-btn" id="plate-yang" onclick="setPlateMode('yang')">陽盤</button>
+    <button type="button" class="plate-btn" id="plate-mingpan" onclick="toggleMingPan()">命盤</button>
+  </div>
+  <div class="plate-toggle plate-subtoggle" id="plate-yin-row">
+    <button type="button" class="plate-btn active" id="plate-yin" onclick="setPlateMode('yin')">陰盤</button>
+  </div>
+  <div class="plate-toggle plate-subtoggle" id="plate-subtoggle" style="display:none;">
+    <button type="button" class="plate-btn active" id="plate-yang-time" onclick="setYangSubMode('time')">時家(置閏)</button>
+    <button type="button" class="plate-btn" id="plate-yang-day" onclick="setYangSubMode('day')">日家</button>
+    <button type="button" class="plate-btn" id="plate-yang-month" onclick="setYangSubMode('month')">月家</button>
+    <button type="button" class="plate-btn" id="plate-yang-year" onclick="setYangSubMode('year')">年家</button>
+  </div>
+  <div class="plate-toggle plate-subtoggle" id="mingpan-gender-toggle" style="display:none;">
+    <button type="button" class="plate-btn active" id="mingpan-male" onclick="setMingPanGender('male')">男命</button>
+    <button type="button" class="plate-btn" id="mingpan-female" onclick="setMingPanGender('female')">女命</button>
+  </div>
   <div class="input-buttons">
     <button class="btn-now" onclick="resetChart()">重置</button>
     <button class="btn-start" onclick="clearHighlight();castChart()">排盤</button>
@@ -873,20 +1306,24 @@
 <div id="paipan-result" style="display:block;">
 
 <div class="header">
-  <div class="h-col-left">
+  <div class="h-col-top">
     <table class="h-table">
-      <tr><td class="hl">西元</td><td class="hv" id="sy">—</td><td class="hv" id="sm">—</td><td class="hv" id="sd">—</td><td class="hv" id="st">—</td></tr>
-      <tr><td class="hl">農曆</td><td class="hv" id="ly">—</td><td class="hv" id="lm">—</td><td class="hv" id="ld">—</td><td class="hv" id="lt">—</td></tr>
-      <tr><td class="hl">天干</td><td class="hv" id="gz-y-gan">—</td><td class="hv" id="gz-m-gan">—</td><td class="hv" id="gz-d-gan">—</td><td class="hv" id="gz-h-gan">—</td></tr>
-      <tr><td class="hl">地支</td><td class="hv" id="gz-y-zhi">—</td><td class="hv" id="gz-m-zhi">—</td><td class="hv" id="gz-d-zhi">—</td><td class="hv" id="gz-h-zhi">—</td></tr>
-    </table>
-  </div>
-  <div class="h-col-mid">
-    <table class="h-table">
-      <tr><td class="hl">起局</td><td class="hv" id="hb-qiju">—</td><td class="hl">類型</td><td class="hv" id="hb-fuyin">—</td></tr>
-      <tr><td class="hl">旬首</td><td class="hv" id="hb-xun">—</td><td class="hl">符頭</td><td class="hv" id="hb-dutyStem">—</td></tr>
-      <tr><td class="hl">值符</td><td class="hv" id="hb-zhifu">—</td><td class="hl">值使</td><td class="hv" id="hb-zhishi">—</td></tr>
-      <tr><td class="hl">空亡</td><td class="hv" id="hb-voidBranches">—</td><td class="hl">驛馬</td><td class="hv" id="hb-travel-horse">—</td></tr>
+      <tr>
+        <td class="hl">西元</td><td class="hv" id="sy">—</td><td class="hv" id="sm">—</td><td class="hv" id="sd">—</td><td class="hv" id="st">—</td>
+        <td class="hl">排盤</td><td class="hv" id="hb-fuyin">—</td><td class="hl">局數</td><td class="hv" id="hb-qiju">—</td><td class="hl">旬首</td><td class="hv" id="hb-xun">—</td>
+      </tr>
+      <tr>
+        <td class="hl">農曆</td><td class="hv" id="ly">—</td><td class="hv" id="lm">—</td><td class="hv" id="ld">—</td><td class="hv" id="lt">—</td>
+        <td class="hl">符頭</td><td class="hv" id="hb-dutyStem">—</td><td class="hl">值符</td><td class="hv" id="hb-zhifu">—</td><td class="hl">值使</td><td class="hv" id="hb-zhishi">—</td>
+      </tr>
+      <tr>
+        <td class="hl">天干</td><td class="hv" id="gz-y-gan">—</td><td class="hv" id="gz-m-gan">—</td><td class="hv" id="gz-d-gan">—</td><td class="hv" id="gz-h-gan">—</td>
+        <td class="hl">空亡</td><td class="hv" id="hb-voidBranches">—</td><td class="hl">驛馬</td><td class="hv" id="hb-travel-horse">—</td><td class="hl">用神</td><td class="hv" id="hb-yongshen">—</td>
+      </tr>
+      <tr>
+        <td class="hl">地支</td><td class="hv" id="gz-y-zhi">—</td><td class="hv" id="gz-m-zhi">—</td><td class="hv" id="gz-d-zhi">—</td><td class="hv" id="gz-h-zhi">—</td>
+        <td class="hl">標記</td><td class="hv" colspan="5" id="hb-marker">—</td>
+      </tr>
     </table>
   </div>
   <div class="h-col-combined">
@@ -918,7 +1355,7 @@
   </div>
 </div>
 
-<div class="outer">
+<div class="outer" id="outer-board">
 
   <div class="yigan yigan-top"    id="yin-9"></div>
   <div class="yigan yigan-bottom" id="yin-1"></div>
@@ -928,14 +1365,43 @@
   <div class="yigan yigan-tr"     id="yin-2"></div>
   <div class="yigan yigan-bl"     id="yin-8"></div>
   <div class="yigan yigan-br"     id="yin-6"></div>
+  <!-- 命盤模式：12地支固定位置的人事宮位標籤，取代上方8個引干欄位 -->
+  <div class="yigan mingpan-label rg-top-l"    id="mp-top-l"    style="display:none;"></div>
+  <div class="yigan mingpan-label rg-top-c"    id="mp-top-c"    style="display:none;"></div>
+  <div class="yigan mingpan-label rg-top-r"    id="mp-top-r"    style="display:none;"></div>
+  <div class="yigan mingpan-label rg-right-t"  id="mp-right-t"  style="display:none;"></div>
+  <div class="yigan mingpan-label rg-right-c"  id="mp-right-c"  style="display:none;"></div>
+  <div class="yigan mingpan-label rg-right-b"  id="mp-right-b"  style="display:none;"></div>
+  <div class="yigan mingpan-label rg-bottom-r" id="mp-bottom-r" style="display:none;"></div>
+  <div class="yigan mingpan-label rg-bottom-c" id="mp-bottom-c" style="display:none;"></div>
+  <div class="yigan mingpan-label rg-bottom-l" id="mp-bottom-l" style="display:none;"></div>
+  <div class="yigan mingpan-label rg-left-b"   id="mp-left-b"   style="display:none;"></div>
+  <div class="yigan mingpan-label rg-left-c"   id="mp-left-c"   style="display:none;"></div>
+  <div class="yigan mingpan-label rg-left-t"   id="mp-left-t"   style="display:none;"></div>
+
+  <!-- 返回鈕：本質是「跳出地圖模式」，移到方框左上角，與右上角的全螢幕展開鈕對稱 -->
+  <button type="button" class="travel-inline-exit" id="travel-inline-exit" aria-label="返回盤面">←</button>
+  <!-- 出行訣 階段三：全螢幕展開鈕，方框右上角，點擊後進入既有的全螢幕扇形羅盤（travel-overlay） -->
+  <button type="button" class="travel-inline-fullscreen" id="travel-inline-fullscreen" aria-label="展開全螢幕羅盤">⛶</button>
+  <!-- 眼睛圖示（Feather風格）：張開＝盤面顯示中（board-visible），閉眼（變形＋斜線）＝盤面隱藏（只看地圖）；預設閉眼，見CSS/JS同步切換。
+       位置在方框右上角、疊在全螢幕鈕正下方；必須是獨立浮動元件（不能放進 travel-inline-map-wrap，見CSS註解），
+       否則會被九宮格點擊層（board-visible時）蓋住，點不到、無法再次隱藏 -->
+  <button type="button" class="travel-inline-board-toggle" id="travel-inline-board-toggle" aria-label="顯示/隱藏盤面"><svg class="eye-open" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12C1 12 5 5 12 5C19 5 23 12 23 12C23 12 19 19 12 19C5 19 1 12 1 12Z"/><circle cx="12" cy="12" r="3"/></svg><svg class="eye-closed" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 15.2C21.9 13.9 23 12 23 12C23 12 19 5 12 5C10.9 5 9.9 5.2 9 5.5M6.5 6.9C3.2 8.8 1 12 1 12C1 12 5 19 12 19C13.9 19 15.6 18.5 17 17.7"/><path d="M9.9 10C9.3 10.6 9 11.3 9 12C9 13.7 10.3 15 12 15C12.7 15 13.4 14.7 14 14.2"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button>
+
+  <!-- 出行訣 階段二 2a：方框內嵌地圖。z-index 低於 .grid，透過 .cell 背景透明讓地圖從九宮線縫間透出 -->
+  <div class="travel-inline-map-wrap" id="travel-inline-map-wrap" style="display:none;">
+    <div class="travel-inline-map" id="travel-inline-map"></div>
+    <button type="button" class="travel-inline-locate" id="travel-inline-locate" aria-label="拉回目前位置"><svg viewBox="0 0 24 24" width="16" height="16"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg></button>
+  </div>
 
   <div class="grid">
     <!-- 4 巽 -->
     <div class="cell" data-gong="4">
+    <div class="travel-mark-big" id="travel-mark-big-4" style="grid-column:1/4;grid-row:1/4;"><span></span></div>
     <div id="g4r1c1" class="gc gc-left" style="grid-column:1;grid-row:1;"><div class="house-id"><span class="house-num" style="color:#4caf50;">4</span><span class="house-name" style="color:#4caf50;">巽</span></div><div class="bagua" style="--line-color:#4caf50;"><div class="bline-full"></div><div class="bline-full"></div><div class="bline-broken"><span></span><span></span></div></div></div>
     <div id="g4r1c2" class="gc gc-shen" style="grid-column:2;grid-row:1;"><span id="sh-4"></span></div>
     <div id="g4r1c3" class="gc gc-void" style="grid-column:3;grid-row:1;"><div id="void-4"></div></div>
-    <div id="g4r2c1" class="gc gc-left2" style="grid-column:1;grid-row:2;"></div>
+    <div id="g4r2c1" class="gc gc-left2" style="grid-column:1;grid-row:2;"><span id="daxian-4" class="gc-daxian mingpan-label" style="display:none;"></span><span id="travel-mark-4" class="travel-mark-label" style="display:none;"></span></div>
     <div id="g4r2c2" class="gc gc-star" style="grid-column:2;grid-row:2;"><span id="star-4"></span></div>
     <div id="g4r2c3" class="gc gc-tian" style="grid-column:3;grid-row:2;"><span id="tian-4"></span></div>
     <div id="g4r3c1" class="gc gc-horse" style="grid-column:1;grid-row:3;"><div id="horse-4"></div></div>
@@ -945,10 +1411,11 @@
 
     <!-- 9 離 -->
     <div class="cell" data-gong="9">
+    <div class="travel-mark-big" id="travel-mark-big-9" style="grid-column:1/4;grid-row:1/4;"><span></span></div>
     <div id="g9r1c1" class="gc gc-left" style="grid-column:1;grid-row:1;"><div class="house-id"><span class="house-num" style="color:#c0392b;">9</span><span class="house-name" style="color:#c0392b;">離</span></div><div class="bagua" style="--line-color:#c0392b;"><div class="bline-full"></div><div class="bline-broken"><span></span><span></span></div><div class="bline-full"></div></div></div>
     <div id="g9r1c2" class="gc gc-shen" style="grid-column:2;grid-row:1;"><span id="sh-9"></span></div>
     <div id="g9r1c3" class="gc gc-void" style="grid-column:3;grid-row:1;"><div id="void-9"></div></div>
-    <div id="g9r2c1" class="gc gc-left2" style="grid-column:1;grid-row:2;"></div>
+    <div id="g9r2c1" class="gc gc-left2" style="grid-column:1;grid-row:2;"><span id="daxian-9" class="gc-daxian mingpan-label" style="display:none;"></span><span id="travel-mark-9" class="travel-mark-label" style="display:none;"></span></div>
     <div id="g9r2c2" class="gc gc-star" style="grid-column:2;grid-row:2;"><span id="star-9"></span></div>
     <div id="g9r2c3" class="gc gc-tian" style="grid-column:3;grid-row:2;"><span id="tian-9"></span></div>
     <div id="g9r3c1" class="gc gc-horse" style="grid-column:1;grid-row:3;"><div id="horse-9"></div></div>
@@ -958,10 +1425,11 @@
 
     <!-- 2 坤 -->
     <div class="cell" data-gong="2">
+    <div class="travel-mark-big" id="travel-mark-big-2" style="grid-column:1/4;grid-row:1/4;"><span></span></div>
     <div id="g2r1c1" class="gc gc-left" style="grid-column:1;grid-row:1;"><div class="house-id"><span class="house-num" style="color:#a0714f;">2</span><span class="house-name" style="color:#a0714f;">坤</span></div><div class="bagua" style="--line-color:#a0714f;"><div class="bline-broken"><span></span><span></span></div><div class="bline-broken"><span></span><span></span></div><div class="bline-broken"><span></span><span></span></div></div></div>
     <div id="g2r1c2" class="gc gc-shen" style="grid-column:2;grid-row:1;"><span id="sh-2"></span></div>
     <div id="g2r1c3" class="gc gc-void" style="grid-column:3;grid-row:1;"><div id="void-2"></div></div>
-    <div id="g2r2c1" class="gc gc-left2" style="grid-column:1;grid-row:2;"></div>
+    <div id="g2r2c1" class="gc gc-left2" style="grid-column:1;grid-row:2;"><span id="daxian-2" class="gc-daxian mingpan-label" style="display:none;"></span><span id="travel-mark-2" class="travel-mark-label" style="display:none;"></span></div>
     <div id="g2r2c2" class="gc gc-star" style="grid-column:2;grid-row:2;"><span id="star-2"></span></div>
     <div id="g2r2c3" class="gc gc-tian" style="grid-column:3;grid-row:2;"><span id="tian-2"></span></div>
     <div id="g2r3c1" class="gc gc-horse" style="grid-column:1;grid-row:3;"><div id="horse-2"></div></div>
@@ -971,10 +1439,11 @@
 
     <!-- 3 震 -->
     <div class="cell" data-gong="3">
+    <div class="travel-mark-big" id="travel-mark-big-3" style="grid-column:1/4;grid-row:1/4;"><span></span></div>
     <div id="g3r1c1" class="gc gc-left" style="grid-column:1;grid-row:1;"><div class="house-id"><span class="house-num" style="color:#1a7a1a;">3</span><span class="house-name" style="color:#1a7a1a;">震</span></div><div class="bagua" style="--line-color:#1a7a1a;"><div class="bline-broken"><span></span><span></span></div><div class="bline-broken"><span></span><span></span></div><div class="bline-full"></div></div></div>
     <div id="g3r1c2" class="gc gc-shen" style="grid-column:2;grid-row:1;"><span id="sh-3"></span></div>
     <div id="g3r1c3" class="gc gc-void" style="grid-column:3;grid-row:1;"><div id="void-3"></div></div>
-    <div id="g3r2c1" class="gc gc-left2" style="grid-column:1;grid-row:2;"></div>
+    <div id="g3r2c1" class="gc gc-left2" style="grid-column:1;grid-row:2;"><span id="daxian-3" class="gc-daxian mingpan-label" style="display:none;"></span><span id="travel-mark-3" class="travel-mark-label" style="display:none;"></span></div>
     <div id="g3r2c2" class="gc gc-star" style="grid-column:2;grid-row:2;"><span id="star-3"></span></div>
     <div id="g3r2c3" class="gc gc-tian" style="grid-column:3;grid-row:2;"><span id="tian-3"></span></div>
     <div id="g3r3c1" class="gc gc-horse" style="grid-column:1;grid-row:3;"><div id="horse-3"></div></div>
@@ -984,6 +1453,28 @@
 
     <!-- 5 中 -->
     <div class="cell center">
+    <!-- 出行訣：三個確認/提示泡泡都疊在中宮正中央（.cell.center 是定位基準，見 CSS），共用同一種小型泡泡樣式 -->
+    <div class="travel-marking-banner" id="travel-ask-panel">
+      <span>確定載入出行訣圖資？</span>
+      <div class="travel-marking-actions">
+        <button type="button" class="travel-marking-cancel"  onclick="confirmTravelAsk(false)" aria-label="否">✕</button>
+        <button type="button" class="travel-marking-confirm" onclick="confirmTravelAsk(true)" aria-label="是">✓</button>
+      </div>
+    </div>
+    <div class="travel-marking-banner" id="yang-submode-confirm">
+      <span>切換將重置盤面與吉凶標記。</span>
+      <div class="travel-marking-actions">
+        <button type="button" class="travel-marking-cancel"  onclick="hideYangSubSwitchConfirm()" aria-label="否">✕</button>
+        <button type="button" class="travel-marking-confirm" onclick="confirmYangSubSwitch()" aria-label="是">✓</button>
+      </div>
+    </div>
+    <div class="travel-marking-banner" id="travel-marking-banner">
+      <span>點擊各宮位標記吉凶</span>
+      <div class="travel-marking-actions">
+        <button type="button" class="travel-marking-cancel"  onclick="cancelTravelMarking()" aria-label="取消">✕</button>
+        <button type="button" class="travel-marking-confirm" onclick="confirmTravelMarking()" aria-label="確認">✓</button>
+      </div>
+    </div>
     <div id="g5r1c1" class="gc gc-center" style="grid-column:1;grid-row:1;"><div class="dz9">
       <div class="dz9-cell" style="grid-column:3;grid-row:1;"><span class="dz9-branch" data-dz="巳">巳</span></div>
       <div class="dz9-cell align-right" style="grid-column:1 / span 2;grid-row:1;"><span class="dz9-label" data-dz-label="巳"></span></div>
@@ -1005,10 +1496,17 @@
       <div class="dz9-cell align-left" style="grid-column:2 / span 2;grid-row:2;"><span class="dz9-label" data-dz-label="卯"></span></div>
     </div></div>
     <div id="g5r2c2" class="gc gc-center" style="grid-column:2;grid-row:2;"><div class="dz-center" id="compassCell" title="點擊啟用指南針">
-      <div class="compass-ring" id="compassRing"><div class="compass-needle">
+      <div class="compass-ring" id="compassRing">
+      <!-- 出行訣旋轉：弧形括弧＋箭頭，分放指針左右，跟指針一起放在 #compassRing 裡面才會同步旋轉；
+           只在方框內嵌地圖模式顯示（見 CSS #paipan-result .outer.travel-map-mode .compass-rotate-bracket），點整個中宮即可觸發 -->
+      <span class="compass-rotate-bracket left" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M14 5 Q4 5 4 12 Q4 19 14 19"/><polyline points="11.4 3.0 14 5 12.0 7.6"/></svg></span>
+      <span class="compass-rotate-bracket right" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5 Q20 5 20 12 Q20 19 10 19"/><polyline points="12.0 16.4 10 19 12.6 21.0"/></svg></span>
+      <div class="compass-needle">
         <div class="needle-half needle-s">S</div>
         <div class="needle-half needle-n">N</div>
-      </div></div>
+      </div>
+      </div>
+      <span id="daxian-5" class="gc-daxian mingpan-label" style="display:none;"></span>
     </div></div>
     <div id="g5r2c3" class="gc gc-center" style="grid-column:3;grid-row:2;"><div class="dz9">
       <div class="dz9-cell" style="grid-column:3;grid-row:2;"><span class="dz9-branch" data-dz="酉">酉</span></div>
@@ -1034,10 +1532,11 @@
 
     <!-- 7 兌 -->
     <div class="cell" data-gong="7">
+    <div class="travel-mark-big" id="travel-mark-big-7" style="grid-column:1/4;grid-row:1/4;"><span></span></div>
     <div id="g7r1c1" class="gc gc-left" style="grid-column:1;grid-row:1;"><div class="house-id"><span class="house-num" style="color:#999999;">7</span><span class="house-name" style="color:#999999;">兌</span></div><div class="bagua" style="--line-color:#999999;"><div class="bline-broken"><span></span><span></span></div><div class="bline-full"></div><div class="bline-full"></div></div></div>
     <div id="g7r1c2" class="gc gc-shen" style="grid-column:2;grid-row:1;"><span id="sh-7"></span></div>
     <div id="g7r1c3" class="gc gc-void" style="grid-column:3;grid-row:1;"><div id="void-7"></div></div>
-    <div id="g7r2c1" class="gc gc-left2" style="grid-column:1;grid-row:2;"></div>
+    <div id="g7r2c1" class="gc gc-left2" style="grid-column:1;grid-row:2;"><span id="daxian-7" class="gc-daxian mingpan-label" style="display:none;"></span><span id="travel-mark-7" class="travel-mark-label" style="display:none;"></span></div>
     <div id="g7r2c2" class="gc gc-star" style="grid-column:2;grid-row:2;"><span id="star-7"></span></div>
     <div id="g7r2c3" class="gc gc-tian" style="grid-column:3;grid-row:2;"><span id="tian-7"></span></div>
     <div id="g7r3c1" class="gc gc-horse" style="grid-column:1;grid-row:3;"><div id="horse-7"></div></div>
@@ -1047,10 +1546,11 @@
 
     <!-- 8 艮 -->
     <div class="cell" data-gong="8">
+    <div class="travel-mark-big" id="travel-mark-big-8" style="grid-column:1/4;grid-row:1/4;"><span></span></div>
     <div id="g8r1c1" class="gc gc-left" style="grid-column:1;grid-row:1;"><div class="house-id"><span class="house-num" style="color:#6b4423;">8</span><span class="house-name" style="color:#6b4423;">艮</span></div><div class="bagua" style="--line-color:#6b4423;"><div class="bline-full"></div><div class="bline-broken"><span></span><span></span></div><div class="bline-broken"><span></span><span></span></div></div></div>
     <div id="g8r1c2" class="gc gc-shen" style="grid-column:2;grid-row:1;"><span id="sh-8"></span></div>
     <div id="g8r1c3" class="gc gc-void" style="grid-column:3;grid-row:1;"><div id="void-8"></div></div>
-    <div id="g8r2c1" class="gc gc-left2" style="grid-column:1;grid-row:2;"></div>
+    <div id="g8r2c1" class="gc gc-left2" style="grid-column:1;grid-row:2;"><span id="daxian-8" class="gc-daxian mingpan-label" style="display:none;"></span><span id="travel-mark-8" class="travel-mark-label" style="display:none;"></span></div>
     <div id="g8r2c2" class="gc gc-star" style="grid-column:2;grid-row:2;"><span id="star-8"></span></div>
     <div id="g8r2c3" class="gc gc-tian" style="grid-column:3;grid-row:2;"><span id="tian-8"></span></div>
     <div id="g8r3c1" class="gc gc-horse" style="grid-column:1;grid-row:3;"><div id="horse-8"></div></div>
@@ -1060,10 +1560,11 @@
 
     <!-- 1 坎 -->
     <div class="cell" data-gong="1">
+    <div class="travel-mark-big" id="travel-mark-big-1" style="grid-column:1/4;grid-row:1/4;"><span></span></div>
     <div id="g1r1c1" class="gc gc-left" style="grid-column:1;grid-row:1;"><div class="house-id"><span class="house-num" style="color:#2471a3;">1</span><span class="house-name" style="color:#2471a3;">坎</span></div><div class="bagua" style="--line-color:#2471a3;"><div class="bline-broken"><span></span><span></span></div><div class="bline-full"></div><div class="bline-broken"><span></span><span></span></div></div></div>
     <div id="g1r1c2" class="gc gc-shen" style="grid-column:2;grid-row:1;"><span id="sh-1"></span></div>
     <div id="g1r1c3" class="gc gc-void" style="grid-column:3;grid-row:1;"><div id="void-1"></div></div>
-    <div id="g1r2c1" class="gc gc-left2" style="grid-column:1;grid-row:2;"></div>
+    <div id="g1r2c1" class="gc gc-left2" style="grid-column:1;grid-row:2;"><span id="daxian-1" class="gc-daxian mingpan-label" style="display:none;"></span><span id="travel-mark-1" class="travel-mark-label" style="display:none;"></span></div>
     <div id="g1r2c2" class="gc gc-star" style="grid-column:2;grid-row:2;"><span id="star-1"></span></div>
     <div id="g1r2c3" class="gc gc-tian" style="grid-column:3;grid-row:2;"><span id="tian-1"></span></div>
     <div id="g1r3c1" class="gc gc-horse" style="grid-column:1;grid-row:3;"><div id="horse-1"></div></div>
@@ -1073,10 +1574,11 @@
 
     <!-- 6 乾 -->
     <div class="cell" data-gong="6">
+    <div class="travel-mark-big" id="travel-mark-big-6" style="grid-column:1/4;grid-row:1/4;"><span></span></div>
     <div id="g6r1c1" class="gc gc-left" style="grid-column:1;grid-row:1;"><div class="house-id"><span class="house-num" style="color:#555555;">6</span><span class="house-name" style="color:#555555;">乾</span></div><div class="bagua" style="--line-color:#555555;"><div class="bline-full"></div><div class="bline-full"></div><div class="bline-full"></div></div></div>
     <div id="g6r1c2" class="gc gc-shen" style="grid-column:2;grid-row:1;"><span id="sh-6"></span></div>
     <div id="g6r1c3" class="gc gc-void" style="grid-column:3;grid-row:1;"><div id="void-6"></div></div>
-    <div id="g6r2c1" class="gc gc-left2" style="grid-column:1;grid-row:2;"></div>
+    <div id="g6r2c1" class="gc gc-left2" style="grid-column:1;grid-row:2;"><span id="daxian-6" class="gc-daxian mingpan-label" style="display:none;"></span><span id="travel-mark-6" class="travel-mark-label" style="display:none;"></span></div>
     <div id="g6r2c2" class="gc gc-star" style="grid-column:2;grid-row:2;"><span id="star-6"></span></div>
     <div id="g6r2c3" class="gc gc-tian" style="grid-column:3;grid-row:2;"><span id="tian-6"></span></div>
     <div id="g6r3c1" class="gc gc-horse" style="grid-column:1;grid-row:3;"><div id="horse-6"></div></div>
@@ -1084,10 +1586,190 @@
     <div id="g6r3c3" class="gc gc-di" style="grid-column:3;grid-row:3;"><span id="di-6"></span></div>
     </div>
 
-  </div><!-- end grid -->
+</div><!-- end grid -->
+</div>
+
+<!-- 出行羅盤：吉方標記規則尚待討論；此層先固定呈現八宮五行色與即時朝向。 -->
+<div class="travel-overlay" id="travel-overlay" aria-hidden="true">
+  <div class="travel-map" id="travel-map"></div>
+  <div class="travel-board-layer" id="travel-board-layer"></div>
+  <div class="travel-compass" aria-label="八方位羅盤">
+    <svg class="travel-compass-disc" id="travel-compass-disc" viewBox="0 0 200 200">
+      <!-- 配色定案（2026.08）：五行對應色相，同屬性依陰陽分深淺（陽深陰淺，後天八卦分類：乾震坎艮為陽卦、坤巽離兌為陰卦）。
+           水(坎)＝暖調藍；火(離)＝暖珊瑚桃紅；木(震陽/巽陰)＝深/淺綠；土(艮陽/坤陰)＝深/淺黃褐；金(乾陽/兌陰)＝暖銀灰/近白珍珠，避免用黃（黃屬土非金） -->
+      <path class="travel-compass-sector" data-house="1" d="M100 100 L67.47 21.47 A85 85 0 0 1 132.53 21.47 Z" fill="#5EC4E0" vector-effect="non-scaling-stroke"/>
+      <path class="travel-compass-sector" data-house="8" d="M100 100 L132.53 21.47 A85 85 0 0 1 178.53 67.47 Z" fill="#C97D3E" vector-effect="non-scaling-stroke"/>
+      <path class="travel-compass-sector" data-house="3" d="M100 100 L178.53 67.47 A85 85 0 0 1 178.53 132.53 Z" fill="#8BC34A" vector-effect="non-scaling-stroke"/>
+      <path class="travel-compass-sector" data-house="4" d="M100 100 L178.53 132.53 A85 85 0 0 1 132.53 178.53 Z" fill="#C5D96C" vector-effect="non-scaling-stroke"/>
+      <path class="travel-compass-sector" data-house="9" d="M100 100 L132.53 178.53 A85 85 0 0 1 67.47 178.53 Z" fill="#FF7597" vector-effect="non-scaling-stroke"/>
+      <path class="travel-compass-sector" data-house="2" d="M100 100 L67.47 178.53 A85 85 0 0 1 21.47 132.53 Z" fill="#E8B88A" vector-effect="non-scaling-stroke"/>
+      <path class="travel-compass-sector" data-house="7" d="M100 100 L21.47 132.53 A85 85 0 0 1 21.47 67.47 Z" fill="#F5F0E6" vector-effect="non-scaling-stroke"/>
+      <path class="travel-compass-sector" data-house="6" d="M100 100 L21.47 67.47 A85 85 0 0 1 67.47 21.47 Z" fill="#C7C4BC" vector-effect="non-scaling-stroke"/>
+      <circle class="travel-compass-ring" cx="100" cy="100" r="85" vector-effect="non-scaling-stroke"/>
+      <text class="travel-compass-gua" data-house="1" x="100" y="128" transform="rotate(180 100 100)" fill="#222">坎</text>
+      <text class="travel-compass-gua" data-house="8" x="100" y="128" transform="rotate(225 100 100)" fill="#222">艮</text>
+      <text class="travel-compass-gua" data-house="3" x="100" y="128" transform="rotate(270 100 100)" fill="#222">震</text>
+      <text class="travel-compass-gua" data-house="4" x="100" y="128" transform="rotate(315 100 100)" fill="#222">巽</text>
+      <text class="travel-compass-gua" data-house="9" x="100" y="128" transform="rotate(0 100 100)"   fill="#222">離</text>
+      <text class="travel-compass-gua" data-house="2" x="100" y="128" transform="rotate(45 100 100)"  fill="#222">坤</text>
+      <text class="travel-compass-gua" data-house="7" x="100" y="128" transform="rotate(90 100 100)"  fill="#222">兌</text>
+      <text class="travel-compass-gua" data-house="6" x="100" y="128" transform="rotate(135 100 100)" fill="#222">乾</text>
+      <text class="travel-compass-dot" data-house="1" x="100" y="140" transform="rotate(180 100 100)" fill="#222">・</text>
+      <text class="travel-compass-dot" data-house="8" x="100" y="140" transform="rotate(225 100 100)" fill="#222">・</text>
+      <text class="travel-compass-dot" data-house="3" x="100" y="140" transform="rotate(270 100 100)" fill="#222">・</text>
+      <text class="travel-compass-dot" data-house="4" x="100" y="140" transform="rotate(315 100 100)" fill="#222">・</text>
+      <text class="travel-compass-dot" data-house="9" x="100" y="140" transform="rotate(0 100 100)" fill="#222">・</text>
+      <text class="travel-compass-dot" data-house="2" x="100" y="140" transform="rotate(45 100 100)" fill="#222">・</text>
+      <text class="travel-compass-dot" data-house="7" x="100" y="140" transform="rotate(90 100 100)" fill="#222">・</text>
+      <text class="travel-compass-dot" data-house="6" x="100" y="140" transform="rotate(135 100 100)" fill="#222">・</text>
+      <text class="travel-compass-dir" data-house="1" x="100" y="152" transform="rotate(180 100 100)" fill="#222">北</text>
+      <text class="travel-compass-dir" data-house="8" x="100" y="152" transform="rotate(225 100 100)" fill="#222">東北</text>
+      <text class="travel-compass-dir" data-house="3" x="100" y="152" transform="rotate(270 100 100)" fill="#222">東</text>
+      <text class="travel-compass-dir" data-house="4" x="100" y="152" transform="rotate(315 100 100)" fill="#222">東南</text>
+      <text class="travel-compass-dir" data-house="9" x="100" y="152" transform="rotate(0 100 100)"   fill="#222">南</text>
+      <text class="travel-compass-dir" data-house="2" x="100" y="152" transform="rotate(45 100 100)"  fill="#222">西南</text>
+      <text class="travel-compass-dir" data-house="7" x="100" y="152" transform="rotate(90 100 100)"  fill="#222">西</text>
+      <text class="travel-compass-dir" data-house="6" x="100" y="152" transform="rotate(135 100 100)" fill="#222">西北</text>
+      <!-- 出行訣：宮位標記吉凶時才會顯示這一圈的門名單字（生/休/傷…）與跟方位字之間的分隔點，平常都是空的
+           （見 updateTravelCompassSectorMarks）；分隔點半徑落在 dir 圈（y=159）跟門名圈（y=172）之間 -->
+      <text class="travel-compass-gate-dot" data-house="1" x="100" y="166" transform="rotate(180 100 100)" fill="#222"></text>
+      <text class="travel-compass-gate-dot" data-house="8" x="100" y="166" transform="rotate(225 100 100)" fill="#222"></text>
+      <text class="travel-compass-gate-dot" data-house="3" x="100" y="166" transform="rotate(270 100 100)" fill="#222"></text>
+      <text class="travel-compass-gate-dot" data-house="4" x="100" y="166" transform="rotate(315 100 100)" fill="#222"></text>
+      <text class="travel-compass-gate-dot" data-house="9" x="100" y="166" transform="rotate(0 100 100)"   fill="#222"></text>
+      <text class="travel-compass-gate-dot" data-house="2" x="100" y="166" transform="rotate(45 100 100)"  fill="#222"></text>
+      <text class="travel-compass-gate-dot" data-house="7" x="100" y="166" transform="rotate(90 100 100)"  fill="#222"></text>
+      <text class="travel-compass-gate-dot" data-house="6" x="100" y="166" transform="rotate(135 100 100)" fill="#222"></text>
+      <text class="travel-compass-gate" data-house="1" x="100" y="182" transform="rotate(180 100 100)" fill="#222"></text>
+      <text class="travel-compass-gate" data-house="8" x="100" y="182" transform="rotate(225 100 100)" fill="#222"></text>
+      <text class="travel-compass-gate" data-house="3" x="100" y="182" transform="rotate(270 100 100)" fill="#222"></text>
+      <text class="travel-compass-gate" data-house="4" x="100" y="182" transform="rotate(315 100 100)" fill="#222"></text>
+      <text class="travel-compass-gate" data-house="9" x="100" y="182" transform="rotate(0 100 100)"   fill="#222"></text>
+      <text class="travel-compass-gate" data-house="2" x="100" y="182" transform="rotate(45 100 100)"  fill="#222"></text>
+      <text class="travel-compass-gate" data-house="7" x="100" y="182" transform="rotate(90 100 100)"  fill="#222"></text>
+      <text class="travel-compass-gate" data-house="6" x="100" y="182" transform="rotate(135 100 100)" fill="#222"></text>
+      <circle class="travel-compass-center" cx="100" cy="100" r="3" fill="rgba(255,255,255,.9)"/>
+    </svg>
+    <svg class="travel-compass-label-disc" id="travel-compass-label-disc" viewBox="0 0 200 200" aria-hidden="true">
+      <text class="travel-compass-gua" data-house="1" x="100" y="128" transform="rotate(180 100 100)" fill="#222">坎</text>
+      <text class="travel-compass-gua" data-house="8" x="100" y="128" transform="rotate(225 100 100)" fill="#222">艮</text>
+      <text class="travel-compass-gua" data-house="3" x="100" y="128" transform="rotate(270 100 100)" fill="#222">震</text>
+      <text class="travel-compass-gua" data-house="4" x="100" y="128" transform="rotate(315 100 100)" fill="#222">巽</text>
+      <text class="travel-compass-gua" data-house="9" x="100" y="128" transform="rotate(0 100 100)"   fill="#222">離</text>
+      <text class="travel-compass-gua" data-house="2" x="100" y="128" transform="rotate(45 100 100)"  fill="#222">坤</text>
+      <text class="travel-compass-gua" data-house="7" x="100" y="128" transform="rotate(90 100 100)"  fill="#222">兌</text>
+      <text class="travel-compass-gua" data-house="6" x="100" y="128" transform="rotate(135 100 100)" fill="#222">乾</text>
+      <text class="travel-compass-dot" data-house="1" x="100" y="140" transform="rotate(180 100 100)" fill="#222">・</text>
+      <text class="travel-compass-dot" data-house="8" x="100" y="140" transform="rotate(225 100 100)" fill="#222">・</text>
+      <text class="travel-compass-dot" data-house="3" x="100" y="140" transform="rotate(270 100 100)" fill="#222">・</text>
+      <text class="travel-compass-dot" data-house="4" x="100" y="140" transform="rotate(315 100 100)" fill="#222">・</text>
+      <text class="travel-compass-dot" data-house="9" x="100" y="140" transform="rotate(0 100 100)" fill="#222">・</text>
+      <text class="travel-compass-dot" data-house="2" x="100" y="140" transform="rotate(45 100 100)" fill="#222">・</text>
+      <text class="travel-compass-dot" data-house="7" x="100" y="140" transform="rotate(90 100 100)" fill="#222">・</text>
+      <text class="travel-compass-dot" data-house="6" x="100" y="140" transform="rotate(135 100 100)" fill="#222">・</text>
+      <text class="travel-compass-dir" data-house="1" x="100" y="152" transform="rotate(180 100 100)" fill="#222">北</text>
+      <text class="travel-compass-dir" data-house="8" x="100" y="152" transform="rotate(225 100 100)" fill="#222">東北</text>
+      <text class="travel-compass-dir" data-house="3" x="100" y="152" transform="rotate(270 100 100)" fill="#222">東</text>
+      <text class="travel-compass-dir" data-house="4" x="100" y="152" transform="rotate(315 100 100)" fill="#222">東南</text>
+      <text class="travel-compass-dir" data-house="9" x="100" y="152" transform="rotate(0 100 100)"   fill="#222">南</text>
+      <text class="travel-compass-dir" data-house="2" x="100" y="152" transform="rotate(45 100 100)"  fill="#222">西南</text>
+      <text class="travel-compass-dir" data-house="7" x="100" y="152" transform="rotate(90 100 100)"  fill="#222">西</text>
+      <text class="travel-compass-dir" data-house="6" x="100" y="152" transform="rotate(135 100 100)" fill="#222">西北</text>
+      <!-- 出行訣：宮位標記吉凶時才會顯示這一圈的門名單字（生/休/傷…）與跟方位字之間的分隔點，平常都是空的
+           （見 updateTravelCompassSectorMarks）；分隔點半徑落在 dir 圈（y=159）跟門名圈（y=172）之間 -->
+      <text class="travel-compass-gate-dot" data-house="1" x="100" y="166" transform="rotate(180 100 100)" fill="#222"></text>
+      <text class="travel-compass-gate-dot" data-house="8" x="100" y="166" transform="rotate(225 100 100)" fill="#222"></text>
+      <text class="travel-compass-gate-dot" data-house="3" x="100" y="166" transform="rotate(270 100 100)" fill="#222"></text>
+      <text class="travel-compass-gate-dot" data-house="4" x="100" y="166" transform="rotate(315 100 100)" fill="#222"></text>
+      <text class="travel-compass-gate-dot" data-house="9" x="100" y="166" transform="rotate(0 100 100)"   fill="#222"></text>
+      <text class="travel-compass-gate-dot" data-house="2" x="100" y="166" transform="rotate(45 100 100)"  fill="#222"></text>
+      <text class="travel-compass-gate-dot" data-house="7" x="100" y="166" transform="rotate(90 100 100)"  fill="#222"></text>
+      <text class="travel-compass-gate-dot" data-house="6" x="100" y="166" transform="rotate(135 100 100)" fill="#222"></text>
+      <text class="travel-compass-gate" data-house="1" x="100" y="182" transform="rotate(180 100 100)" fill="#222"></text>
+      <text class="travel-compass-gate" data-house="8" x="100" y="182" transform="rotate(225 100 100)" fill="#222"></text>
+      <text class="travel-compass-gate" data-house="3" x="100" y="182" transform="rotate(270 100 100)" fill="#222"></text>
+      <text class="travel-compass-gate" data-house="4" x="100" y="182" transform="rotate(315 100 100)" fill="#222"></text>
+      <text class="travel-compass-gate" data-house="9" x="100" y="182" transform="rotate(0 100 100)"   fill="#222"></text>
+      <text class="travel-compass-gate" data-house="2" x="100" y="182" transform="rotate(45 100 100)"  fill="#222"></text>
+      <text class="travel-compass-gate" data-house="7" x="100" y="182" transform="rotate(90 100 100)"  fill="#222"></text>
+      <text class="travel-compass-gate" data-house="6" x="100" y="182" transform="rotate(135 100 100)" fill="#222"></text>
+      <circle class="travel-compass-center" cx="100" cy="100" r="3" fill="rgba(255,255,255,.9)"/>
+    </svg>
+    <!-- 起點水滴：直接放在 .travel-compass 這一層（不隨扇形旋轉的外層容器，跟 travel-compass-disc／
+         travel-compass-label-disc 是平行的兄弟節點），圓心到哪水滴就自動跟到哪，不用另外同步座標。
+         尖端對齊圓心用 transform:translate(-50%,-100%)；預設隱藏，只在錨定時顯示（見 applyTravelCompassPos）-->
+    <div class="travel-compass-start-pin" id="travel-compass-start-pin" style="color:#2ecc71">
+      <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg>
+    </div>
+  </div>
+  <div class="travel-toolbar"><button type="button" onclick="closeTravelMode()">← 返回盤面</button></div>
+  <div class="travel-status" id="travel-status"><span id="travel-status-text">載入地圖與定位中…</span><button type="button" id="travel-orientation-btn">啟用</button></div>
+  <!-- 右上角小羅盤：永遠跟著手機朝向即時轉動（不受扇形羅盤錨定凍結影響），
+       讓扇形羅盤錨定、朝向鎖住之後，使用者仍能看出自己目前面向哪個方位（見 renderTravelMiniCompass）；
+       指針沿用九宮中心 #compassCell 同一套 .compass-needle 素材，僅另包一層小圓盤＋獨立旋轉容器；
+       2026.08 新增：可點擊切換「朝向鎖定」（見 toggleTravelHeadingLock）——鎖定時扇形羅盤（含已錨定的
+       彩色圓盤）凍結在點擊當下的角度不再跟著手機轉，小羅盤指針改固定指向正上方代表「已鎖定」狀態，
+       跟指針原本「即時朝向」的功能分開，不會互相混淆 -->
+  <div class="travel-mini-compass is-locked" id="travel-mini-compass" onclick="toggleTravelHeadingLock()">
+    <div class="mini-compass-plate">
+      <div class="mini-compass-ring" id="mini-compass-ring">
+        <div class="compass-needle">
+          <div class="needle-half needle-s">S</div>
+          <div class="needle-half needle-n">N</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="travel-size-expand" id="travel-size-expand">
+    <button type="button" class="travel-size-trigger" aria-label="調整羅盤大小" onclick="toggleTravelSizePopover()">
+      <span class="mini-compass-dot"></span>
+    </button>
+    <div class="travel-size-options" id="travel-size-control">
+      <span id="travel-size-value">45%</span>
+      <input id="travel-size-range" type="range" min="40" max="200" value="45" aria-label="調整羅盤大小">
+    </div>
+  </div>
+  <button type="button" class="travel-locate-btn" aria-label="回到目前位置" onclick="recenterTravelPosition()">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 2 L19 21 L12 17 L5 21 Z"/></svg>
+  </button>
+
+  <!-- 出行訣：路線導航＋圓心錨定，收合式控制鈕，只在全螢幕扇形羅盤模式提供。
+       交通工具鈕：收合顯示目前選定的交通工具，點了向左展開三個選項，選一個自動收合。
+       點位/錨定鈕：沿用水滴圖釘造型，展開後是 起點/中途點/終點/錨定 四個選項；
+       起點/終點各自設過一次後鎖住，需先點地圖上的圖釘刪除才能重設；中途點不受限。 -->
+  <div class="expand-control" id="transport-control">
+    <button type="button" class="expand-trigger" id="transport-trigger" onclick="toggleExpandControl('transport-control')">🚶</button>
+    <div class="expand-options" id="transport-options">
+      <button type="button" data-mode="walking" onclick="selectTravelTransportMode('walking')">🚶</button>
+      <button type="button" data-mode="cycling" onclick="selectTravelTransportMode('cycling')">🚲</button>
+      <button type="button" data-mode="driving" onclick="selectTravelTransportMode('driving')">🚗</button>
+    </div>
+  </div>
+  <div class="expand-control" id="pin-control">
+    <button type="button" class="expand-trigger" id="pin-trigger" onclick="toggleExpandControl('pin-control')">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg>
+    </button>
+    <div class="expand-options" id="pin-options">
+      <!-- 起點已跟原本獨立的錨定功能合一：放置起點時扇形羅盤圓心與朝向一併鎖定於此，
+           圖示沿用原本錨定按鈕的「水滴＋底下小小五行色羅盤」造型，提醒這顆按鈕同時具備兩種功能；
+           小圓盤透明度從0.45調到0.9——0.45時只要按鈕進入.armed深藍底狀態，淺色系會被背景吃掉看不出色彩 -->
+      <button type="button" id="opt-start" onclick="armTravelRouteMode('start')" style="color:#2ecc71;"><svg viewBox="0 0 24 28" width="22" height="26"><g opacity="0.9"><path d="M12 24L23.2 24.0L19.92 26.83Z" fill="#29B6F6"/><path d="M12 24L19.92 26.83L12.0 28.0Z" fill="#6F4E37"/><path d="M12 24L12.0 28.0L4.08 26.83Z" fill="#2E7D32"/><path d="M12 24L4.08 26.83L0.8 24.0Z" fill="#66BB6A"/><path d="M12 24L0.8 24.0L4.08 21.17Z" fill="#D32F2F"/><path d="M12 24L4.08 21.17L12.0 20.0Z" fill="#C8A878"/><path d="M12 24L12.0 20.0L19.92 21.17Z" fill="#CFD5DC"/><path d="M12 24L19.92 21.17L23.2 24.0Z" fill="#8E9AAF"/></g><path fill="currentColor" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><rect x="9.7" y="8.6" width="4.6" height="3.6" rx="0.8" fill="#fff"/><path d="M10.6 8.6V7.4a1.4 1.4 0 0 1 2.8 0v1.2" fill="none" stroke="#fff" stroke-width="0.9" stroke-linecap="round"/><circle cx="12" cy="10.2" r="0.5" fill="currentColor"/></svg></button>
+      <button type="button" id="opt-via" onclick="armTravelRouteMode('via')" style="color:#e67e22;"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg></button>
+      <button type="button" id="opt-end" onclick="armTravelRouteMode('end')" style="color:#e74c3c;"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg></button>
+    </div>
+  </div>
+
+  <div class="remove-popup" id="travel-route-remove-popup">
+    移除？
+    <div class="btn-row">
+      <button type="button" class="btn-cancel" onclick="cancelTravelRouteRemove()">✕</button>
+      <button type="button" class="btn-confirm" onclick="confirmTravelRouteRemove()">✓</button>
+    </div>
+  </div>
 </div>
 
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ── 入墓判定 ──
 const ENTOMBED_TABLE = { '癸':2, '乙':6,'丙':6,'戊':6, '丁':8,'己':8,'庚':8, '辛':4,'壬':4 };
@@ -1161,6 +1843,225 @@ function clearChangsheng() {
 let _activeChangshengHouse = null;
 let _activeChangshengIndex = -1;
 
+// 出行訣（標記模式／方框地圖／全螢幕羅盤）只適用陽盤；切到陰盤或命盤時，三層一起收掉，不留在背景
+function closeTravelEverything() {
+  if (typeof travelMarkingActive !== 'undefined' && travelMarkingActive) {
+    exitTravelMarkingModeUI();
+  }
+  const outer = document.getElementById('outer-board');
+  if (outer && outer.classList.contains('travel-map-mode')) {
+    exitTravelMapMode();
+  }
+  const overlay = document.getElementById('travel-overlay');
+  if (overlay && overlay.classList.contains('is-open')) {
+    closeTravelMode();
+  }
+}
+
+// 陰盤／陽盤（時盤／日盤）切換
+let PLATE_MODE = 'yin';    // 'yin' | 'yang'
+let PLATE_SUBMODE = 'time'; // 'time' | 'day'（僅陽盤適用）
+function applyPlateMode(mode) {
+  PLATE_MODE = mode;
+  document.getElementById('plate-yin').classList.toggle('active', mode === 'yin');
+  document.getElementById('plate-yang').classList.toggle('active', mode === 'yang');
+  document.getElementById('plate-yin-row').style.display = (mode === 'yin' && !MING_PAN_MODE) ? 'flex' : 'none';
+  document.getElementById('plate-subtoggle').style.display = (mode === 'yang' && !MING_PAN_MODE) ? 'flex' : 'none';
+  updateQuickNav();
+  // 出行訣開放給所有陽盤子模式；切到陰盤時自動整個收掉（標記/地圖/全螢幕都算，travelMarks 資料保留，只是畫面收起）
+  if (mode !== 'yang') {
+    closeTravelEverything();
+  }
+}
+function setPlateMode(mode) {
+  if (MING_PAN_MODE) {
+    // 命盤模式下點陰盤/陽盤＝視為主動離開命盤模式、改切到點的這個模式（比鎖住按鈕更直覺）
+    exitMingPanMode();
+    applyPlateMode(mode);
+    return;
+  }
+  if (mode === 'yang' && PLATE_MODE === 'yang') {
+    // 陽盤已選中時再點一次＝取消選取，回到陰盤（陰盤按鈕本身移到第二排，不然點不回去）
+    applyPlateMode('yin');
+    return;
+  }
+  applyPlateMode(mode);
+}
+function applyYangSubMode(sub) {
+  PLATE_SUBMODE = sub;
+  ['time','day','month','year'].forEach(s => {
+    document.getElementById('plate-yang-' + s).classList.toggle('active', sub === s);
+  });
+  updateQuickNav();
+}
+let _pendingYangSubMode = null; // 陽盤子模式切換確認期間，暫存使用者點的目標子模式
+
+// 出行訣是否有東西可能因為切換子模式而失去意義：已標記的吉凶，或標記/地圖/全螢幕任一層還開著
+function travelHasResettableState() {
+  const hasMark = TRAVEL_MARK_HOUSES.some(h => travelMarks[h] !== null);
+  if (hasMark) return true;
+  if (typeof travelMarkingActive !== 'undefined' && travelMarkingActive) return true;
+  const outer = document.getElementById('outer-board');
+  if (outer && outer.classList.contains('travel-map-mode')) return true;
+  const overlay = document.getElementById('travel-overlay');
+  if (overlay && overlay.classList.contains('is-open')) return true;
+  return false;
+}
+
+function showYangSubSwitchConfirm() {
+  document.getElementById('yang-submode-confirm').classList.add('is-open');
+}
+function hideYangSubSwitchConfirm() {
+  document.getElementById('yang-submode-confirm').classList.remove('is-open');
+  _pendingYangSubMode = null;
+}
+function confirmYangSubSwitch() {
+  const sub = _pendingYangSubMode;
+  hideYangSubSwitchConfirm();
+  if (!sub) return;
+  // 盤面重新起盤後，舊的吉凶標記已經對不上新的宮位意義，清空；地圖本身（位置/縮放/圖資）不動，維持原樣
+  TRAVEL_MARK_HOUSES.forEach(h => {
+    travelMarks[h] = null;
+    renderTravelMark(h);
+  });
+  updateTravelCompassSectorMarks();
+  applyYangSubMode(sub);
+}
+
+function setYangSubMode(sub) {
+  if (MING_PAN_MODE) { exitMingPanMode(); applyYangSubMode(sub); return; }
+  if (sub === PLATE_SUBMODE) return; // 沒有真的切換子模式，不用跳確認
+  if (travelHasResettableState()) {
+    _pendingYangSubMode = sub;
+    showYangSubSwitchConfirm();
+    return;
+  }
+  applyYangSubMode(sub);
+}
+
+// ── 命盤模式 ──
+// 固定套用「陽盤・時家(置閏)」計算該日期的盤（跟當下陰盤/陽盤選擇無關），
+// 在原本引干欄位（8個位置）改顯示紫微斗數十二宮（12個固定地支位置）。
+// 命宮＝時支所在固定位置，從命宮起逆時針依序放入十二宮名稱（見排盤規則.md外部討論，非課程逐字稿內容）。
+let MING_PAN_MODE = false;
+let MING_PAN_GENDER = 'male'; // 'male' | 'female'
+let _prevPlateMode = 'yin', _prevPlateSubmode = 'time'; // 命盤關閉時還原用
+
+// 關閉命盤模式的共用部分：還原命盤相關 UI（標籤、指南針、引干欄位），但不動 PLATE_MODE本身，
+// 交由呼叫端決定接下來要套用哪個模式（回到進入命盤前的模式，或使用者剛點的新模式）
+function exitMingPanMode() {
+  if (!MING_PAN_MODE) return;
+  MING_PAN_MODE = false;
+  document.getElementById('plate-mingpan').classList.remove('active');
+  document.getElementById('mingpan-gender-toggle').style.display = 'none';
+  ['yin-1','yin-2','yin-3','yin-4','yin-6','yin-7','yin-8','yin-9'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = '';
+  });
+  document.querySelectorAll('.mingpan-label').forEach(el => { el.style.display = 'none'; });
+  const compassRing = document.getElementById('compassRing');
+  if (compassRing) compassRing.style.display = '';
+}
+
+function toggleMingPan() {
+  if (MING_PAN_MODE) {
+    // 點「命盤」關閉：還原成進入命盤前原本選的模式
+    exitMingPanMode();
+    applyPlateMode(_prevPlateMode);
+    if (_prevPlateMode === 'yang') applyYangSubMode(_prevPlateSubmode);
+    return;
+  }
+
+  // 點「命盤」開啟
+  MING_PAN_MODE = true;
+  // 出行訣不適用命盤；標記/地圖/全螢幕若還開著，一起自動收掉（travelMarks 資料保留，只是畫面收起）
+  closeTravelEverything();
+  _prevPlateMode = PLATE_MODE;
+  _prevPlateSubmode = PLATE_SUBMODE;
+  document.getElementById('plate-mingpan').classList.add('active');
+  document.getElementById('mingpan-gender-toggle').style.display = 'flex';
+  applyPlateMode('yang');
+  applyYangSubMode('time');
+  // 命盤模式固定套用「陽盤・時家(置閏)」，不需要讓人再切時/日/月/年，直接把整排按鈕藏起來
+  document.getElementById('plate-subtoggle').style.display = 'none';
+
+  // 切換8個引干欄位 vs 12個命盤宮位標籤的顯示
+  ['yin-1','yin-2','yin-3','yin-4','yin-6','yin-7','yin-8','yin-9'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  document.querySelectorAll('.mingpan-label').forEach(el => {
+    el.style.display = '';
+  });
+
+  // 命盤模式：中宮不顯示指南針（老師的排盤工具中宮不放干支類資訊），改放大限歲數；
+  // 十二長生／地支資訊（g5r1c1~g5r3c3，指南針以外的其餘子格）維持顯示，不受影響
+  const compassRing = document.getElementById('compassRing');
+  if (compassRing) compassRing.style.display = 'none';
+}
+
+function setMingPanGender(g) {
+  MING_PAN_GENDER = g;
+  document.getElementById('mingpan-male').classList.toggle('active', g === 'male');
+  document.getElementById('mingpan-female').classList.toggle('active', g === 'female');
+}
+
+// 十二宮固定順序（從命宮起）；十二地支固定位置對照（見排盤規則.md外部討論）
+const MINGPAN_PALACE_NAMES = ['命宮','兄弟','夫妻','子女','財帛','疾厄','遷移','交友','事業','田宅','福德','父母'];
+const MINGPAN_BRANCH_POSITION = {
+  '巳':'top-l', '午':'top-c', '未':'top-r',
+  '申':'right-t', '酉':'right-c', '戌':'right-b',
+  '亥':'bottom-r', '子':'bottom-c', '丑':'bottom-l',
+  '寅':'left-b', '卯':'left-c', '辰':'left-t'
+};
+function renderMingPan(mingGongBranch) {
+  const startIdx = EARTH_BRANCH_LIST.indexOf(mingGongBranch);
+  if (startIdx < 0) return;
+  for (let i = 0; i < 12; i++) {
+    const branch = EARTH_BRANCH_LIST[(startIdx - i + 12) % 12]; // 從命宮起逆時針（地支遞減方向）
+    const posKey = MINGPAN_BRANCH_POSITION[branch];
+    const el = document.getElementById('mp-' + posKey);
+    if (!el) continue;
+    const name = MINGPAN_PALACE_NAMES[i];
+    // 左右兩側比照陰盤引干（.yigan-left/.yigan-right）做法：逐字拆成 span，靠 flex-direction:column 直式堆疊，
+    // 不使用 writing-mode（先前造成左右不對稱的問題來源）；上下兩側維持橫式整串文字。
+    if (posKey.startsWith('left') || posKey.startsWith('right')) {
+      el.innerHTML = name.split('').map(ch => `<span>${ch}</span>`).join('');
+    } else {
+      el.textContent = name;
+    }
+  }
+}
+
+// 命盤模式：排「大限」歲數區間，寫入各宮 gc-left2 空格（.gc-daxian），中宮則寫入指南針原本的位置
+// 依據：老師app（tzchimen）教材圖22/23——起運宮＝局數本身（1~9，含中宮）；
+//   第一大限＝1歲(虛歲)～局數，之後每宮固定+10年；
+//   方向：男命陽局順、陰局逆；女命陰局順、陽局逆；
+//   順逆走「系統一」九宮數字順序（1→2→3→4→5→6→7→8→9含中宮，循環），非實際順逆時針。
+// 中宮（5）：指南針在命盤模式下隱藏（見 toggleMingPan），該格改顯示中宮的大限歲數。
+function renderDaXian(solsticeType, chartNum, gender) {
+  const isYangJu = solsticeType === '陽';
+  const forward = (gender === 'male') ? isYangJu : !isYangJu; // 男陽局／女陰局＝順，其餘＝逆
+
+  // 清除舊資料
+  [1,2,3,4,5,6,7,8,9].forEach(h => {
+    const el = document.getElementById('daxian-' + h);
+    if (el) el.textContent = '';
+  });
+
+  let ageStart = 1;
+  let ageEnd = chartNum;
+  for (let i = 0; i < 9; i++) {
+    const house = forward
+      ? (((chartNum - 1 + i) % 9) + 1)
+      : (((chartNum - 1 - i) % 9 + 9) % 9 + 1);
+    const el = document.getElementById('daxian-' + house);
+    if (el) el.innerHTML = `<span class="dx-start">${String(ageStart).padStart(2,'0')}</span><span class="dx-mid">＼</span><span class="dx-end"><span class="dx-num">${String(ageEnd).padStart(2,'0')}</span><span class="dx-suffix">歲</span></span>`;
+    ageStart = ageEnd;
+    ageEnd = ageStart + 10;
+  }
+}
+
 // 取得該宮位可觸發十二長生的候選清單：天盤天干（寄干則有兩個，左→右）→ 值符（若本宮為值符宮，代表甲）
 function getHouseChangshengCandidates(cellEl) {
   const candidates = [];
@@ -1207,6 +2108,7 @@ function captureChart() {
   }
 
   function handleOrientation(e) {
+    if (travelCompassFrozen) return; // 出行訣地圖模式期間指針凍結，改由 setTravelCompassOrientation 固定控制，不套用即時朝向
     let heading = null;
     if (typeof e.webkitCompassHeading === 'number') {
       // iOS：webkitCompassHeading 已經是真實方位角，數值越準確
@@ -1226,6 +2128,23 @@ function captureChart() {
   }
 
   compassCell.addEventListener('click', function() {
+    // 羅盤已啟用 → 這次點擊不是要開權限，而是詢問是否進入出行訣吉凶標記模式
+    if (compassActive) {
+      // 已經在方框內嵌地圖模式中：點中宮＝旋轉（2026.08 併入指針，取代原本獨立的⟳按鈕）；
+      // pointer-events 只在 #paipan-result 底下的原始位置開放（見 CSS），搬進全螢幕快照層後這裡不會被觸發，不需另外判斷
+      const outerEl = document.getElementById('outer-board');
+      if (outerEl && outerEl.classList.contains('travel-map-mode')) {
+        toggleTravelMapRotate();
+        return;
+      }
+      if (typeof travelMarkingActive !== 'undefined' && travelMarkingActive) return; // 標記中不重複詢問
+      // 出行訣開放給所有陽盤（時/日/月/年家皆可）；僅陰盤、命盤不適用；兩者都永遠不會進出行訣，直接不反應，不跳提示
+      if (typeof PLATE_MODE === 'undefined' || PLATE_MODE !== 'yang' || (typeof MING_PAN_MODE !== 'undefined' && MING_PAN_MODE)) {
+        return;
+      }
+      showTravelAskPanel();
+      return;
+    }
     if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
       DeviceOrientationEvent.requestPermission().then(function(state) {
         if (state === 'granted') {
@@ -1245,7 +2164,897 @@ function captureChart() {
   });
 })();
 
+// ══════════════════════════════════
+// 出行訣 階段一：吉凶標記模式（不含地圖，純 UI；地圖載入是階段二的工作）
+// 觸發鏈：羅盤已啟用 → 中5宮再次點擊 → 詢問是否載入出行訣圖資 → 是 → 進入標記模式
+// ══════════════════════════════════
+const TRAVEL_MARK_HOUSES = [1,2,3,4,6,7,8,9];
+let travelMarks = {}; // { house: '吉' | '凶' | null }，null＝未標記
+TRAVEL_MARK_HOUSES.forEach(h => { travelMarks[h] = null; });
+let travelMarkingActive = false;
+
+// 階段三＋：吉凶標記除了「一開始的標記流程」(travelMarkingActive) 之外，
+// 進入方框地圖模式後只要按「盤」鈕顯示盤面，也可以隨時點擊宮位新增/修改標記——
+// 兩個入口共用同一組編輯狀態判斷，不需要另外開一個標記流程
+function travelMarkEditable() {
+  if (travelMarkingActive) return true;
+  const outer = document.getElementById('outer-board');
+  return !!(outer && outer.classList.contains('travel-map-mode') && outer.classList.contains('board-visible'));
+}
+
+function showTravelAskPanel() {
+  document.getElementById('travel-ask-panel').classList.add('is-open');
+}
+function hideTravelAskPanel() {
+  document.getElementById('travel-ask-panel').classList.remove('is-open');
+}
+function confirmTravelAsk(yes) {
+  hideTravelAskPanel();
+  if (yes) enterTravelMarkingMode();
+}
+
+function renderTravelMark(house) {
+  const el = document.getElementById('travel-mark-' + house);
+  if (!el) return;
+  const v = travelMarks[house];
+  el.classList.remove('mark-lucky', 'mark-unlucky', 'mark-placeholder');
+  if (v) {
+    el.textContent = v; // 選取後維持原樣：吉／凶單一文字，各自獨立
+    el.classList.add(v === '吉' ? 'mark-lucky' : 'mark-unlucky');
+  } else if (travelMarkEditable()) {
+    // 未標記時的淡灰提示：上下兩行，吉靠左、凶靠右，沒有斜線（見 CSS .mark-placeholder）
+    el.innerHTML = '<span class="travel-mark-line-lucky">吉</span><span class="travel-mark-line-unlucky">凶</span>';
+    el.classList.add('mark-placeholder');
+  } else {
+    el.textContent = '';
+  }
+  // 已標記的宮位，即使收起盤面（純看地圖）也持續顯示標記；
+  // 用 .travel-marked 這個 class 讓地圖模式的 CSS 知道要亮出合併大字（見 .travel-mark-big 對應規則）
+  const cell = document.querySelector('.cell[data-gong="' + house + '"]');
+  if (cell) cell.classList.toggle('travel-marked', !!v);
+  // 合併大字：取門名第一個字（門名固定「X門」兩字，門迫/門制標籤是附加在後面的第三字，取第一字不受影響），
+  // 沿用跟扇形羅盤（updateTravelCompassSectorMarks）同一套取字邏輯，上色/光暈也共用 mark-lucky/mark-unlucky
+  // （class 掛在外層div，實際文字與filter效果在內層span，見CSS說明）
+  const bigEl = document.getElementById('travel-mark-big-' + house);
+  if (bigEl) {
+    const textSpan = bigEl.querySelector('span');
+    bigEl.classList.remove('mark-lucky', 'mark-unlucky');
+    if (v) {
+      const gateEl = document.getElementById('gate-' + house);
+      if (textSpan) textSpan.textContent = gateEl ? gateEl.textContent.charAt(0) : '';
+      bigEl.classList.add(v === '吉' ? 'mark-lucky' : 'mark-unlucky');
+    } else if (textSpan) {
+      textSpan.textContent = '';
+    }
+  }
+}
+
+// 三態循環：未標記 → 吉 → 凶 → 未標記，手感同天盤天干點擊十二長生
+function cycleTravelMark(house) {
+  const cur = travelMarks[house];
+  travelMarks[house] = cur === null ? '吉' : (cur === '吉' ? '凶' : null);
+  renderTravelMark(house);
+  updateTravelCompassSectorMarks(); // 階段三：同步標記狀態到全螢幕扇形羅盤邊框（即使當下還沒開全螢幕也先同步好）
+  // 標記時保留橘框高亮，手感比照十二長生：單一高亮、點哪個宮位就換到哪個宮位（不顯示天干長生文字，那部分仍停用）
+  clearHighlight();
+  const cell = document.querySelector('.cell[data-gong="' + house + '"]');
+  if (cell) applyHouseHighlight(cell);
+}
+
+// 階段三：把 travelMarks 目前狀態套到全螢幕扇形羅盤（travel-compass-disc）的宮位文字上
+// 金字＝吉、黑字＝凶，不改動扇形本身的顏色與分隔線（整片扇形描邊視覺上太笨重，見「還是高亮文字」的討論）
+// 標記時額外在扇形上加一個門名單字（如「生」，取自 #gate-N 目前顯示的門名第一個字，門名固定是「X門」兩字，
+// 迫/制標籤是附加在後面的第三個字，取第一字不受影響）＋跟方位字之間的分隔點，未標記則兩者都清空、不佔視覺
+function updateTravelCompassSectorMarks() {
+  TRAVEL_MARK_HOUSES.forEach(h => {
+    const v = travelMarks[h];
+    document.querySelectorAll('.travel-compass-gua[data-house="' + h + '"], .travel-compass-dir[data-house="' + h + '"], .travel-compass-dot[data-house="' + h + '"], .travel-compass-gate[data-house="' + h + '"], .travel-compass-gate-dot[data-house="' + h + '"]').forEach(label => {
+      label.classList.remove('mark-lucky', 'mark-unlucky');
+      if (v === '吉') label.classList.add('mark-lucky');
+      else if (v === '凶') label.classList.add('mark-unlucky');
+    });
+    const gateEl = document.getElementById('gate-' + h);
+    const gateChar = v && gateEl ? gateEl.textContent.charAt(0) : '';
+    document.querySelectorAll('.travel-compass-gate[data-house="' + h + '"]').forEach(label => {
+      label.textContent = gateChar;
+    });
+    document.querySelectorAll('.travel-compass-gate-dot[data-house="' + h + '"]').forEach(label => {
+      label.textContent = v ? '・' : '';
+    });
+  });
+}
+
+function enterTravelMarkingMode() {
+  if (travelMarkingActive) return;
+  // c1r2 這格命盤模式下顯示大限，跟出行標記共用同一格、會互相蓋住，兩者互斥；
+  // 命盤開著時先關閉命盤，還原成進入命盤前的模式，避免畫面衝突
+  if (typeof MING_PAN_MODE !== 'undefined' && MING_PAN_MODE) {
+    exitMingPanMode();
+    applyPlateMode(_prevPlateMode);
+    if (_prevPlateMode === 'yang') applyYangSubMode(_prevPlateSubmode);
+  }
+  // 進入出行訣標記：宮位點擊改切換吉凶用途，先清掉十二長生原本可能留著的高亮／內容，避免混在一起
+  document.querySelectorAll('.gc-tian .stem-active, .gc-shen .stem-active').forEach(s => s.classList.remove('stem-active'));
+  clearHighlight();
+  clearChangsheng();
+  _activeChangshengHouse = null;
+  _activeChangshengIndex = -1;
+  const yongshenEl = document.getElementById('hb-yongshen');
+  if (yongshenEl) yongshenEl.textContent = '—';
+  travelMarkingActive = true;
+  TRAVEL_MARK_HOUSES.forEach(h => {
+    const markEl = document.getElementById('travel-mark-' + h);
+    if (markEl) markEl.style.display = '';
+    const cell = document.querySelector('.cell[data-gong="' + h + '"]');
+    if (cell) cell.classList.add('travel-marking-active');
+    renderTravelMark(h);
+  });
+  document.getElementById('travel-marking-banner').classList.add('is-open');
+}
+
+function exitTravelMarkingModeUI() {
+  travelMarkingActive = false;
+  TRAVEL_MARK_HOUSES.forEach(h => {
+    const markEl = document.getElementById('travel-mark-' + h);
+    if (markEl) markEl.style.display = 'none';
+    const cell = document.querySelector('.cell[data-gong="' + h + '"]');
+    if (cell) cell.classList.remove('travel-marking-active');
+  });
+  document.getElementById('travel-marking-banner').classList.remove('is-open');
+  clearHighlight(); // 退出標記模式，順手清掉標記期間留下的高亮框，回到一般排盤畫面時不留殘影
+}
+
+// 取消：退出標記模式的畫面，但保留目前已選的 travelMarks 資料，下次再開仍在
+function cancelTravelMarking() {
+  if (!travelMarkingActive) return;
+  exitTravelMarkingModeUI();
+}
+
+// 確認：階段一收尾在這裡，travelMarks 已備妥；階段二接手，直接轉入方框地圖模式
+function confirmTravelMarking() {
+  if (!travelMarkingActive) return;
+  exitTravelMarkingModeUI();
+  console.log('出行訣吉凶標記已確認：', travelMarks);
+  enterTravelMapMode();
+}
+
+// 點整個宮位（不限左中格小範圍）都可以切換吉凶；十二長生的宮位點擊高亮在標記期間會自行停用（見 changshengClickDisabled），兩者不衝突
+TRAVEL_MARK_HOUSES.forEach(h => {
+  const cell = document.querySelector('.cell[data-gong="' + h + '"]');
+  if (cell) {
+    cell.addEventListener('click', function() {
+      if (!travelMarkEditable()) return;
+      cycleTravelMark(h);
+    });
+  }
+});
+
+// ══════════════════════════════════
+// 出行訣 階段二 2a：方框內嵌地圖（confirmTravelMarking 收尾後觸發，固定在原九宮框範圍內）
+// ══════════════════════════════════
+let inlineTravelMap = null;
+let inlineTravelPositionMarker = null;
+
+function initializeInlineTravelMap() {
+  if (inlineTravelMap || typeof L === 'undefined') return;
+  // 未取得定位前維持中性世界視角；不可預設任何國家或地區
+  // dragging 預設關閉：南上北下（預設方向）時容器整體旋轉180度，拖曳座標判讀會反向；
+  // 轉正（北上南下，見 toggleTravelMapRotate）後不再反向，屆時才開放拖曳
+  inlineTravelMap = L.map('travel-inline-map', { zoomControl: false, attributionControl: false, dragging: false }).setView([20, 0], 2);
+  L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+    maxZoom: 20,
+    subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+    attribution: 'Map data © Google'
+  }).addTo(inlineTravelMap);
+}
+
+function locateInlineTravelPosition(forceZoom) {
+  if (forceZoom === undefined) forceZoom = true;
+  if (!inlineTravelMap || !navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(function(position) {
+    const latLng = [position.coords.latitude, position.coords.longitude];
+    if (inlineTravelPositionMarker) inlineTravelMap.removeLayer(inlineTravelPositionMarker);
+    inlineTravelPositionMarker = L.circleMarker(latLng, { radius: 4, color: '#2471a3', fillColor: '#2471a3', fillOpacity: 1, weight: 1.5 }).addTo(inlineTravelMap);
+    if (forceZoom) {
+      inlineTravelMap.setView(latLng, 16);
+    } else {
+      inlineTravelMap.panTo(latLng); // 拉回按鈕專用：只平移，不更動使用者手動調整過的縮放比例
+    }
+  }, function() {
+    // 定位失敗：維持中性世界視角，不阻斷畫面
+  }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+}
+
+function recenterInlineTravelPosition() {
+  locateInlineTravelPosition(false);
+}
+
+// 指針凍結旗標：出行訣地圖模式期間指針改跟九宮方位固定，不跟即時裝置朝向連動；
+// 供下方指南針 IIFE 的 handleOrientation 讀取判斷是否要略過這次即時朝向更新。
+let travelCompassFrozen = false;
+
+// 指針固定朝向：rotated=false（預設南上北下）→ rotate(0deg)（S在上，即指針原始未旋轉狀態，本就對準南）；
+// rotated=true（旋轉鈕轉正後、北上南下）→ rotate(180deg)（翻面，N在上）
+function setTravelCompassOrientation(rotated) {
+  const ring = document.getElementById('compassRing');
+  if (ring) ring.style.transform = rotated ? 'rotate(180deg)' : 'rotate(0deg)';
+}
+
+function enterTravelMapMode() {
+  const outer = document.getElementById('outer-board');
+  const wrap = document.getElementById('travel-inline-map-wrap');
+  if (!outer || !wrap) return;
+  outer.classList.add('travel-map-mode');
+  wrap.style.display = '';
+  initializeInlineTravelMap();
+  // 階段三＋：地圖模式期間，吉凶標記格保持可顯示狀態（實際看不看得到由「盤」鈕的 board-visible 控制），
+  // 這樣按「盤」鈕顯示盤面時，之前標記的吉凶會一起現形，也可以繼續點擊修改
+  TRAVEL_MARK_HOUSES.forEach(h => {
+    const markEl = document.getElementById('travel-mark-' + h);
+    if (markEl) markEl.style.display = '';
+    renderTravelMark(h);
+  });
+  // 指針凍結：地圖模式期間指針不跟即時裝置朝向連動，改固定跟著九宮方位（見 setTravelCompassOrientation）
+  travelCompassFrozen = true;
+  setTravelCompassOrientation(travelMapRotated);
+  // wrap 剛從 display:none 切換出來，Leaflet 量測容器尺寸需等下一輪事件循環才準確
+  setTimeout(function() {
+    if (inlineTravelMap) inlineTravelMap.invalidateSize();
+    locateInlineTravelPosition(true);
+  }, 0);
+}
+
+function exitTravelMapMode() {
+  const outer = document.getElementById('outer-board');
+  const wrap = document.getElementById('travel-inline-map-wrap');
+  if (!outer || !wrap) return;
+  if (travelMapRotated) toggleTravelMapRotate(); // 復原宮位順序與地圖朝向，下次進入維持預設南上北下
+  outer.classList.remove('travel-map-mode');
+  outer.classList.remove('board-visible');
+  document.getElementById('travel-inline-board-toggle').classList.remove('active');
+  wrap.style.display = 'none';
+  // 離開地圖模式，回到一般排盤畫面：吉凶標記格收起（資料 travelMarks 仍保留，下次進地圖模式會沿用）
+  TRAVEL_MARK_HOUSES.forEach(h => {
+    const markEl = document.getElementById('travel-mark-' + h);
+    if (markEl) markEl.style.display = 'none';
+  });
+  travelCompassFrozen = false; // 解凍，指針恢復跟隨即時裝置朝向（若羅盤本來就是啟用狀態，下一個朝向事件會自動接手）
+}
+
+function toggleTravelBoardOverlay() {
+  const outer = document.getElementById('outer-board');
+  const btn = document.getElementById('travel-inline-board-toggle');
+  if (!outer) return;
+  const isVisible = outer.classList.toggle('board-visible');
+  if (btn) btn.classList.toggle('active', isVisible);
+  // 「盤」鈕同時決定吉凶標記是否可編輯（見 travelMarkEditable），切換時重繪一次讓未標記宮位的「吉/凶」提示字跟著顯示/隱藏
+  TRAVEL_MARK_HOUSES.forEach(h => renderTravelMark(h));
+}
+
+// ── 2b：旋轉鈕。地圖轉正（北上南下）＋宮位內容對調同步發生 ──
+// 對調用「搬動實際 DOM 節點」而非純 CSS，理由：.grid 是隱式九宮格（DOM順序即畫面位置），
+// 且外框線（.cell:nth-child(1/3/7/9) 的 border）也是靠 DOM 順序判斷，若只用 CSS order 視覺上會位移
+// 但 nth-child 判斷的框線不會跟著動，造成外框線跟內容對不齊。搬動 DOM 節點兩者會同步正確。
+let travelMapRotated = false;
+
+function swapDomNodes(nodeA, nodeB) {
+  if (!nodeA || !nodeB || nodeA === nodeB) return;
+  const parentA = nodeA.parentNode, parentB = nodeB.parentNode;
+  if (!parentA || !parentB) return;
+  const markerA = document.createTextNode('');
+  const markerB = document.createTextNode('');
+  parentA.insertBefore(markerA, nodeA);
+  parentB.insertBefore(markerB, nodeB);
+  parentA.insertBefore(nodeB, markerA);
+  parentB.insertBefore(nodeA, markerB);
+  markerA.remove();
+  markerB.remove();
+}
+
+function swapTravelHousePair(a, b) {
+  const grid = document.querySelector('#outer-board .grid');
+  if (!grid) return;
+  const cellA = grid.querySelector('.cell[data-gong="' + a + '"]');
+  const cellB = grid.querySelector('.cell[data-gong="' + b + '"]');
+  swapDomNodes(cellA, cellB);
+}
+
+function toggleTravelMapRotate() {
+  const outer = document.getElementById('outer-board');
+  if (!outer) return;
+  travelMapRotated = !travelMapRotated;
+  outer.classList.toggle('travel-map-rotated', travelMapRotated);
+  // 轉正（北上南下）後拖曳方向判讀不再反向，開放拖曳；轉回預設南上北下時關閉，理由同容器旋轉的原始限制
+  if (inlineTravelMap && inlineTravelMap.dragging) {
+    if (travelMapRotated) inlineTravelMap.dragging.enable();
+    else inlineTravelMap.dragging.disable();
+  }
+  // 180度旋轉＝對角互換；同一組配對再點一次即復原（toggle 天然可逆，不需另存原始順序）
+  swapTravelHousePair(4, 6);
+  swapTravelHousePair(9, 1);
+  swapTravelHousePair(2, 8);
+  swapTravelHousePair(7, 3);
+  // 指針跟著同步翻面（凍結狀態下才有意義；地圖模式外呼叫此函式的路徑目前不存在，此行為安全）
+  setTravelCompassOrientation(travelMapRotated);
+}
+
+document.getElementById('travel-inline-exit').addEventListener('click', exitTravelMapMode);
+document.getElementById('travel-inline-locate').addEventListener('click', function() { recenterInlineTravelPosition(); });
+document.getElementById('travel-inline-board-toggle').addEventListener('click', toggleTravelBoardOverlay);
+document.getElementById('travel-inline-fullscreen').addEventListener('click', openTravelMode); // 階段三：方框地圖 → 全螢幕扇形羅盤
+
 // ── 門迫判定 ──
+// ══════════════════════════════════
+// 出行羅盤：地圖與裝置朝向。吉方選取介面確認後，只需以 house number 更新對應扇形即可。
+// ══════════════════════════════════
+let travelMap = null;
+let travelPositionMarker = null;
+let travelCompassEnabled = false;
+let travelHeadingLocked = true; // 2026.08新增：小羅盤指針點擊切換的「朝向鎖定」開關，跟起點錨定各自獨立（見 toggleTravelHeadingLock）
+// 預設鎖定北上（2026.08再調整）：進全螢幕時彩色羅盤/權限請求維持原樣自動啟動，但小指針本身預設不
+// 自動跟著轉，先固定指向北，提醒使用者「畫面上方＝北」、方便自行轉身對齊方位；有需要看即時朝向
+// （例如錨定後想知道自己正朝哪走）才點一下小指針切換成跟隨模式
+let travelLastHeading = 0; // 最近一次收到的即時朝向，解除鎖定時用來立刻讓小羅盤指針恢復正確角度，不用等下一個感應器事件
+let travelBoardPlaceholder = null;
+let travelInlineWrapPrevDisplay = null; // 階段三：記住展開全螢幕前，方框內嵌地圖(travel-inline-map-wrap)原本的 display 值，供關閉全螢幕時還原
+
+// 圓心錨定：已跟起點合一，不再是獨立開關（見 placeTravelRoutePoint／confirmTravelRouteRemove／
+// resetTravelRoute）。放置起點時自動開啟並鎖定於起點座標，起點被刪除或整個路線重置時自動關閉；
+// 朝向也一併鎖住、不再跟著手機轉動（見 handleTravelOrientation）；
+// 2026.08改版：拿掉獨立拖曳手把，起點圖釘本身直接可拖曳（Leaflet原生 draggable，見 createTravelRouteMarker），
+// 不再需要另一個疊在圖釘正上方、把圖釘完全蓋住的手把元件（見使用者實測回報）；
+// 即時位置藍點（travelPositionMarker）不受影響，兩者並存
+let travelCompassAnchored = false;
+let travelCompassAnchorLatLng = null; // L.LatLng
+
+
+// 2026.08：'idle' = 平常狀態文字模式；'pending' = 等待羅盤授權；'error' = 授權失敗待重試。
+// 後兩者期間泡泡由 showTravelOrientationPrompt() 接管顯示，setTravelStatus() 呼叫暫不生效，
+// 避免一般狀態訊息（定位中、已設起點等）蓋掉尚未解決的授權提示。
+let travelOrientationState = 'idle';
+
+function setTravelStatus(message) {
+  if (travelOrientationState !== 'idle') return;
+  const textEl = document.getElementById('travel-status-text');
+  if (textEl) textEl.textContent = message;
+}
+
+// 顯示授權提示／錯誤（isError=true時用於拒絕或請求失敗後的重試文字），泡泡此時同時亮出啟用鈕
+function showTravelOrientationPrompt(message, isError) {
+  travelOrientationState = isError ? 'error' : 'pending';
+  const bubbleEl = document.getElementById('travel-status');
+  const textEl = document.getElementById('travel-status-text');
+  if (textEl) textEl.textContent = message;
+  if (bubbleEl) bubbleEl.classList.add('show-btn');
+}
+
+// 授權已解決（成功）或全螢幕關閉時，交還泡泡給平常狀態文字模式
+function hideTravelOrientationPrompt() {
+  travelOrientationState = 'idle';
+  const bubbleEl = document.getElementById('travel-status');
+  if (bubbleEl) bubbleEl.classList.remove('show-btn');
+}
+
+function initializeTravelMap() {
+  if (travelMap || typeof L === 'undefined') return;
+  // 未取得定位前維持中性世界視角；不可預設任何國家或地區。
+  travelMap = L.map('travel-map', { zoomControl: false, attributionControl: true }).setView([20, 0], 2);
+  L.control.zoom({ position: 'topright' }).addTo(travelMap);
+  L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+    maxZoom: 20,
+    subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+    attribution: 'Map data © Google'
+  }).addTo(travelMap);
+  // 錨定模式下，地圖平移/縮放要重算錨點對應的螢幕座標
+  travelMap.on('move zoom', function() {
+    if (travelCompassAnchored) applyTravelCompassPos();
+    // 刪除確認泡泡是用螢幕座標定位的，地圖一移動座標就失效，直接關掉比重新計算位置更不容易誤觸
+    if (travelRoutePendingRemoveIndex !== null) {
+      travelRoutePendingRemoveIndex = null;
+      const popup = document.getElementById('travel-route-remove-popup');
+      if (popup) popup.classList.remove('is-visible');
+    }
+  });
+  travelMap.on('click', function(e) {
+    handleTravelRouteMapClick();          // 收起展開選單、關掉刪除確認泡泡
+    handleTravelRouteMapPlacementClick(e); // 點位模式啟用時，點地圖設起點/中途點/終點
+  });
+}
+
+function locateTravelPosition(forceZoom) {
+  if (forceZoom === undefined) forceZoom = true; // 預設行為（初次開啟出行模式時）維持原本鎖定16縮放
+  if (!navigator.geolocation) {
+    setTravelStatus('此裝置不支援定位');
+    return;
+  }
+  setTravelStatus('定位中…');
+  navigator.geolocation.getCurrentPosition(function(position) {
+    const latLng = [position.coords.latitude, position.coords.longitude];
+    if (!travelMap) initializeTravelMap();
+    if (travelPositionMarker) travelMap.removeLayer(travelPositionMarker);
+    travelPositionMarker = L.circleMarker(latLng, { radius: 7, color: '#2471a3', fillColor: '#2471a3', fillOpacity: 1, weight: 2 }).addTo(travelMap);
+    if (forceZoom) {
+      travelMap.setView(latLng, 16);
+    } else {
+      travelMap.panTo(latLng); // 只平移，不更動使用者當下手動調整過的縮放比例
+    }
+    setTravelStatus('目前位置已定位');
+  }, function() {
+    setTravelStatus('定位失敗，請確認定位權限');
+  }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+}
+
+// 「回到目前位置」按鈕專用：只平移地圖，不強制改變縮放比例
+function recenterTravelPosition() {
+  locateTravelPosition(false);
+}
+
+function renderTravelCompass(heading) {
+  const compassEl = document.getElementById('travel-compass-disc');
+  if (compassEl) compassEl.style.transform = `rotate(${(360 - heading) % 360}deg)`;
+  const labelEl = document.getElementById('travel-compass-label-disc');
+  if (labelEl) labelEl.style.transform = `rotate(${(360 - heading) % 360}deg)`;
+}
+
+// 右上角小羅盤：不受扇形羅盤錨定凍結影響，永遠即時跟著手機朝向轉動（見 handleTravelOrientation 呼叫處）；
+// 指針沿用 .compass-needle 靜態素材（不轉動時 S在上、N在下，見 HTML），故角度公式在一般的 (360-heading) 之外
+// 再加 180°，把「N 尖端朝上＝面北」的直覺基準先轉正，heading 才會跟畫面朝向正確對應
+function renderTravelMiniCompass(heading) {
+  const ringEl = document.getElementById('mini-compass-ring');
+  if (ringEl) ringEl.style.transform = `rotate(${(540 - heading) % 360}deg)`;
+}
+
+// ══════════════════════════════════
+// 出行訣：路線導航（起點/中途點/終點＋交通工具切換＋OSRM 算路線）
+// 概念參考 map-t1-kappa 那個工具（點選模式後點地圖設點，不做店家搜尋），UI 走自己的收合式風格；
+// 圓心錨定已跟起點合一，不再是獨立按鈕/獨立開關（見 placeTravelRoutePoint）
+// ══════════════════════════════════
+let travelRouteMode = null;       // 目前選取的點位模式：'start' | 'via' | 'end' | null（未選取）
+let travelRoutePoints = [];       // [{type, latlng, marker}]，依實際點擊順序記錄
+let travelRouteProfile = 'walking'; // OSRM profile：driving | walking | cycling，預設步行
+let travelRouteLine = null;       // 算出來的路線圖層（L.geoJSON）
+let travelRoutePendingRemoveIndex = null; // 目前跳出「移除？」小泡泡、等待確認的點位索引
+
+const TRAVEL_TRANSPORT_ICONS = { walking: '🚶', cycling: '🚲', driving: '🚗' };
+const TRAVEL_ROUTE_MARKER_COLORS = { start: '#2ecc71', via: '#e67e22', end: '#e74c3c' };
+const PIN_TRIGGER_COLORS = { start: '#2ecc71', via: '#e67e22', end: '#e74c3c' };
+const TRAVEL_ROUTE_PIN_SVG = '<svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg>';
+// 收合鈕（#pin-trigger）圖形：平常是純水滴（PLAIN），起點已設置（＝已錨定）時才換成跟 #opt-start 一致的
+// 「水滴＋底下小小五行色羅盤」圖案（ROSE），提醒使用者目前羅盤圓心/朝向鎖定於起點；純換色不換圖形容易誤會沒同步
+const PIN_TRIGGER_PLAIN_SVG = '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg>';
+const PIN_TRIGGER_ROSE_SVG = '<svg viewBox="0 0 24 28" width="22" height="26"><g opacity="0.9"><path d="M12 24L23.2 24.0L19.92 26.83Z" fill="#29B6F6"/><path d="M12 24L19.92 26.83L12.0 28.0Z" fill="#6F4E37"/><path d="M12 24L12.0 28.0L4.08 26.83Z" fill="#2E7D32"/><path d="M12 24L4.08 26.83L0.8 24.0Z" fill="#66BB6A"/><path d="M12 24L0.8 24.0L4.08 21.17Z" fill="#D32F2F"/><path d="M12 24L4.08 21.17L12.0 20.0Z" fill="#C8A878"/><path d="M12 24L12.0 20.0L19.92 21.17Z" fill="#CFD5DC"/><path d="M12 24L19.92 21.17L23.2 24.0Z" fill="#8E9AAF"/></g><path fill="currentColor" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><rect x="9.7" y="8.6" width="4.6" height="3.6" rx="0.8" fill="#fff"/><path d="M10.6 8.6V7.4a1.4 1.4 0 0 1 2.8 0v1.2" fill="none" stroke="#fff" stroke-width="0.9" stroke-linecap="round"/><circle cx="12" cy="10.2" r="0.5" fill="currentColor"/></svg>';
+const TRAVEL_POINT_LABELS = { start: '起點', via: '中途點', end: '終點' };
+
+// 展開/收合：交通工具、點位/錨定 兩顆觸發鈕共用；同時間只開一個，避免互相打架
+function toggleExpandControl(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  document.querySelectorAll('.expand-control').forEach(function(c) {
+    if (c.id !== id) c.classList.remove('is-open');
+  });
+  el.classList.toggle('is-open');
+}
+
+function selectTravelTransportMode(mode) {
+  travelRouteProfile = mode;
+  const triggerEl = document.getElementById('transport-trigger');
+  if (triggerEl) triggerEl.textContent = TRAVEL_TRANSPORT_ICONS[mode];
+  const controlEl = document.getElementById('transport-control');
+  if (controlEl) controlEl.classList.remove('is-open');
+  calculateTravelRoute(); // 已有路線時，切換交通工具要重新算一次
+}
+
+function hasTravelStartPoint() {
+  return travelRoutePoints.some(function(p) { return p.type === 'start'; });
+}
+function hasTravelEndPoint() {
+  return travelRoutePoints.some(function(p) { return p.type === 'end'; });
+}
+
+// 未設起點前，中途點／終點鎖住不能選；起點/終點各自只能有一個，已存在時鎖住該選項，需先點地圖上的圖釘刪除才能重選；中途點不受限
+function updateTravelRoutePointAvailability() {
+  const ready = hasTravelStartPoint();
+  const viaBtn = document.getElementById('opt-via');
+  if (viaBtn) { viaBtn.disabled = !ready; viaBtn.classList.toggle('disabled', !ready); }
+  const startBtn = document.getElementById('opt-start');
+  if (startBtn) { startBtn.disabled = ready; startBtn.classList.toggle('disabled', ready); }
+  const endReady = ready && !hasTravelEndPoint();
+  const endBtn = document.getElementById('opt-end');
+  if (endBtn) { endBtn.disabled = !endReady; endBtn.classList.toggle('disabled', !endReady); }
+}
+
+function updateTravelRouteArmedButtons() {
+  ['start', 'via', 'end'].forEach(function(t) {
+    const btn = document.getElementById('opt-' + t);
+    if (btn) btn.classList.toggle('armed', travelRouteMode === t);
+  });
+  updatePinTriggerColor();
+}
+
+// 收合鈕（黑色水滴）同步目前選取功能的顏色與圖形：優先顯示「正在選取中」的起點/中途/終點（此時是純水滴，
+// 跟展開選單裡未放置狀態的圖示一致）；沒有選取中的點位模式時，若起點已設置（＝已錨定，見
+// placeTravelRoutePoint），改顯示跟 #opt-start 同一份「水滴＋五行色羅盤」圖形＋起點綠色，
+// 提醒目前羅盤圓心/朝向鎖定於起點；都沒有則還原預設黑色水滴
+function updatePinTriggerColor() {
+  const triggerBtn = document.getElementById('pin-trigger');
+  if (!triggerBtn) return;
+  if (travelRouteMode) {
+    triggerBtn.style.color = PIN_TRIGGER_COLORS[travelRouteMode];
+    triggerBtn.innerHTML = PIN_TRIGGER_PLAIN_SVG;
+  } else if (hasTravelStartPoint()) {
+    triggerBtn.style.color = PIN_TRIGGER_COLORS.start;
+    triggerBtn.innerHTML = PIN_TRIGGER_ROSE_SVG;
+  } else {
+    triggerBtn.style.color = '';
+    triggerBtn.innerHTML = PIN_TRIGGER_PLAIN_SVG;
+  }
+}
+
+function armTravelRouteMode(mode) {
+  if (mode === 'start') {
+    // 起點改成單鍵直接定位，不走「進入模式→點地圖」流程（見 placeTravelStartAtCurrentLocation）
+    placeTravelStartAtCurrentLocation();
+    return;
+  }
+  if (mode === 'via' && !hasTravelStartPoint()) { setTravelStatus('請先設置起點'); return; }
+  if (mode === 'end' && !hasTravelStartPoint()) { setTravelStatus('請先設置起點'); return; }
+  if (mode === 'end' && hasTravelEndPoint()) { setTravelStatus('已有終點，請先刪除再重新設置'); return; }
+  travelRouteMode = (travelRouteMode === mode) ? null : mode; // 再點一次同一個按鈕＝取消選取
+  const controlEl = document.getElementById('pin-control');
+  if (controlEl) controlEl.classList.remove('is-open');
+  updateTravelRouteArmedButtons();
+  const hintMap = { via: '🟠 點擊地圖新增中途點', end: '🔴 點擊地圖設置終點' };
+  setTravelStatus(travelRouteMode ? hintMap[travelRouteMode] : '選擇下方模式後點地圖設點');
+}
+
+// 2026.08 改版：起點＝目前GPS定位（地圖藍點），按下 #opt-start 直接以此設點並錨定，
+// 不再需要先「進入起點模式」才能點地圖放置——起點本來就該是「我現在在哪」，多一道點地圖的手續是多餘的。
+function placeTravelStartAtCurrentLocation() {
+  if (hasTravelStartPoint()) { setTravelStatus('已有起點，請先刪除再重新設置'); return; }
+  const controlEl = document.getElementById('pin-control');
+  if (controlEl) controlEl.classList.remove('is-open');
+  if (!travelPositionMarker || !travelMap) {
+    setTravelStatus('尚未取得目前定位，請稍候再試');
+    return;
+  }
+  const latlng = travelPositionMarker.getLatLng();
+  // GPS藍點只有在按「回到目前位置」或剛進全螢幕時才會更新座標，若使用者後續手動把地圖平移到別處，
+  // 藍點座標會跟目前畫面範圍脫節；這裡先把地圖平移過去，確保放置後的起點跟扇形羅盤落在看得到的範圍內
+  // （2026.08 使用者實測回報：起點「消失」，實際上是放到畫面外看不到的地方，非真的沒放成功）
+  travelMap.panTo(latlng);
+  placeTravelRoutePoint(latlng, 'start');
+}
+
+// 放置點位的共用邏輯：地圖點擊放置（中途點／終點）與按鈕直接定位（起點）都走這裡，
+// 避免兩套流程各自維護一份幾乎相同但容易漏改的程式碼
+function placeTravelRoutePoint(latlng, type) {
+  const marker = createTravelRouteMarker(latlng, type);
+  travelRoutePoints.push({ type: type, latlng: latlng, marker: marker });
+  updateTravelRouteArmedButtons();
+  updateTravelRoutePointAvailability();
+  if (type === 'start') {
+    // 起點已跟原本獨立的錨定功能合一：放置起點時，扇形羅盤圓心與朝向一併鎖定在起點座標
+    travelCompassAnchored = true;
+    travelCompassAnchorLatLng = latlng;
+    applyTravelCompassPos();
+    setTravelStatus('起點已設置於目前位置，羅盤圓心與朝向已鎖定於此，點圖釘可移除、拖曳可調整位置');
+  } else {
+    setTravelStatus(TRAVEL_POINT_LABELS[type] + '已設置');
+  }
+  calculateTravelRoute();
+}
+
+function createTravelRouteMarker(latlng, type) {
+  // 2026.08 再改版：起點的視覺水滴改成畫在扇形羅盤本身裡面（見 HTML #travel-compass-start-pin），
+  // 圓心到哪水滴就自動到哪，不用另外同步座標，也不會有「複製疊圖對不準」的問題（見使用者實測回報）。
+  // 這裡建立的 L.marker 對起點來說只保留互動功能（拖曳／點擊移除），視覺上用 travel-route-marker-ghost
+  // 隱形處理，真正看到的水滴是扇形羅盤裡那個固定在圓心的版本
+  const ghost = (type === 'start');
+  const icon = L.divIcon({
+    className: ghost ? 'travel-route-marker travel-route-marker-ghost' : 'travel-route-marker',
+    html: `<span style="color:${TRAVEL_ROUTE_MARKER_COLORS[type]}">${TRAVEL_ROUTE_PIN_SVG}</span>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 28] // 尖端對齊點擊座標
+  });
+  // 起點圖釘可拖曳（2026.08改版，取代原本疊在圖釘正上方、會蓋住圖釘的獨立手把）；
+  // 中途點／終點維持不可拖曳，跟原本一樣只能點擊移除、重新點地圖放置
+  const draggable = (type === 'start');
+  const marker = L.marker(latlng, { icon: icon, draggable: draggable }).addTo(travelMap);
+  marker.on('click', function() { showTravelRouteRemovePopup(marker, type); });
+  if (draggable) {
+    // 拖曳中即時同步錨定座標＋扇形羅盤位置（含裡面的起點水滴），體感才會跟著手指走，不是放開才跳一下
+    marker.on('drag', function() {
+      const ll = marker.getLatLng();
+      travelCompassAnchorLatLng = ll;
+      applyTravelCompassPos();
+    });
+    marker.on('dragend', function() {
+      const ll = marker.getLatLng();
+      const p = travelRoutePoints.find(function(pt) { return pt.marker === marker; });
+      if (p) p.latlng = ll;
+      travelCompassAnchorLatLng = ll;
+      applyTravelCompassPos();
+      calculateTravelRoute();
+    });
+  }
+  return marker;
+}
+
+function showTravelRouteRemovePopup(marker, type) {
+  const idx = travelRoutePoints.findIndex(function(p) { return p.marker === marker; });
+  if (idx === -1 || !travelMap) return;
+  travelRoutePendingRemoveIndex = idx;
+  const popup = document.getElementById('travel-route-remove-popup');
+  const pt = travelMap.latLngToContainerPoint(marker.getLatLng());
+  popup.style.left = pt.x + 'px';
+  popup.style.top = pt.y + 'px';
+  popup.classList.add('is-visible');
+  setTravelStatus('要移除這個' + TRAVEL_POINT_LABELS[type] + '嗎？點✓確認或✕取消');
+}
+
+function cancelTravelRouteRemove() {
+  travelRoutePendingRemoveIndex = null;
+  document.getElementById('travel-route-remove-popup').classList.remove('is-visible');
+  setTravelStatus('選擇下方模式後點地圖設點');
+}
+
+function confirmTravelRouteRemove() {
+  if (travelRoutePendingRemoveIndex === null) return;
+  const p = travelRoutePoints[travelRoutePendingRemoveIndex];
+  if (travelMap) travelMap.removeLayer(p.marker);
+  travelRoutePoints.splice(travelRoutePendingRemoveIndex, 1);
+  travelRoutePendingRemoveIndex = null;
+  document.getElementById('travel-route-remove-popup').classList.remove('is-visible');
+  updateTravelRoutePointAvailability();
+  if (p.type === 'start') {
+    // 起點被刪除，錨定狀態一併解除（起點與錨定已合一，見 placeTravelRoutePoint）
+    travelCompassAnchored = false;
+    travelCompassAnchorLatLng = null;
+    applyTravelCompassPos();
+    updatePinTriggerColor();
+  }
+  setTravelStatus('已移除');
+  calculateTravelRoute();
+}
+
+function handleTravelRouteMapClick() {
+  // 點地圖空白處：收起展開選單、關掉刪除確認泡泡（跟正常地圖操作手感一致）
+  document.querySelectorAll('.expand-control').forEach(function(c) { c.classList.remove('is-open'); });
+  travelRoutePendingRemoveIndex = null;
+  const popup = document.getElementById('travel-route-remove-popup');
+  if (popup) popup.classList.remove('is-visible');
+}
+
+function handleTravelRouteMapPlacementClick(e) {
+  if (!travelRouteMode || !travelMap) return;
+  const placedType = travelRouteMode;
+  travelRouteMode = null; // 放置後自動取消選取，避免下一次點地圖誤放點
+  placeTravelRoutePoint(e.latlng, placedType);
+}
+
+// 送進 OSRM 的座標序列：起點固定放第一個、終點（若有）固定放最後一個，中途點夾在中間依加入順序放入；
+// 中途點彼此的先後順序其實不影響最終路線——calculateTravelRoute() 改用 OSRM 的 trip 服務（旅行商問題
+// 排序最佳化），會自動幫中途點重新排出最短/最快的走訪順序，不受這裡放入順序侷限，這裡的順序只是
+// 用來標定「哪個是起點、哪個是終點」給 trip API 的 source=first/destination=last 用
+function getOrderedTravelRoutePoints() {
+  const start = travelRoutePoints.find(function(p) { return p.type === 'start'; });
+  const end = travelRoutePoints.find(function(p) { return p.type === 'end'; });
+  const vias = travelRoutePoints.filter(function(p) { return p.type === 'via'; });
+  const ordered = [];
+  if (start) ordered.push(start);
+  ordered.push.apply(ordered, vias);
+  if (end) ordered.push(end);
+  return ordered;
+}
+
+function calculateTravelRoute() {
+  if (travelRouteLine) { travelMap.removeLayer(travelRouteLine); travelRouteLine = null; }
+  const points = getOrderedTravelRoutePoints();
+  if (points.length < 2) return;
+  const hasEnd = points[points.length - 1].type === 'end';
+  const coordStr = points.map(function(p) { return p.latlng.lng + ',' + p.latlng.lat; }).join(';');
+  // 2026.08改版：中途點不設固定順序，改用 OSRM trip 服務（旅行商問題最佳化）取代原本的 route 服務——
+  // route 服務會嚴格照給定順序算路線，trip 服務則會在「起點固定第一個、終點（若有）固定最後一個」
+  // 的前提下，自動幫中間的中途點排出最短/最快的走訪順序。沒有設終點時 destination=any，讓演算法
+  // 連「在哪個中途點結束」都一併找出最優解，不強制回到起點（roundtrip=false）
+  const url = 'https://router.project-osrm.org/trip/v1/' + travelRouteProfile + '/' + coordStr +
+    '?source=first&destination=' + (hasEnd ? 'last' : 'any') + '&roundtrip=false&overview=full&geometries=geojson';
+  setTravelStatus('計算路線中…');
+  fetch(url).then(function(r) { return r.json(); }).then(function(data) {
+    if (!data.trips || !data.trips.length) { setTravelStatus('找不到路線'); return; }
+    const route = data.trips[0];
+    travelRouteLine = L.geoJSON(route.geometry, { style: { color: '#2471a3', weight: 5, opacity: .85 } }).addTo(travelMap);
+    travelMap.fitBounds(travelRouteLine.getBounds(), { padding: [40, 40] });
+    const km = (route.distance / 1000).toFixed(1);
+    const min = Math.round(route.duration / 60);
+    setTravelStatus('約 ' + km + ' 公里・' + min + ' 分鐘' + (points.length > 2 ? '（中途點已自動排序）' : ''));
+  }).catch(function() { setTravelStatus('路線計算失敗，請確認網路連線'); });
+}
+
+function clearAllTravelRoutePoints() {
+  travelRoutePoints.forEach(function(p) { if (travelMap) travelMap.removeLayer(p.marker); });
+  travelRoutePoints = [];
+  if (travelRouteLine && travelMap) { travelMap.removeLayer(travelRouteLine); travelRouteLine = null; }
+}
+
+// 離開全螢幕出行訣時，路線導航狀態一併重置（比照圓心錨定的重置邏輯），下次重新進入是乾淨狀態
+function resetTravelRoute() {
+  clearAllTravelRoutePoints();
+  travelRouteMode = null;
+  travelRoutePendingRemoveIndex = null;
+  // 起點已經跟錨定合一（見 placeTravelRoutePoint），起點被清空時錨定狀態要一併重置
+  travelCompassAnchored = false;
+  travelCompassAnchorLatLng = null;
+  applyTravelCompassPos();
+  updateTravelRouteArmedButtons();
+  updateTravelRoutePointAvailability();
+  document.querySelectorAll('.expand-control').forEach(function(c) { c.classList.remove('is-open'); });
+  const popup = document.getElementById('travel-route-remove-popup');
+  if (popup) popup.classList.remove('is-visible');
+  // 交通工具選擇維持不重設（跟羅盤大小一樣算是使用偏好），只重設點位跟展開狀態
+}
+
+// ── 圓心錨定（手動，預設關閉）──
+// 關閉：羅盤浮在畫面正中央（left/top:50%，跟 .travel-compass 原本的置中邏輯一致），起點水滴隱藏
+// 開啟：羅盤圓心固定在 travelCompassAnchorLatLng 這個地理座標，隨地圖平移/縮放重算螢幕位置；
+// 起點水滴（#travel-compass-start-pin）畫在 .travel-compass 內部、不隨扇形旋轉的那一層，
+// 圓心到哪水滴就自動到哪，這裡只需要開關顯示，不用另外同步座標（2026.08 改版，取代原本
+// 疊在扇形羅盤外面、需要另外算座標又容易對不準尖端的複製圖釘）
+function applyTravelCompassPos() {
+  const compassEl = document.querySelector('.travel-compass');
+  const pinEl = document.getElementById('travel-compass-start-pin');
+  if (!compassEl) return;
+  if (!travelCompassAnchored || !travelCompassAnchorLatLng || !travelMap) {
+    compassEl.style.left = '50%';
+    compassEl.style.top = '50%';
+    if (pinEl) pinEl.style.display = 'none';
+    return;
+  }
+  const pt = travelMap.latLngToContainerPoint(travelCompassAnchorLatLng);
+  compassEl.style.left = pt.x + 'px';
+  compassEl.style.top = pt.y + 'px';
+  if (pinEl) pinEl.style.display = 'block';
+}
+
+function handleTravelOrientation(event) {
+  let heading = null;
+  if (typeof event.webkitCompassHeading === 'number') {
+    heading = event.webkitCompassHeading;
+  } else if (event.absolute && typeof event.alpha === 'number') {
+    heading = 360 - event.alpha;
+  }
+  if (heading === null) return;
+  travelLastHeading = heading;
+  // 右上角小羅盤：平常永遠即時更新、不受錨定影響；朝向鎖定開啟時例外——固定指向正上方代表「已鎖定」，
+  // 跳過這次更新，直到解除鎖定（見 toggleTravelHeadingLock）
+  if (!travelHeadingLocked) renderTravelMiniCompass(heading);
+  // 扇形羅盤是否跟著手機轉，只看有沒有錨定；朝向鎖定只管小羅盤指針本身要不要固定指向北，
+  // 兩者互不影響——沒錨定時，就算小羅盤鎖定中，扇形羅盤依然要能正常跟著轉（2026.08修正：
+  // 先前誤把鎖定也拿去擋扇形羅盤更新，導致未錨定狀態下鎖定小羅盤會連帶把扇形羅盤也凍結住）
+  if (travelCompassAnchored) return;
+  renderTravelCompass(heading);
+}
+
+// 小羅盤指針點擊切換「朝向鎖定」：只影響小羅盤指針本身的顯示（見下方函式），跟扇形羅盤的轉動邏輯無關
+// 小羅盤指針點擊切換「朝向鎖定」：只影響小羅盤指針本身要不要固定指向正上方（代表北），
+// 跟扇形羅盤的轉動邏輯完全分開——扇形羅盤是否跟著手機轉，只看有沒有起點錨定（見 handleTravelOrientation），
+// 不受這個開關影響。鎖定時的用途單純是：即使不想再讓小指針晃動、或想確認目前螢幕上方對應的實際方位，
+// 可以先固定小指針做參考，扇形羅盤（含尚未錨定時的即時方位標記）仍會正常繼續跟著轉
+function toggleTravelHeadingLock() {
+  travelHeadingLocked = !travelHeadingLocked;
+  const miniEl = document.getElementById('travel-mini-compass');
+  if (travelHeadingLocked) {
+    if (miniEl) miniEl.classList.add('is-locked');
+    renderTravelMiniCompass(0);
+    setTravelStatus('小羅盤指針已鎖定指向北；扇形羅盤仍會正常跟著轉（除非已錨定）');
+  } else {
+    if (miniEl) miniEl.classList.remove('is-locked');
+    renderTravelMiniCompass(travelLastHeading);
+    setTravelStatus('小羅盤指針鎖定已解除，恢復即時朝向');
+  }
+}
+
+function startTravelCompass() {
+  if (travelCompassEnabled) return;
+  travelCompassEnabled = true;
+  window.addEventListener('deviceorientationabsolute', handleTravelOrientation, true);
+  window.addEventListener('deviceorientation', handleTravelOrientation, true);
+  hideTravelOrientationPrompt();
+  setTravelStatus('羅盤已跟隨手機朝向');
+}
+
+function requestTravelCompass() {
+  // 已啟用過（travelCompassEnabled=true）就不用再問一次：先前每次進全螢幕都會呼叫這裡，
+  // 沒檢查是否已啟用，導致重新打開全螢幕時詢問泡泡又跳出來，但泡泡上的「啟用」鈕在
+  // startTravelCompass() 裡會被 if(travelCompassEnabled) return 擋掉、不會有反應，形同關不掉
+  if (travelCompassEnabled) return;
+  if (typeof DeviceOrientationEvent === 'undefined') {
+    setTravelStatus('此裝置不支援方向感測');
+    return;
+  }
+  if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+    showTravelOrientationPrompt('啟用羅盤，讓方位圖跟著手機朝向轉動', false);
+  } else {
+    startTravelCompass();
+  }
+}
+
+function openTravelMode() {
+  const overlay = document.getElementById('travel-overlay');
+  const boardLayer = document.getElementById('travel-board-layer');
+  const board = document.querySelector('#paipan-result .outer');
+  if (!overlay || !boardLayer || !board || overlay.classList.contains('is-open')) return;
+  // 階段三：若是從方框地圖模式展開，先暫時隱藏方框內嵌地圖（travel-inline-map-wrap），
+  // 避免跟全螢幕背景地圖疊在一起顯示；記住原本的 display 值，關閉全螢幕時還原
+  const inlineWrap = document.getElementById('travel-inline-map-wrap');
+  travelInlineWrapPrevDisplay = inlineWrap ? inlineWrap.style.display : null;
+  if (inlineWrap) inlineWrap.style.display = 'none';
+  updateTravelCompassSectorMarks(); // 同步吉凶標記到扇形羅盤邊框
+  travelBoardPlaceholder = document.createComment('travel-board-placeholder');
+  board.parentNode.insertBefore(travelBoardPlaceholder, board);
+  boardLayer.appendChild(board);
+  overlay.setAttribute('aria-hidden', 'false');
+  overlay.classList.add('board-visible');
+  initializeTravelMap();
+  requestAnimationFrame(function() {
+    overlay.classList.add('is-open');
+    if (travelMap) travelMap.invalidateSize();
+    setTimeout(function() { overlay.classList.remove('board-visible'); }, 60);
+  });
+  setTimeout(function() {
+    if (travelMap) travelMap.invalidateSize();
+    locateTravelPosition();
+  }, 300);
+  requestTravelCompass();
+}
+
+function closeTravelMode() {
+  const overlay = document.getElementById('travel-overlay');
+  const board = document.querySelector('#travel-board-layer .outer');
+  if (!overlay || !overlay.classList.contains('is-open')) return;
+  overlay.classList.remove('is-open', 'board-visible');
+  hideTravelOrientationPrompt();
+  resetTravelRoute(); // 路線導航狀態一併重置（含起點，已跟錨定合一，見 resetTravelRoute），下次重新進入是乾淨狀態
+  setTimeout(function() {
+    if (board && travelBoardPlaceholder) {
+      travelBoardPlaceholder.parentNode.insertBefore(board, travelBoardPlaceholder);
+      travelBoardPlaceholder.remove();
+      travelBoardPlaceholder = null;
+    }
+    // 階段三：還原方框內嵌地圖原本的顯示狀態（若當初是從地圖模式展開全螢幕進來的）
+    const inlineWrap = document.getElementById('travel-inline-map-wrap');
+    if (inlineWrap && travelInlineWrapPrevDisplay !== null) {
+      inlineWrap.style.display = travelInlineWrapPrevDisplay;
+      if (inlineWrap.style.display === '' && inlineTravelMap) {
+        inlineTravelMap.invalidateSize(); // 剛從 display:none 恢復，Leaflet 容器尺寸需要重新量測
+      }
+    }
+    travelInlineWrapPrevDisplay = null;
+    overlay.setAttribute('aria-hidden', 'true');
+  }, 300);
+}
+
+document.getElementById('travel-orientation-btn').addEventListener('click', function() {
+  DeviceOrientationEvent.requestPermission().then(function(result) {
+    if (result === 'granted') startTravelCompass();
+    else showTravelOrientationPrompt('未取得羅盤權限，可再試一次', true);
+  }).catch(function() { showTravelOrientationPrompt('羅盤權限請求失敗，可再試一次', true); });
+});
+
+document.getElementById('travel-size-range').addEventListener('input', function(event) {
+  const size = event.target.value;
+  document.documentElement.style.setProperty('--travel-compass-size', size + 'vmax');
+  document.getElementById('travel-size-value').textContent = size + '%';
+});
+
+// 2026.08：羅盤大小面板改收合式，點旁邊的小圓鈕（.travel-size-trigger）才彈出/收起，
+// 手感比照交通工具/點位的.expand-control（見toggleExpandControl），這裡獨立一個開關函式，
+// 不共用toggleExpandControl是因為那個函式還處理了「未設起點鎖住其他鈕」等額外邏輯，這裡用不到
+function toggleTravelSizePopover() {
+  const wrap = document.getElementById('travel-size-expand');
+  if (wrap) wrap.classList.toggle('is-open');
+}
+
 const GATE_CONSTRAINT_TABLE = {
   '休門': [9],
   '生門': [1],
@@ -1256,6 +3065,19 @@ const GATE_CONSTRAINT_TABLE = {
   '驚門': [3, 4],
   '開門': [3, 4],
 };
+// ── 制判定（宮剋門，跟門迫相反的方向：宮的五行反過來剋制門）──
+// 適用範圍：陽盤全系列（時家置閏／日／月／年盤），一般陰盤排除（老師陰盤實測確認無此標記）。
+// 不算四害，純視覺標示，顏色比照「墓」字淡化處理。
+const GATE_SUPPRESS_TABLE = {
+  '休門': [2, 8],
+  '生門': [3, 4],
+  '傷門': [6, 7],
+  '杜門': [6, 7],
+  '景門': [1],
+  '死門': [3, 4],
+  '驚門': [9],
+  '開門': [9],
+};
 
 function renderGateHTML(gate, house) {
   if (!gate) return '';
@@ -1263,11 +3085,19 @@ function renderGateHTML(gate, house) {
   if (constraintHouses.includes(house)) {
     return `<span style="position:relative;display:inline-block;color:#c0392b;">${gate}<span class="tag gate-constraint">迫</span></span>`;
   }
+  if (PLATE_MODE === 'yang') {
+    const suppressHouses = GATE_SUPPRESS_TABLE[gate] || [];
+    if (suppressHouses.includes(house)) {
+      return `<span style="position:relative;display:inline-block;">${gate}<span class="tag gate-suppress">制</span></span>`;
+    }
+  }
   return gate;
 }
 
 function resetChart() {
   clearHighlight();
+  if (MING_PAN_MODE) exitMingPanMode();
+  applyPlateMode('yin');
   ['year','month','day','hour','minute'].forEach(id => {
     const el = document.getElementById(id);
     if (el) {
@@ -1279,7 +3109,7 @@ function resetChart() {
   if (msgEl) { msgEl.textContent = ''; msgEl.style.display = 'none'; }
   ['sy','sm','sd','st','ly','lm','ld','lt',
    'gz-y-gan','gz-y-zhi','gz-m-gan','gz-m-zhi','gz-d-gan','gz-d-zhi','gz-h-gan','gz-h-zhi',
-   'hb-qiju','hb-xun','hb-dutyStem','hb-voidBranches','hb-travel-horse','hb-zhifu','hb-zhishi'
+   'hb-qiju','hb-fuyin','hb-marker','hb-xun','hb-dutyStem','hb-voidBranches','hb-travel-horse','hb-zhifu','hb-zhishi','hb-yongshen'
   ].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.textContent = '—';
@@ -1323,12 +3153,67 @@ function shiftHour(hours) {
   castChart();
 }
 
+function shiftMonth(months) {
+  const dt = getInputDate();
+  dt.setMonth(dt.getMonth() + months);
+  setInputDate(dt);
+  castChart();
+}
+
+function shiftYear(years) {
+  const dt = getInputDate();
+  dt.setFullYear(dt.getFullYear() + years);
+  setInputDate(dt);
+  castChart();
+}
+
+// 快捷鍵按鈕組：依當前盤別／子模式切換對應的時間跳轉單位
+// 陰盤／陽盤時盤：前日／次日／上時／下時（沿用原本行為）
+// 陽盤日盤：上日／次日（日盤只看日干支，時分不影響結果，不需要上時/下時）
+// 陽盤月盤：上月／次月（比照tzchimen月家的「上月/次月」設計）
+// 陽盤年盤：去年／次年（比照tzchimen年家的「去年/次年」設計）
+function updateQuickNav() {
+  const row = document.getElementById('btn-quick-row');
+  if (!row) return;
+  let html;
+  if (PLATE_MODE === 'yang' && PLATE_SUBMODE === 'year') {
+    html = `
+      <button class="btn-quick" onclick="shiftYear(-1)">去年</button>
+      <div class="btn-quick-spacer"></div>
+      <div class="btn-quick-spacer"></div>
+      <button class="btn-quick" onclick="shiftYear(+1)">次年</button>
+    `;
+  } else if (PLATE_MODE === 'yang' && PLATE_SUBMODE === 'month') {
+    html = `
+      <button class="btn-quick" onclick="shiftMonth(-1)">上月</button>
+      <div class="btn-quick-spacer"></div>
+      <div class="btn-quick-spacer"></div>
+      <button class="btn-quick" onclick="shiftMonth(+1)">次月</button>
+    `;
+  } else if (PLATE_MODE === 'yang' && PLATE_SUBMODE === 'day') {
+    html = `
+      <button class="btn-quick" onclick="shiftDate(-1)">上日</button>
+      <div class="btn-quick-spacer"></div>
+      <div class="btn-quick-spacer"></div>
+      <button class="btn-quick" onclick="shiftDate(+1)">次日</button>
+    `;
+  } else {
+    html = `
+      <button class="btn-quick" onclick="shiftDate(-1)">前日</button>
+      <button class="btn-quick" onclick="shiftHour(-2)">上時</button>
+      <button class="btn-quick" onclick="shiftHour(+2)">下時</button>
+      <button class="btn-quick" onclick="shiftDate(+1)">次日</button>
+    `;
+  }
+  row.innerHTML = html;
+}
+
 function setNow() {
   setInputDate(new Date());
 }
 
 // 頁面載入時自動填入當前時間
-window.addEventListener('DOMContentLoaded', setNow);
+window.addEventListener('DOMContentLoaded', () => { setNow(); updateQuickNav(); });
 
 const pad = n => String(n).padStart(2, '0');
 
@@ -1425,8 +3310,17 @@ function applyHouseHighlight(cellEl) {
   }
 }
 
+// 出行訣標記中（travelMarkingActive 或地圖模式）：宮位點擊改成切換吉凶用途，
+// 十二長生的宮位點擊高亮功能在此期間先禁用，避免兩種點擊意圖互相干擾
+function changshengClickDisabled() {
+  if (typeof travelMarkingActive !== 'undefined' && travelMarkingActive) return true;
+  const outer = document.getElementById('outer-board');
+  return !!(outer && outer.classList.contains('travel-map-mode'));
+}
+
 document.querySelectorAll('.cell[data-gong]').forEach(cell => {
   cell.addEventListener('click', function() {
+    if (changshengClickDisabled()) return;
     const candidates = getHouseChangshengCandidates(this);
     if (candidates.length === 0) return;
 
@@ -1444,9 +3338,12 @@ document.querySelectorAll('.cell[data-gong]').forEach(cell => {
     clearHighlight();
     clearChangsheng();
 
+    const yongshenEl = document.getElementById('hb-yongshen');
+
     if (nextIndex === -1) {
       _activeChangshengHouse = null;
       _activeChangshengIndex = -1;
+      if (yongshenEl) yongshenEl.textContent = '—';
       return;
     }
 
@@ -1456,6 +3353,7 @@ document.querySelectorAll('.cell[data-gong]').forEach(cell => {
     applyHouseHighlight(this);
     _activeChangshengHouse = this;
     _activeChangshengIndex = nextIndex;
+    if (yongshenEl) yongshenEl.textContent = chosen.stem;
   });
 });
 
@@ -1487,6 +3385,238 @@ INPUT_ORDER.forEach((id, idx) => {
   });
 });
 
+// ==================== 陽盤時家置閏法引擎 ====================
+// 移植自「奇門曆引擎」工具，錨點 1899-12-22 甲子日 冬至 陽一局 正授（已多來源交叉驗證）
+// 僅負責算「局數＋陰陽遁」，其餘排盤步驟（值符值使、八神八星八門、引干、四害）與陰盤共用，不受影響
+
+const YANG_CYCLE_TRAD = ['冬至','小寒','大寒','立春','雨水','驚蟄','春分','清明','穀雨','立夏','小滿','芒種','夏至','小暑','大暑','立秋','處暑','白露','秋分','寒露','霜降','立冬','小雪','大雪'];
+const YANG_CYCLE_SIMP = ['冬至','小寒','大寒','立春','雨水','惊蛰','春分','清明','谷雨','立夏','小满','芒种','夏至','小暑','大暑','立秋','处暑','白露','秋分','寒露','霜降','立冬','小雪','大雪'];
+const YANG_JU_TABLE = {
+  "冬至":{"dun":"陽遁","shang":1,"zhong":7,"xia":4},"小寒":{"dun":"陽遁","shang":2,"zhong":8,"xia":5},
+  "大寒":{"dun":"陽遁","shang":3,"zhong":9,"xia":6},"立春":{"dun":"陽遁","shang":8,"zhong":5,"xia":2},
+  "雨水":{"dun":"陽遁","shang":9,"zhong":6,"xia":3},"驚蟄":{"dun":"陽遁","shang":1,"zhong":7,"xia":4},
+  "春分":{"dun":"陽遁","shang":3,"zhong":9,"xia":6},"清明":{"dun":"陽遁","shang":4,"zhong":1,"xia":7},
+  "穀雨":{"dun":"陽遁","shang":5,"zhong":2,"xia":8},"立夏":{"dun":"陽遁","shang":4,"zhong":1,"xia":7},
+  "小滿":{"dun":"陽遁","shang":5,"zhong":2,"xia":8},"芒種":{"dun":"陽遁","shang":6,"zhong":3,"xia":9},
+  "夏至":{"dun":"陰遁","shang":9,"zhong":3,"xia":6},"小暑":{"dun":"陰遁","shang":8,"zhong":2,"xia":5},
+  "大暑":{"dun":"陰遁","shang":7,"zhong":1,"xia":4},"立秋":{"dun":"陰遁","shang":2,"zhong":5,"xia":8},
+  "處暑":{"dun":"陰遁","shang":1,"zhong":4,"xia":7},"白露":{"dun":"陰遁","shang":9,"zhong":3,"xia":6},
+  "秋分":{"dun":"陰遁","shang":7,"zhong":1,"xia":4},"寒露":{"dun":"陰遁","shang":6,"zhong":9,"xia":3},
+  "霜降":{"dun":"陰遁","shang":5,"zhong":8,"xia":2},"立冬":{"dun":"陰遁","shang":6,"zhong":9,"xia":3},
+  "小雪":{"dun":"陰遁","shang":5,"zhong":8,"xia":1},"大雪":{"dun":"陰遁","shang":4,"zhong":7,"xia":1}
+};
+const YANG_ANCHOR = new Date(Date.UTC(1899,11,22)); // 1899-12-22 甲子日 冬至 陽一局 正授
+const YANG_ANCHOR_INDEX = 0; // 冬至
+
+let _yangJieQiTableCache = {};
+function _yangParseSolarToDate(solarObj){
+  const s = solarObj.toYmdHms();
+  const m = s.match(/(\d+)-(\d+)-(\d+)\s+(\d+):(\d+):(\d+)/);
+  return new Date(Date.UTC(+m[1], +m[2]-1, +m[3], +m[4], +m[5], +m[6]));
+}
+function _yangLoadJieQiTableForYear(y){
+  if (_yangJieQiTableCache[y]) return _yangJieQiTableCache[y];
+  const lunar = Lunar.fromYmd(y, 6, 15);
+  const raw = lunar.getJieQiTable();
+  const table = {};
+  for (const name in raw) {
+    if (raw.hasOwnProperty(name)) table[name] = _yangParseSolarToDate(raw[name]);
+  }
+  _yangJieQiTableCache[y] = table;
+  return table;
+}
+function _yangGetRealJieqiDate(cycleIndex, nearDate){
+  const simpName = YANG_CYCLE_SIMP[cycleIndex];
+  const y = nearDate.getUTCFullYear();
+  let best = null, bestDist = Infinity;
+  [y-1, y, y+1].forEach(yr => {
+    const table = _yangLoadJieQiTableForYear(yr);
+    if (table[simpName]) {
+      const dist = Math.abs(table[simpName].getTime() - nearDate.getTime());
+      if (dist < bestDist) { bestDist = dist; best = table[simpName]; }
+    }
+  });
+  return best;
+}
+function _yangDateOnly(d){ return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())); }
+function _yangDayDiff(a,b){ return Math.round((_yangDateOnly(a).getTime()-_yangDateOnly(b).getTime())/86400000); }
+function _yangAddDays(d,n){ return new Date(d.getTime()+n*86400000); }
+
+let _yangSimCache = [];
+let _yangSimCacheEndsAt = null;
+let _yangSimCursorIndex = YANG_ANCHOR_INDEX;
+let _yangSimCursorDate = YANG_ANCHOR;
+
+function _yangStepOnce(){
+  const jieqi = YANG_CYCLE_TRAD[_yangSimCursorIndex];
+  const jt = YANG_JU_TABLE[jieqi];
+  const real = _yangGetRealJieqiDate(_yangSimCursorIndex, _yangSimCursorDate);
+  const diffDays = real ? _yangDayDiff(real, _yangSimCursorDate) : null;
+  const isTrigger = (jieqi === '大雪' || jieqi === '芒種') && diffDays !== null && diffDays >= 9;
+  const row = {
+    date: _yangSimCursorDate, jieqi, dun: jt.dun,
+    shang: jt.shang, zhong: jt.zhong, xia: jt.xia,
+    actual: real, diffDays, zhiRun: isTrigger
+  };
+  _yangSimCache.push(row);
+  _yangSimCursorDate = _yangAddDays(_yangSimCursorDate, 15);
+  if (!isTrigger) _yangSimCursorIndex = (_yangSimCursorIndex + 1) % 24;
+  _yangSimCacheEndsAt = _yangSimCursorDate;
+  return row;
+}
+function _yangEnsureSimulatedUntil(targetDate){
+  let guard = 0;
+  while ((_yangSimCacheEndsAt === null || _yangSimCacheEndsAt <= targetDate) && guard < 20000) {
+    _yangStepOnce();
+    guard++;
+  }
+}
+function _yangFindRowForDate(targetDate){
+  _yangEnsureSimulatedUntil(targetDate);
+  let idx = -1;
+  for (let i = 0; i < _yangSimCache.length; i++) {
+    if (_yangSimCache[i].date.getTime() <= targetDate.getTime()) idx = i; else break;
+  }
+  return idx >= 0 ? _yangSimCache[idx] : null;
+}
+
+// 陽盤局數（僅看日期，跟時分無關；子時跨日等細節不適用，因局數以15天為粒度）
+// 回傳 { solsticeType:'陽'|'陰', chartNum:1-9, row } 供 castChart() 使用
+function getYangChartNumber(y, m, d) {
+  const target = new Date(Date.UTC(y, m - 1, d));
+  if (target.getTime() < YANG_ANCHOR.getTime()) return null; // 早於已驗證錨點範圍
+  const row = _yangFindRowForDate(target);
+  if (!row) return null;
+  const offset = _yangDayDiff(target, row.date);
+  let yuanKey;
+  if (offset <= 4) yuanKey = 'shang';
+  else if (offset <= 9) yuanKey = 'zhong';
+  else yuanKey = 'xia';
+  return {
+    solsticeType: row.dun === '陽遁' ? '陽' : '陰',
+    chartNum: row[yuanKey],
+    jieqi: row.jieqi,
+    zhiRun: row.zhiRun,
+    row
+  };
+}
+
+// ⚠️ 已淘汰：月盤原本是工具開發過程中類推套用9.2節氣表＋強制陰遁的假設（舊函式getYangChartNumberForcedYin，
+// 非老師教學內容——老師只教過陽盤第三步以後的流程骨架共用，未具體教授局數怎麼算），
+// 2026.08經8筆實測資料證實這套自訂假設方向錯誤，已改用下方getMonthWuXingJu（跟年盤同一套三元甲子邏輯，5年一區塊）。
+
+// 年盤專用：三元甲子局數表（2026.08 實測驗證，取代工具開發過程中原本套用9.2節氣表的自訂假設）
+// 依據：6筆比對資料（china95.net、tzchimen.com）橫跨1957-2026年，證實年家局數
+// 不是按9.2表逐日/逐節氣變動，而是套用玄空飛星「三元甲子」的60年區塊，每180年循環：
+//   上元：1864起 → 陰1局；中元：1924起 → 陰4局；下元：1984起 → 陰7局
+// 換元邊界已實測確認為1984年立春（1984/2/4癸亥年中元陰4局 → 1984/2/5甲子年下元陰7局），
+// 與排盤規則.md「年支須用節氣換年」原則一致，故效力年份（effectiveYear）採用八字年柱
+// 干支反推，不用西元曆年或農曆正月初一。陰陽遁固定為陰遁（此點原假設方向正確，未變動）。
+const SAN_YUAN_ANCHOR_YEAR = 1864; // 上元起始年（甲子，以立春為界）
+const SAN_YUAN_JU_BY_YUAN = [1, 4, 7]; // [上元, 中元, 下元] 對應局數
+function getEffectiveYearFromGanZhi(y, yearGZ) {
+  // 由西元年反推「立春校正後」的年份：year本身的干支已由 eightChar（含立春校正）算出，
+  // 這裡只是找出與該干支相符、且落在 y 附近（y-1／y／y+1）的西元年整數，供三元表查詢用
+  const stemIdx = HEAVEN_STEM_LIST.indexOf(yearGZ[0]);
+  const branchIdx = EARTH_BRANCH_LIST.indexOf(yearGZ[1]);
+  for (const cand of [y, y - 1, y + 1]) {
+    const s = ((cand - 4) % 10 + 10) % 10;
+    const b = ((cand - 4) % 12 + 12) % 12;
+    if (s === stemIdx && b === branchIdx) return cand;
+  }
+  return y; // 理論上不會走到這裡，僅防呆
+}
+// 已驗證範圍：1800年起（2026.08用china95.net五組資料往回驗證確認，涵蓋1804年立春換元邊界）。
+// 1800年以前公式仍會照常計算（純mod 180運算，跟時盤那種鏈式模擬不同，沒有方向性限制），
+// 但缺乏比對資料，故標示為「未驗證外推」而非直接擋下。
+const SAN_YUAN_VERIFIED_FROM_YEAR = 1800;
+function getYearSanYuanJu(y, m, d, yearGZ) {
+  const effectiveYear = getEffectiveYearFromGanZhi(y, yearGZ);
+  const offset = ((effectiveYear - SAN_YUAN_ANCHOR_YEAR) % 180 + 180) % 180;
+  const yuanIndex = Math.floor(offset / 60); // 0=上元, 1=中元, 2=下元
+  return {
+    solsticeType: '陰',
+    chartNum: SAN_YUAN_JU_BY_YUAN[yuanIndex],
+    yuanName: ['上元', '中元', '下元'][yuanIndex],
+    effectiveYear,
+    isVerified: effectiveYear >= SAN_YUAN_VERIFIED_FROM_YEAR
+  };
+}
+// 月盤專用：跟年盤同一套「三元甲子」邏輯，只是週期縮小為5年一區塊、15年一循環（2026.08 實測驗證）
+// 依據：8筆比對資料（china95.net）橫跨1975-2029年，涵蓋上中下三元，逐項核對局數與china95顯示的
+// 「上/中/下元XX年」區塊起始年標籤，全數一致。這推翻的是工具開發過程中自訂的類推假設（「月盤跟時盤
+// 共用置閏邏輯」），不是老師教學內容——老師只教過陽盤第三步以後的流程骨架共用，未具體教過局數公式。
+// 月盤實際運作更接近年盤的縮小版：60個月＝5年（跟年干支60甲子循環一樣是精確離散系統，不套用會浮動
+// 的節氣連續量），故不需要時盤那套超神接氣、大雪/芒種置閏機制。effectiveYear沿用同一套立春校正反推
+// （見getEffectiveYearFromGanZhi），局數對照表也跟年盤共用同一張[1,4,7]，已驗證範圍同年盤沿用
+// SAN_YUAN_VERIFIED_FROM_YEAR（1800年起）。
+// 此函式取代原本的getYangChartNumberForcedYin(套9.2節氣表)作為月盤的正式邏輯。
+function getMonthWuXingJu(y, m, d, yearGZ) {
+  const effectiveYear = getEffectiveYearFromGanZhi(y, yearGZ);
+  const offset = ((effectiveYear - SAN_YUAN_ANCHOR_YEAR) % 15 + 15) % 15;
+  const blockIndex = Math.floor(offset / 5); // 0=上元, 1=中元, 2=下元（5年一區塊）
+  return {
+    solsticeType: '陰',
+    chartNum: SAN_YUAN_JU_BY_YUAN[blockIndex],
+    yuanName: ['上元', '中元', '下元'][blockIndex],
+    effectiveYear,
+    isVerified: effectiveYear >= SAN_YUAN_VERIFIED_FROM_YEAR
+  };
+}
+// ⚠️ 陰陽遁判定精度更新（2026.08，獨立資料佐證）：Eric用china95.net「日家奇門」交叉驗證，
+// 同一天內（2026/12/22庚午日）冬至交節時刻（04:51）前後一小時開盤，4:24仍顯示「阴庚午日」、
+// 5:24已顯示「阳庚午日」——證實奇門陰陽遁切換不是只精確到日。
+// 原本借用的getYangChartNumber()雖然內部有抓到精確節氣時刻，但_yangDateOnly()會把時分秒砍掉、
+// 只留年月日比較，是日級精度，跟這次實測發現的精度不符，故另立本函式，不動原本的日級版本
+// （getYangChartNumber沿用給時盤自己的鏈式模擬用，不受影響）。
+// 2026.08再更新：本函式已改為陰盤的正式判定（取代getSolsticeType()，見該函式上方棄用說明），
+// 用china95.net「陰盤奇門」實測資料（4:24阴遁八局／5:24阳遁九局）二度驗證，證實不只日家奇門、
+// 標準陰盤奇門本身跨節氣時局數也會確實跳動，不是單純日級精度的誤差。
+// ⚠️ 尚待確認：這裡寫的是「分鐘級」精度（直接比對交節秒數），但東方命理系統本身的時間顆粒度是
+// 時辰（2小時一個單位），冬至/夏至交節時刻理論上可能只需要精確到「落在哪個時辰」，不必真的精確到
+// 分鐘——現有這批交叉驗證資料（4:24 vs 5:24）剛好同時跨了時辰（寅→卯）與節氣兩條線，無法排除
+// 其實只是時辰級精度在起作用。真正決定性的測試是「同一時辰內、卡在交節時刻前後」的兩筆資料（如
+// 2026/12/22 04:30 vs 04:55，同為寅時），若兩者結果相同，代表系統只到時辰級精度，屆時本函式的
+// 分鐘級比對邏輯需要改成「取交節時刻所在時辰的邊界」再比對，而非直接比對秒數本身。
+function getSolsticeTypePrecise(y, m, d, h, min) {
+  if (y < 1899) return null; // 沿用時盤已驗證範圍下限，維持保守（節氣表理論上可算更早，但無交叉驗證）
+  const target = new Date(Date.UTC(y, m - 1, d, h, min || 0));
+  let lastSolstice = null, lastSolsticeTime = -Infinity;
+  for (let yr = y - 1; yr <= y + 1; yr++) {
+    const table = _yangLoadJieQiTableForYear(yr);
+    ['冬至', '夏至'].forEach(name => {
+      const dt = table[name];
+      if (dt && dt.getTime() <= target.getTime() && dt.getTime() > lastSolsticeTime) {
+        lastSolstice = name;
+        lastSolsticeTime = dt.getTime();
+      }
+    });
+  }
+  return lastSolstice === '冬至' ? '陽' : (lastSolstice === '夏至' ? '陰' : null);
+}
+
+// 陰陽遁方向（2026.08確認並完整驗證）：老師明確表示日盤跟時盤、陰盤一樣有分陰陽遁（不同於年盤/月盤固定陰遁），
+// 局數公式本身逐字稿未直接教授，是工具開發階段從實測資料反推、並已完整驗證的結果（見排盤規則.md「八、日盤」）：
+//   陰陽遁判定：借用節氣冬至/夏至半年判定，判定本身為分鐘級精度（見上方getSolsticeTypePrecise）
+//   陽遁方向翻轉：陰遁公式鏡像成陽遁公式（9-(n mod9) → 1+(n mod9)），同一錨點、同一diffDays線性計數，
+//     只是陽遁時改用遞增映射。邊界為平滑翻轉、非歸零重置（已用12/21與12/22相鄰n值資料交叉驗證）。
+const DAY_JU_ANCHOR = new Date(Date.UTC(2026, 7, 3)); // 2026-08-03，日柱己酉，n mod 9 = 0（陰9局）
+function getDayJu(y, m, d, h, min) {
+  const solsticeType = getSolsticeTypePrecise(y, m, d, h, min); // 分鐘級精度判定（2026.08驗證，見上方註解）
+  if (!solsticeType) return null; // 早於已驗證範圍(1899年)，陰陽遁無法判定，比照時盤擋下
+  const target = new Date(Date.UTC(y, m - 1, d));
+  const diffDays = Math.round((target - DAY_JU_ANCHOR) / 86400000);
+  const nMod9 = ((diffDays % 9) + 9) % 9;
+  const isYang = solsticeType === '陽';
+  return {
+    solsticeType,
+    chartNum: isYang ? (1 + nMod9) : (9 - nMod9), // 陽遁：鏡像遞增；陰遁：遞減（兩者皆已驗證）
+    _verified: true, // 陰遁分支8組實測資料驗證、陽遁分支5組跨冬至邊界實測資料驗證，皆通過（2026.08，見排盤規則.md）
+    _note: '局數公式已驗證（2026.08，陰遁8組＋陽遁5組跨邊界實測資料）；陰陽遁判定已為分鐘級精度（2026.08驗證）'
+  };
+}
+// ==================== 陽盤引擎結束 ====================
+
 // 地支序數
 const EARTH_BRANCH_LIST = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
 
@@ -1505,6 +3635,11 @@ function hourToBranch(h) {
   return EARTH_BRANCH_LIST[idx];
 }
 
+// ⚠️ 2026.08已棄用：此為原版陰盤陰陽遁判定，只比對到年月日（sDate把時分砍掉），是日級精度。
+// 2026.08用china95.net「陰盤奇門」實測資料證實：同一天內（2026/12/22庚午日）冬至交節時刻
+// （04:51）前後，4:24仍「阴遁八局」、5:24已「阳遁九局」，確認需要至少分鐘級（待驗證是否要收斂為
+// 時辰級，見getSolsticeTypePrecise上方註解）精度，此函式的日級精度不夠用，已改用下方
+// getSolsticeTypePrecise()取代（見castChart()呼叫處）。保留本函式僅供回溯對照，不再被呼叫。
 // 判斷陰陽遁：找開盤時間前最近的冬至或夏至
 function getSolsticeType(y, m, d, h) {
   const openDate = new Date(y, m-1, d, h);
@@ -1602,6 +3737,13 @@ const TRAVEL_HORSE_TABLE = {
   '寅':'申', '午':'申', '戌':'申',
   '巳':'亥', '酉':'亥', '丑':'亥',
   '亥':'巳', '卯':'巳', '未':'巳'
+};
+
+// 五不遇時：日天干→忌用時天干（時剋日，同性相剋；隔五位故稱「五不遇」）
+// 第18堂課新增，僅出行訣（陽盤）擇時用，判斷式為固定：時干==查表(日干)，與 effGZ／PLATE_SUBMODE 無關
+const WUBUYU_TABLE = {
+  '甲':'庚', '乙':'辛', '丙':'壬', '丁':'癸', '戊':'甲',
+  '己':'乙', '庚':'丙', '辛':'丁', '壬':'戊', '癸':'己'
 };
 
 // 時干序數
@@ -1840,6 +3982,8 @@ function castChart() {
   clearChangsheng();
   clearHighlight();
   document.querySelectorAll('.gc-tian .stem-active, .gc-shen .stem-active').forEach(s => s.classList.remove('stem-active'));
+  const yongshenResetEl = document.getElementById('hb-yongshen');
+  if (yongshenResetEl) yongshenResetEl.textContent = '—';
 
   // 子時跨日：23:00-23:59 屬於隔日子時，農曆換算需 +1 天，時辰改為 0
   let lunarD = d, lunarM = m, lunarY = y, lunarH = h;
@@ -1882,19 +4026,70 @@ function castChart() {
   document.getElementById('gz-h-gan').textContent = hGZ[0];
   document.getElementById('gz-h-zhi').textContent = hGZ[1];
 
+  // 命盤模式：命宮＝時支固定位置，逆時針放入十二宮
+  if (MING_PAN_MODE) {
+    renderMingPan(hGZ[1]);
+  }
+
+  // 陽盤日/月/年盤：旬首/符頭/空亡/馬星/值符值使/引干，改用對應的干支；陰盤與陽盤時盤維持用時干支
+  const effGZ = (PLATE_MODE === 'yang' && PLATE_SUBMODE === 'day') ? dGZ
+              : (PLATE_MODE === 'yang' && PLATE_SUBMODE === 'month') ? mGZ
+              : (PLATE_MODE === 'yang' && PLATE_SUBMODE === 'year') ? yGZ
+              : hGZ;
+
   // 陰陽遁 + 局數
-  const solsticeType = getSolsticeType(y, m, d, h);
-  const chartNum = getChartNumber(lunar, h, ec);
+  let solsticeType, chartNum, yangInfo = null;
+  if (PLATE_MODE === 'yang') {
+    // 年盤／月盤：改用三元甲子公式（2026.08實測驗證，見 getYearSanYuanJu／getMonthWuXingJu 註解）；
+    // 時盤：維持沿用9.2節氣表＋9.3置閏引擎
+    if (PLATE_SUBMODE === 'year') {
+      yangInfo = getYearSanYuanJu(y, m, d, yGZ); // 純mod 180公式，無方向性限制，任何年份皆可算
+    } else if (PLATE_SUBMODE === 'month') {
+      yangInfo = getMonthWuXingJu(y, m, d, yGZ); // 純mod 15公式，同上
+    } else if (PLATE_SUBMODE === 'day') {
+      yangInfo = getDayJu(lunarY, lunarM, lunarD, lunarH, min); // 純日柱線性公式（2026.08驗證）；用子時跨日調整後的日期（與dGZ同基準，23:00起算次日），陰陽遁判定已為分鐘級精度（2026.08驗證，見getSolsticeTypePrecise）
+    } else {
+      yangInfo = getYangChartNumber(y, m, d); // 時盤：鏈式模擬，僅能從1899-12-22正授錨點往後算
+    }
+    if (!yangInfo) {
+      const msgEl = document.getElementById('input-error-msg');
+      if (msgEl) {
+        msgEl.textContent = PLATE_SUBMODE === 'day'
+          ? '此日期早於已驗證陰陽遁判定錨點範圍（1899-12-22），暫不支援日盤排盤'
+          : '此日期早於陽盤時家(置閏)已驗證錨點範圍（1899-12-22），暫不支援排盤';
+        msgEl.style.display = 'block';
+      }
+      return;
+    }
+    solsticeType = yangInfo.solsticeType;
+    chartNum = yangInfo.chartNum;
+  } else {
+    solsticeType = getSolsticeTypePrecise(y, m, d, h, min); // 2026.08修正：改用分鐘級精度判定，取代原本的日級精度getSolsticeType()（見下方⚠️保留原函式供對照）
+    if (solsticeType === null) {
+      const msgEl = document.getElementById('input-error-msg');
+      if (msgEl) {
+        msgEl.textContent = '此日期早於已驗證陰陽遁判定錨點範圍（1899年），暫不支援排盤';
+        msgEl.style.display = 'block';
+      }
+      return;
+    }
+    chartNum = getChartNumber(lunar, h, ec);
+  }
   document.getElementById('hb-qiju').textContent = solsticeType + chartNum + '局';
+
+  // 命盤模式：排大限（需先有陰陽遁＋局數才能算，故安排在此，晚於 renderMingPan 的呼叫點）
+  if (MING_PAN_MODE) {
+    renderDaXian(solsticeType, chartNum, MING_PAN_GENDER);
+  }
 
   // 排地盤天干
   const { earthStemMap, houseFiveStem } = getEarthStemMap(solsticeType, chartNum);
   // 地盤天干寫入將在後面取得 dutyStemHouse 後統一處理（入墓判定需要）
 
   // 旬首 / 符頭 / 空亡
-  const decInfo = getDecInfo(hGZ[0], hGZ[1]);
+  const decInfo = getDecInfo(effGZ[0], effGZ[1]);
   if (decInfo) {
-    document.getElementById('hb-xun').textContent = decInfo.xun;
+    document.getElementById('hb-xun').textContent = decInfo.xun.replace('旬', '');
     document.getElementById('hb-dutyStem').textContent = decInfo.dutyStem;
     document.getElementById('hb-voidBranches').textContent = decInfo.voidBranches.join('、');
 
@@ -1907,7 +4102,7 @@ function castChart() {
     });
 
     // 先計算馬和空的宮位
-    const horseZhi = TRAVEL_HORSE_TABLE[hGZ[1]];
+    const horseZhi = TRAVEL_HORSE_TABLE[effGZ[1]];
     const horseHouse = horseZhi ? BRANCH_TO_HOUSE[horseZhi] : null;
 
     // 馬先放（放入 horse- 格）
@@ -1938,7 +4133,7 @@ function castChart() {
 
       // 地盤時干宮：時柱天干在地盤的宮位
       // 六甲伏吟：時干為甲，甲不在地盤，改用符頭宮位（甲遁伏於值符下）
-      let timeStemHouse = Object.keys(earthStemMap).find(g => earthStemMap[g].includes(hGZ[0]));
+      let timeStemHouse = Object.keys(earthStemMap).find(g => earthStemMap[g].includes(effGZ[0]));
       if (!timeStemHouse) timeStemHouse = dutyStemHouse;
 
       if (timeStemHouse) {
@@ -1956,7 +4151,7 @@ function castChart() {
           // 數字走步（含中宮）的起點應為5本身，不可用已合併到坤2的位置（5與2在九宮數字
           // 循環中是不同的計數站，提前合併會讓起點算錯）
           const dutyStemHouseForGate = (houseFiveStem && decInfo.dutyStem === houseFiveStem) ? 5 : dutyStemHouse;
-          const gateMap = getGateMap(dutyStemHouseForGate, solsticeType, hGZ[0]);
+          const gateMap = getGateMap(dutyStemHouseForGate, solsticeType, effGZ[0]);
           // 找值使門落宮（天盤使門所在宮位）
           const shimenName = HOUSE_GATE[dutyStemHouse];
           const dutyGateLandHouse = Object.keys(gateMap).find(g => gateMap[g] === shimenName);
@@ -1967,25 +4162,39 @@ function castChart() {
 
           // 排引干
           const guidingResult = dutyGateLandHouse
-            ? getHidingStemMap(dutyGateLandHouse, earthStemMap, earthStemSeq, hGZ[0], decInfo.dutyStem, solsticeType, timeStemHouse, dutyStemHouse)
+            ? getHidingStemMap(dutyGateLandHouse, earthStemMap, earthStemSeq, effGZ[0], decInfo.dutyStem, solsticeType, timeStemHouse, dutyStemHouse)
             : { guidingMap: {}, isStarFrozen: false, isGateFrozen: false, isStarReversed: false };
           const hidingStemMap = guidingResult.guidingMap;
 
-          // 伏吟/反吟標記顯示：有伏吟顯示星伏／門伏（標紅）；有反吟顯示星反（標紅）；無則顯示陰盤
+          // 五不遇時：時剋日、同性相剋，僅陽盤（時/日/月/年盤皆算，判斷式固定用實際日干、時干，與 effGZ／PLATE_SUBMODE 無關）
+          const isWuBuYu = PLATE_MODE === 'yang' && WUBUYU_TABLE[dGZ[0]] === hGZ[0];
+
+          // 排盤：顯示目前模式本身，陰盤／命盤固定二字；陽盤依子模式顯示 時家／日家／月家／年家（不含「置閏」，
+          // 按鈕上已標明「時家（置閏）」，使用者選擇當下就知道，此處不必重複）
+          // 標記：男命／女命＋伏吟反吟（星伏／門伏／星反／門反）＋五不遇時（標紅）＋其餘提醒文字，都放這裡
           const fuyinEl = document.getElementById('hb-fuyin');
+          const markerEl = document.getElementById('hb-marker');
+          const fuyinLabels = [];
+          if (guidingResult.isStarFrozen) fuyinLabels.push('星伏');
+          if (guidingResult.isGateFrozen) fuyinLabels.push('門伏');
+          if (isStarReversed) fuyinLabels.push('星反');
+          if (isGateReversed) fuyinLabels.push('門反');
+          if (isWuBuYu) fuyinLabels.push('五不遇時');
           if (fuyinEl) {
-            const labels = [];
-            if (guidingResult.isStarFrozen) labels.push('星伏');
-            if (guidingResult.isGateFrozen) labels.push('門伏');
-            if (isStarReversed) labels.push('星反');
-            if (isGateReversed) labels.push('門反');
-            if (labels.length) {
-              fuyinEl.textContent = labels.join('');
-              fuyinEl.style.color = '#c0392b';
-            } else {
-              fuyinEl.textContent = '陰盤';
-              fuyinEl.style.color = '';
+            const yangSubLabel = { time: '時家', day: '日家', month: '月家', year: '年家' }[PLATE_SUBMODE] || '時家';
+            fuyinEl.textContent = MING_PAN_MODE ? '命盤' : (PLATE_MODE === 'yang' ? yangSubLabel : '陰盤');
+          }
+          if (markerEl) {
+            const detailParts = [];
+            if (MING_PAN_MODE) {
+              detailParts.push(MING_PAN_GENDER === 'male' ? '男命' : '女命');
             }
+            let html = detailParts.join('、');
+            if (fuyinLabels.length) {
+              const markerSpan = '<span style="color:#c0392b">' + fuyinLabels.join('') + '</span>';
+              html = html ? (html + '，' + markerSpan) : markerSpan;
+            }
+            markerEl.innerHTML = html || '—';
           }
 
           [1,2,3,4,6,7,8,9].forEach(g => {
@@ -2008,9 +4217,10 @@ function castChart() {
               const isDutyHouse = String(g) === String(dutyStemHouse);
               diEl.innerHTML = renderStemHTML(earthStemMap[g] || '', g, decInfo.dutyStem, isDutyHouse);
             }
-            // 引干（不判定四害）
+            // 引干（不判定四害）——僅陰盤與陽盤時盤顯示；陽盤日/月/年盤經老師的排盤工具比對確認本來就不顯示引干（非待確認事項）
+            const showGuidingStem = !(PLATE_MODE === 'yang' && PLATE_SUBMODE !== 'time');
             if (yinEl) {
-              const val = hidingStemMap[g] || '';
+              const val = showGuidingStem ? (hidingStemMap[g] || '') : '';
               if (!val) { yinEl.innerHTML = ''; return; }
               if ((g === 3 || g === 7) && val.length > 1) {
                 yinEl.innerHTML = val.split('').map(ch => `<span>${ch}</span>`).join('');
@@ -2370,11 +4580,11 @@ function deleteRecord(id) {
 </div>
 
 <div id="btn-quick-wrap" style="text-align:center; padding:10px 0 0;">
-  <div class="btn-quick-row" style="width:calc(100% - 44px); margin-left:auto; margin-right:auto;">
+  <div id="btn-quick-row" class="btn-quick-row" style="width:calc(100% - 44px); margin-left:auto; margin-right:auto;">
     <button class="btn-quick" onclick="shiftDate(-1)">前日</button>
-    <button class="btn-quick" onclick="shiftDate(+1)">次日</button>
     <button class="btn-quick" onclick="shiftHour(-2)">上時</button>
     <button class="btn-quick" onclick="shiftHour(+2)">下時</button>
+    <button class="btn-quick" onclick="shiftDate(+1)">次日</button>
   </div>
 </div>
 
