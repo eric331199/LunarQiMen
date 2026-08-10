@@ -42,7 +42,7 @@
   ══════════════════════════════════ */
   .header {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr;
+    grid-template-columns: 1fr;
     grid-template-rows: auto auto;
     border: 2px solid #111;
     border-radius: 12px;
@@ -55,10 +55,9 @@
     margin-right: auto;
   }
 
-  .h-col-left  { grid-column: 1; grid-row: 1; border-right: 1px solid #ddd; padding: 6px 8px; }
-  .h-col-mid   { grid-column: 2 / 4; grid-row: 1; padding: 6px 8px; }
+  .h-col-top { grid-column: 1; grid-row: 1; padding: 6px 8px; }
   .h-col-combined {
-    grid-column: 1 / 4;
+    grid-column: 1 / -1;
     grid-row: 2;
     border-top: 2px solid #111;
     padding: 0;
@@ -117,7 +116,6 @@
   .h-table td.hl {
     color: #aaa;
     text-align: center;
-    width: 2.5em;
   }
   /* 內容欄（置中） */
   .h-table td.hv {
@@ -384,6 +382,7 @@
   .dz9-label.stage-good  { color: #2e7d32; }
   .dz9-label.stage-neutral { color: #999; }
   .stem-active { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 1px; }
+  .yongshen-mark { font-weight: 700; }
 
 
     /* ══════════════════════════════════
@@ -867,25 +866,42 @@
 <div id="paipan-result" style="display:block;">
 
 <div class="header">
-  <div class="h-col-left">
+  <div class="h-col-top">
     <table class="h-table">
-      <tr><td class="hl">西元</td><td class="hv" id="sy">—</td><td class="hv" id="sm">—</td><td class="hv" id="sd">—</td><td class="hv" id="st">—</td></tr>
-      <tr><td class="hl">農曆</td><td class="hv" id="ly">—</td><td class="hv" id="lm">—</td><td class="hv" id="ld">—</td><td class="hv" id="lt">—</td></tr>
-      <tr><td class="hl">天干</td><td class="hv" id="gz-y-gan">—</td><td class="hv" id="gz-m-gan">—</td><td class="hv" id="gz-d-gan">—</td><td class="hv" id="gz-h-gan">—</td></tr>
-      <tr><td class="hl">地支</td><td class="hv" id="gz-y-zhi">—</td><td class="hv" id="gz-m-zhi">—</td><td class="hv" id="gz-d-zhi">—</td><td class="hv" id="gz-h-zhi">—</td></tr>
-    </table>
-  </div>
-  <div class="h-col-mid">
-    <table class="h-table">
-      <tr><td class="hl">起局</td><td class="hv" id="hb-qiju">—</td><td class="hl">類型</td><td class="hv" id="hb-fuyin">—</td></tr>
-      <tr><td class="hl">旬首</td><td class="hv" id="hb-xun">—</td><td class="hl">符頭</td><td class="hv" id="hb-dutyStem">—</td></tr>
-      <tr><td class="hl">值符</td><td class="hv" id="hb-zhifu">—</td><td class="hl">值使</td><td class="hv" id="hb-zhishi">—</td></tr>
-      <tr><td class="hl">空亡</td><td class="hv" id="hb-voidBranches">—</td><td class="hl">驛馬</td><td class="hv" id="hb-travel-horse">—</td></tr>
+      <colgroup>
+        <col style="width:9.0909%;">
+        <col style="width:8.7909%;">
+        <col style="width:8.7909%;">
+        <col style="width:8.7909%;">
+        <col style="width:8.7909%;">
+        <col style="width:9.0909%;">
+        <col style="width:9.4909%;">
+        <col style="width:9.0909%;">
+        <col style="width:9.4909%;">
+        <col style="width:9.0909%;">
+        <col style="width:9.4909%;">
+      </colgroup>
+      <tr>
+        <td class="hl">西元</td><td class="hv" id="sy">—</td><td class="hv" id="sm">—</td><td class="hv" id="sd">—</td><td class="hv" id="st">—</td>
+        <td class="hl">排盤</td><td class="hv" id="hb-fuyin">陰盤</td><td class="hl">局數</td><td class="hv" id="hb-qiju">—</td><td class="hl">旬首</td><td class="hv" id="hb-xun">—</td>
+      </tr>
+      <tr>
+        <td class="hl">農曆</td><td class="hv" id="ly">—</td><td class="hv" id="lm">—</td><td class="hv" id="ld">—</td><td class="hv" id="lt">—</td>
+        <td class="hl">符頭</td><td class="hv" id="hb-dutyStem">—</td><td class="hl">值符</td><td class="hv" id="hb-zhifu">—</td><td class="hl">值使</td><td class="hv" id="hb-zhishi">—</td>
+      </tr>
+      <tr>
+        <td class="hl">天干</td><td class="hv" id="gz-y-gan">—</td><td class="hv" id="gz-m-gan">—</td><td class="hv" id="gz-d-gan">—</td><td class="hv" id="gz-h-gan">—</td>
+        <td class="hl">空亡</td><td class="hv" id="hb-voidBranches">—</td><td class="hl">驛馬</td><td class="hv" id="hb-travel-horse">—</td><td class="hl">節氣</td><td class="hv" id="hb-jieqi">—</td>
+      </tr>
+      <tr>
+        <td class="hl">地支</td><td class="hv" id="gz-y-zhi">—</td><td class="hv" id="gz-m-zhi">—</td><td class="hv" id="gz-d-zhi">—</td><td class="hv" id="gz-h-zhi">—</td>
+        <td class="hl">標記</td><td class="hv" colspan="3" id="hb-marker">—</td><td class="hl">用神</td><td class="hv" id="hb-yongshen">—</td>
+      </tr>
     </table>
   </div>
   <div class="h-col-combined">
     <div class="hc-groups">
-      <div class="hc-group g6">
+      <div class="hc-group g6" id="hcg-yinyang">
         <span class="hl"><span>陰</span><span>陽</span></span>
         <span class="hc-pair"><span>甲</span><span>乙</span></span>
         <span class="hc-pair"><span>丙</span><span>丁</span></span>
@@ -893,14 +909,14 @@
         <span class="hc-pair"><span>庚</span><span>辛</span></span>
         <span class="hc-pair"><span>壬</span><span>癸</span></span>
       </div>
-      <div class="hc-group g5">
+      <div class="hc-group g5" id="hcg-chong">
         <span class="hl"><span>沖</span><span>格</span></span>
         <span class="hc-pair"><span>甲</span><span>庚</span></span>
         <span class="hc-pair"><span>乙</span><span>辛</span></span>
         <span class="hc-pair"><span>丙</span><span>壬</span></span>
         <span class="hc-pair"><span>丁</span><span>癸</span></span>
       </div>
-      <div class="hc-group g6">
+      <div class="hc-group g6" id="hcg-he">
         <span class="hl"><span>合</span><span>干</span></span>
         <span class="hc-pair"><span>甲</span><span>己</span></span>
         <span class="hc-pair"><span>乙</span><span>庚</span></span>
@@ -1152,6 +1168,27 @@ function clearChangsheng() {
   });
 }
 
+// ── 用神粗體回顯：點格子觸發十二長生時，盤頭天干列/符頭/陰陽/沖格/合干裡同字一併變粗體 ──
+function clearYongshenEcho() {
+  document.querySelectorAll('.yongshen-mark').forEach(el => el.classList.remove('yongshen-mark'));
+  const yongshenEl = document.getElementById('hb-yongshen');
+  if (yongshenEl) yongshenEl.classList.remove('yongshen-mark');
+}
+function applyYongshenEcho(stemChar) {
+  clearYongshenEcho();
+  if (!stemChar) return;
+  const targets = [];
+  ['gz-y-gan', 'gz-m-gan', 'gz-d-gan', 'gz-h-gan', 'hb-dutyStem', 'hb-yongshen'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) targets.push(el);
+  });
+  document.querySelectorAll('#hcg-yinyang .hc-pair span, #hcg-chong .hc-pair span, #hcg-he .hc-pair span')
+    .forEach(el => targets.push(el));
+  targets.forEach(el => {
+    if (el.textContent.trim() === stemChar) el.classList.add('yongshen-mark');
+  });
+}
+
 let _activeChangshengHouse = null;
 let _activeChangshengIndex = -1;
 
@@ -1273,11 +1310,14 @@ function resetChart() {
   if (msgEl) { msgEl.textContent = ''; msgEl.style.display = 'none'; }
   ['sy','sm','sd','st','ly','lm','ld','lt',
    'gz-y-gan','gz-y-zhi','gz-m-gan','gz-m-zhi','gz-d-gan','gz-d-zhi','gz-h-gan','gz-h-zhi',
-   'hb-qiju','hb-xun','hb-dutyStem','hb-voidBranches','hb-travel-horse','hb-zhifu','hb-zhishi'
+   'hb-qiju','hb-xun','hb-dutyStem','hb-voidBranches','hb-travel-horse','hb-zhifu','hb-zhishi','hb-marker','hb-jieqi','hb-yongshen'
   ].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.textContent = '—';
   });
+  const fuyinResetEl = document.getElementById('hb-fuyin');
+  if (fuyinResetEl) { fuyinResetEl.textContent = '陰盤'; }
+  clearYongshenEcho();
   [1,2,3,4,6,7,8,9].forEach(g => {
     ['sh-','star-','gate-','tian-','di-','void-','horse-','yin-'].forEach(pre => {
       const el = document.getElementById(pre + g);
@@ -1441,6 +1481,9 @@ document.querySelectorAll('.cell[data-gong]').forEach(cell => {
     if (nextIndex === -1) {
       _activeChangshengHouse = null;
       _activeChangshengIndex = -1;
+      const yongshenEl = document.getElementById('hb-yongshen');
+      if (yongshenEl) yongshenEl.textContent = '—';
+      clearYongshenEcho();
       return;
     }
 
@@ -1448,6 +1491,9 @@ document.querySelectorAll('.cell[data-gong]').forEach(cell => {
     chosen.span.classList.add('stem-active');
     renderChangsheng(chosen.stem);
     applyHouseHighlight(this);
+    const yongshenEl = document.getElementById('hb-yongshen');
+    if (yongshenEl) yongshenEl.textContent = chosen.stem;
+    applyYongshenEcho(chosen.stem);
     _activeChangshengHouse = this;
     _activeChangshengIndex = nextIndex;
   });
@@ -1523,6 +1569,33 @@ function getSolsticeType(y, m, d, h) {
   }
 
   return lastSolstice === '冬至' ? '陽' : '陰';
+}
+
+// 取得開盤時間所屬的真實節氣（24節氣任一個，純顯示用途，非陽盤置閏功能）
+// 精度：比對到時分（沿用 Solar 物件的 getHour/getMinute），非僅日期層級
+function getCurrentJieQi(y, m, d, h, min) {
+  const openDate = new Date(y, m-1, d, h, min || 0);
+
+  let lastName = null;
+  let lastDate = null;
+
+  for (let yr = y - 1; yr <= y; yr++) {
+    const lunarYr = LunarYear.fromYear(yr);
+    const jieQiDays = lunarYr.getJieQiJulianDays();
+
+    for (let i = 0; i < jieQiDays.length; i++) {
+      const s = Solar.fromJulianDay(jieQiDays[i]);
+      const name = s.getLunar().getJieQi();
+      if (!name) continue;
+      const sDate = new Date(s.getYear(), s.getMonth()-1, s.getDay(), s.getHour(), s.getMinute());
+      if (sDate <= openDate && (!lastDate || sDate > lastDate)) {
+        lastDate = sDate;
+        lastName = name;
+      }
+    }
+  }
+
+  return lastName;
 }
 
 // 計算局數
@@ -1834,6 +1907,9 @@ function castChart() {
   clearChangsheng();
   clearHighlight();
   document.querySelectorAll('.gc-tian .stem-active, .gc-shen .stem-active').forEach(s => s.classList.remove('stem-active'));
+  const yongshenResetEl = document.getElementById('hb-yongshen');
+  if (yongshenResetEl) yongshenResetEl.textContent = '—';
+  clearYongshenEcho();
 
   // 子時跨日：23:00-23:59 屬於隔日子時，農曆換算需 +1 天，時辰改為 0
   let lunarD = d, lunarM = m, lunarY = y, lunarH = h;
@@ -1854,6 +1930,10 @@ function castChart() {
   document.getElementById('sm').textContent = String(m).padStart(2,'0');
   document.getElementById('sd').textContent = String(d).padStart(2,'0');
   document.getElementById('st').textContent = String(h * 100 + min).padStart(4,'0');
+
+  // 節氣（純顯示，24節氣任一個）
+  const currentJieQi = getCurrentJieQi(y, m, d, h, min);
+  document.getElementById('hb-jieqi').textContent = currentJieQi || '—';
 
   // 農曆
   document.getElementById('ly').textContent = lunar.getYear();
@@ -1965,20 +2045,20 @@ function castChart() {
             : { guidingMap: {}, isStarFrozen: false, isGateFrozen: false, isStarReversed: false };
           const hidingStemMap = guidingResult.guidingMap;
 
-          // 伏吟/反吟標記顯示：有伏吟顯示星伏／門伏（標紅）；有反吟顯示星反（標紅）；無則顯示陰盤
-          const fuyinEl = document.getElementById('hb-fuyin');
-          if (fuyinEl) {
+          // 伏吟/反吟標記顯示：有伏吟顯示星伏／門伏（標紅）；有反吟顯示星反（標紅）；無則顯示—
+          const markerEl = document.getElementById('hb-marker');
+          if (markerEl) {
             const labels = [];
             if (guidingResult.isStarFrozen) labels.push('星伏');
             if (guidingResult.isGateFrozen) labels.push('門伏');
             if (isStarReversed) labels.push('星反');
             if (isGateReversed) labels.push('門反');
             if (labels.length) {
-              fuyinEl.textContent = labels.join('');
-              fuyinEl.style.color = '#c0392b';
+              markerEl.textContent = labels.join('');
+              markerEl.style.color = '#c0392b';
             } else {
-              fuyinEl.textContent = '陰盤';
-              fuyinEl.style.color = '';
+              markerEl.textContent = '—';
+              markerEl.style.color = '';
             }
           }
 
