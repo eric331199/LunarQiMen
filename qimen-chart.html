@@ -6,6 +6,12 @@
 <link rel="apple-touch-icon" href="icon.PNG">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>奇門遁甲九宮排盤</title>
+<!-- 讓「加入主畫面」後開啟走iOS獨立全螢幕模式（無網址列/Safari工具列），原本缺這三個meta
+     標籤才會被當成一般Safari分頁。status-bar-style用預設淺色（跟米白背景較搭）；title是主畫面
+     圖示下方顯示的名稱，跟<title>網頁標題分開設定（Android PWA需另搭配manifest，此處不處理）。 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="奇門遁甲">
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-VKV3FP5CRB"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
@@ -23,7 +29,7 @@
 <style>
   /* ── Reset ── */
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  /* 2026.08新增：關掉手機瀏覽器「雙擊放大畫面」的預設手勢（Eric回饋誤觸困擾）。
+  /* 關掉手機瀏覽器「雙擊放大畫面」的預設手勢（有回饋誤觸困擾）。
      touch-action: manipulation 只關掉雙擊縮放，雙指縮放（pinch-zoom）不受影響、照樣保留。 */
   html { touch-action: manipulation; }
 
@@ -326,8 +332,8 @@
     font-size: 12px; font-weight: bold;
     font-family: "M PLUS Rounded 1c", sans-serif;
   }
-  /* 2026.08調整：已標記的吉/凶改成實心圓圈徽章（比照.tag.void空亡標記與吉按鈕的做法），
-     不再是純色文字——純色文字疊在地圖背景上對比不夠，看不清楚（Eric回報，見對話記錄）。
+  /* 已標記的吉/凶改成實心圓圈徽章（比照.tag.void空亡標記與吉按鈕的做法），
+     不再是純色文字——純色文字疊在地圖背景上對比不夠，看不清楚。
      圓圈大小22px，跟空亡「空」字badge一致，在同一個角落格子（.gc-left2）裡視覺統一 */
   .travel-mark-label.mark-lucky, .travel-mark-label.mark-unlucky {
     width: 22px; height: 22px; border-radius: 50%;
@@ -336,7 +342,7 @@
   }
   .travel-mark-label.mark-lucky   { background: #FFB700; }
   .travel-mark-label.mark-unlucky { background: #c0392b; }
-  /* 2026.08恢復三態（見travelMarks宣告處註解，Eric確認偶爾還是需要標凶）：未標記時的提示
+  /* 恢復三態（見travelMarks宣告處註解，確認偶爾還是需要標凶）：未標記時的提示
      改回上下兩行——吉靠左、凶靠右，字體大小跟已選取時一樣（13px），只用灰色跟實際標記色區分 */
   .travel-mark-label.mark-placeholder {
     display: flex; flex-direction: column; align-items: stretch;
@@ -352,7 +358,7 @@
     align-items: center; justify-content: center; gap: 1px;
   }
 
-  /* ── 中上（神）── 2026.08：垂直改貼下緣對齊（跟中中的星、中下的門三格拉近視覺距離），水平仍置中 */
+  /* ── 中上（神）── 垂直改貼下緣對齊（跟中中的星、中下的門三格拉近視覺距離），水平仍置中 */
   .gc-shen {
     display: flex; align-items: flex-end; justify-content: center;
     font-size: 14px; color: #333;
@@ -364,7 +370,7 @@
     font-size: 14px; color: #333; gap: 2px;
   }
 
-  /* ── 中下（門）── 2026.08：垂直改貼上緣對齊，呼應c2r1（神）貼下緣，水平仍置中 */
+  /* ── 中下（門）── 垂直改貼上緣對齊，呼應c2r1（神）貼下緣，水平仍置中 */
   .gc-gate {
     display: flex; align-items: flex-start; justify-content: center;
     font-size: 14px; color: #333;
@@ -396,11 +402,11 @@
   .dz9-cell.align-left  { justify-content: flex-start; }
   .dz9-cell.align-right { justify-content: flex-end; }
   .dz9-branch { font-size: 26.7cqi; color: #333; display: inline-block; line-height: 1; white-space: nowrap; }
-  /* 2026.08新增：宮位高亮時，中宮對應地支同步加粗（取代先前的邊框上色，見applyHouseHighlight） */
+  /* 宮位高亮時，中宮對應地支同步加粗（取代先前的邊框上色，見applyHouseHighlight） */
   .dz9-branch.dz-branch-highlighted { font-weight: bold; }
   .dz9-label { font-size: 26.7cqi; line-height: 1; white-space: nowrap; }
   .dz-center { position: relative; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #bbb; width:100%; height:100%; cursor: pointer; }
-  /* 出行訣旋轉：指針左右各一個小箭頭，2026.08 從獨立的⟳按鈕併入中宮指針（見下方 travel-map-mode 顯示規則） */
+  /* 出行訣旋轉：指針左右各一個小箭頭，從獨立的⟳按鈕併入中宮指針（見下方 travel-map-mode 顯示規則） */
   .compass-rotate-bracket { position: absolute; top: 50%; width: 82.5%; height: 112.5%; transform: translateY(-50%); opacity: 0; transition: opacity .2s ease, color .3s ease; pointer-events: none; color: #999; } /* 弧形括弧＋箭頭，分放指針左右兩側；靠 .gc-center 的 overflow:visible（見下方）才擋不住往外延伸的部分；數值來自調整工具(compass-bracket-tuner.html)手動調校結果 */
   .compass-rotate-bracket.left  { right: 37%; }
   .compass-rotate-bracket.right { left: 37%; }
@@ -421,7 +427,7 @@
     transform: translateX(-50%);
     display: flex;
     flex-direction: column;
-    /* 2026.08：改回單層、灰色（不用黑色），濃度降低，柔和暈開即可 */
+    /* 改回單層、灰色（不用黑色），濃度降低，柔和暈開即可 */
     filter: drop-shadow(0 0 1px #888);
   }
   .needle-half {
@@ -526,7 +532,7 @@
     color: #fff;
   }
 
-  /* ── 奇門曆模式新增樣式（2026.08 從 preview 移植）── */
+  /* ── 奇門曆模式新增樣式（從 preview 移植）── */
   .mode-toggle-btn {
     position: absolute;
     top: 10px;
@@ -545,7 +551,7 @@
   }
   .mode-toggle-btn svg { width: 16.2px; height: 16.2px; }
   .mode-toggle-btn.active { background: #444; border-color: #444; color: #fff; }
-  /* 2026.08新增：出行訣捷徑鈕，鏡射mode-toggle-btn（同尺寸圓框），見HTML input-area內註解 */
+  /* 出行訣捷徑鈕，鏡射mode-toggle-btn（同尺寸圓框），見HTML input-area內註解 */
   .travel-shortcut-btn {
     position: absolute; top: 10px; right: 10px;
     width: 28px; height: 28px; border-radius: 50%;
@@ -562,10 +568,8 @@
   /* 門篩選：點「更多」不是往下展開新的一排，而是同一排塞進剩下4個門，
      全部按鈕用 flex:1 平分寬度，人數變多時自動一起變窄 */
   .gate-chip-row { flex-wrap: nowrap; margin-top: -6px; }
-  /* 2026.08：font-size 原本11px（比其餘按鈕列的12px小一號），推算是造成
-     .input-area 在單次排盤／奇門曆兩模式間切換時，高度相差約1px的來源
-     （見開發對話紀錄）。展開到最多9個按鈕時寬度仍夠塞下12px，故統一調回
-     12px，讓兩模式的按鈕列行高完全一致。 */
+  /* font-size原本11px（比其餘按鈕列的12px小一號），是造成.input-area切換模式時高度相差約1px的
+     來源。展開到最多9個按鈕時寬度仍夠塞下12px，故統一調回12px，讓兩模式按鈕列行高一致 */
   .gate-chip-row .plate-btn { min-width: 0; flex: 1 1 0; padding: 5px 1px; font-size: 12px; }
   .input-row {
     display: flex;
@@ -690,12 +694,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    /* 2026.08修正：原本沒設height/line-height，實際高度由字型預設行高撐出，比.btn-help-icon
+    /* 原本沒設height/line-height，實際高度由字型預設行高撐出，比.btn-help-icon
        固定的28px略高一點點，導致排盤模式（此鈕顯示）標題列比奇門曆模式（此鈕隱藏）略高幾px，
-       輸入框上緣位置因此跟著有微小落差（Eric截圖比對抓到，見對話記錄）。改成跟.btn-help-icon
+       輸入框上緣位置因此跟著有微小落差。改成跟.btn-help-icon
        同樣的固定height+flex置中，不再依賴字型行高，兩模式標題列高度從此完全一致。 */
   }
-  /* 2026.08新增：說明鈕改成左上角的小圓圈「?」圖示，跟mode-toggle-btn（切換奇門曆的日曆鈕）同尺寸、
+  /* 說明鈕改成左上角的小圓圈「?」圖示，跟mode-toggle-btn（切換奇門曆的日曆鈕）同尺寸、
      同邊框風格，視覺語彙統一 */
   .btn-help-icon {
     grid-column: 1; justify-self: start;
@@ -760,17 +764,14 @@
     margin: 0 0 6px;
     text-align: center;
   }
-  /* 2026.08新增：每個區塊（儲存目前盤面／預測師性別／已存紀錄）統一包一層.records-block，
-     用同一個margin-bottom控制區塊間距，不再依賴各區塊內容各自的margin收尾（原本標題只設
-     margin-top，區塊之間的實際間距會被前一區塊最後一個元素有沒有margin-bottom影響，
-     每個區塊尾端元素不同、margin收尾不一致，導致視覺間距忽大忽小） */
+  /* 每個區塊（儲存盤面／預測師性別／已存紀錄）統一包一層.records-block，用同一個margin-bottom
+     控制間距，不依賴各區塊內容自己的margin收尾（避免因各區塊尾端元素不同導致間距忽大忽小） */
   .records-block { margin-bottom: 11px; }
   .records-block:last-child { margin-bottom: 0; }
-  /* 2026.08新增：使用說明面板，跟紀錄面板共用同一套 overlay/panel 骨架與視覺語彙（見.records-overlay/
-     .records-panel等），只是內容改成純閱讀用的條列文字，故面板寬度加大（紀錄面板窄，因為裡面是表單欄位；
-     說明文字要寬一點才不會每行斷太多次）。 */
+  /* 使用說明面板跟紀錄面板共用同一套overlay/panel骨架，內容改成純閱讀條列文字，
+     寬度加大（紀錄面板窄是因為裡面是表單欄位；說明文字要寬一點才不會每行斷太多次） */
   .help-panel { width: min(320px, 88vw); }
-  /* 2026.08新增：出行訣疊層z-index是5000（見.travel-overlay），說明面板共用的.records-overlay
+  /* 出行訣疊層z-index是5000（見.travel-overlay），說明面板共用的.records-overlay
      只有z-index:100，若在出行訣畫面裡開說明會被蓋住，故#help-overlay另外覆寫成更高值 */
   #help-overlay { z-index: 5100; }
   .help-section-title {
@@ -845,13 +846,13 @@
     position: relative;
     border: 1px solid #eee;
     border-radius: 6px;
-    padding: 8px 28px; /* 2026.08修正：左右對稱28px（原本右邊只有10px，內容置中會偏左，
+    padding: 8px 28px; /* 左右對稱28px（原本右邊只有10px，內容置中會偏左，
        跟左上角勾選框的位置有關），這樣text-align:center的內容才會真的置中在整張卡片正中央 */
     margin-bottom: 8px;
     transition: background .15s, border-color .15s;
   }
   .rec-item.is-selected { background: #f7f5f2; border-color: #ddd; }
-  /* 2026.08修正：參考rainbow-calc.html的做法，改用accent-color直接調原生checkbox的顏色，
+  /* 參考rainbow-calc.html的做法，改用accent-color直接調原生checkbox的顏色，
      不用額外疊自訂樣式；尺寸維持13px（比一開始的18px小，符合「再小一點」的需求） */
   .rec-item-select {
     position: absolute; top: 9px; left: 8px; width: 13px; height: 13px; cursor: pointer;
@@ -906,7 +907,7 @@
     cursor: pointer;
   }
   .rec-item-actions .rec-del { color: #c0392b; border-color: #f0d5d0; }
-  /* 2026.08新增：有勾選時（見updateRecordSelectionUI），各卡片自己的載入/刪除鈕先藏起來，
+  /* 有勾選時（見updateRecordSelectionUI），各卡片自己的載入/刪除鈕先藏起來，
      避免跟頂部批次操作混在一起 */
   #rec-list.has-selection .rec-item-actions { display: none; }
   .rec-empty { color: #bbb; font-size: 13px; text-align: center; padding: 12px 0; }
@@ -934,39 +935,28 @@
   ══════════════════════════════════ */
   .travel-overlay { position: fixed; inset: 0; z-index: 5000; visibility: hidden; opacity: 0; transition: opacity .26s ease, visibility 0s linear .26s; background: #f7f7f7; }
   .travel-overlay.is-open { visibility: visible; opacity: 1; transition: opacity .26s ease; }
-  /* 2026.08：彩色羅盤搬進地圖內部的自訂pane（travelCompassPane，見 initializeTravelMap），
-     夾在Leaflet內部的overlayPane（路線，z-index:400）跟markerPane（起訖點圖釘、GPS藍點，
-     z-index:600）中間，讓markers天然畫在羅盤上面，不用再另外複製一層假圖釘。
-     （2026.08修正：一開始誤把羅盤直接塞進travelMap.getContainer()——那只是跟
-     .leaflet-map-pane平行的兄弟節點而已，不是它的子節點，Leaflet替.leaflet-map-pane套用
-     平移用的transform時會單獨建立一個堆疊環境，把內部所有pane的z-index都「關」住跟外面
-     比不到，實測仍蓋住markers才抓出來，改用Leaflet官方createPane API才是正解，見
-     initializeTravelMap／applyTravelCompassPos）。.travel-map本身仍要維持自己的堆疊環境
-     （position:absolute + z-index數字），框住整個地圖（含裡面的自訂pane），不會跑到
-     .travel-board-layer／.travel-toolbar這些外層UI上面去。 */
+  /* 彩色羅盤搬進地圖內部的自訂pane（travelCompassPane，見initializeTravelMap），夾在Leaflet的
+     overlayPane（路線，400）跟markerPane（圖釘/GPS藍點，600）中間，讓markers天然畫在羅盤上面。
+     （曾誤把羅盤直接塞進travelMap.getContainer()——那只是跟.leaflet-map-pane平行的兄弟節點，
+     不是它的子節點，Leaflet替.leaflet-map-pane套transform時會單獨建立堆疊環境，內部pane的
+     z-index全部跟外面比不到，才會蓋住markers；改用官方createPane API解決，見applyTravelCompassPos）。
+     .travel-map本身仍維持自己的堆疊環境，框住整個地圖，不會跑到外層UI上面去。 */
   .travel-map { position: absolute; inset: 0; z-index: 0; opacity: 0; transition: opacity .32s ease .08s; }
   .travel-overlay.is-open .travel-map { opacity: 1; }
   .travel-board-layer { position: absolute; inset: 0; z-index: 2; display: flex; align-items: center; justify-content: center; pointer-events: none; opacity: 0; transform: scale(.82); transition: opacity .2s ease, transform .28s ease; }
   .travel-overlay.board-visible .travel-board-layer { opacity: 1; transform: scale(1); }
   /* pointer-events:none：盤面搬進出行羅盤疊層後純粹是過場視覺用，opacity 淡出後底層不可再被誤觸（原本 pointer-events:auto 會讓十二長生等互動在地圖模式下被意外觸發）。 */
   .travel-board-layer .outer { width: min(82vmin, 520px); margin: 0; pointer-events: none; transition: opacity .22s ease, transform .26s ease; }
-  /* 修補：openTravelMode() 是把 .outer 節點直接搬進本層（非複製），travel-map-mode/board-visible
-     這兩個 class 會原樣跟著搬過來。.outer.travel-map-mode.board-visible .cell[data-gong] 那條
-     pointer-events:auto 規則特定性較高，會蓋掉上面這行的 none，讓框內嵌地圖「顯示盤面」狀態下
-     展開全螢幕時，看不見的九宮格仍可被點擊觸發吉凶標記互動。本層純粹是過場快照，任何情況下都
-     不該接收點擊，用 !important 強制擋回去。 */
+  /* openTravelMode()把.outer節點直接搬進本層（非複製），travel-map-mode/board-visible這兩個
+     class會跟著搬過來，.outer.travel-map-mode.board-visible .cell[data-gong]那條pointer-events:
+     auto規則特定性較高，會蓋掉上面的none，讓看不見的九宮格仍可被點擊。本層純粹是過場快照，
+     不該接收點擊，用!important強制擋回去。 */
   .travel-board-layer .cell[data-gong] { pointer-events: none !important; }
-  .travel-overlay.is-opening .travel-board-layer .outer { opacity: 0; transform: scale(.88); }
-  /* left/top 不設 transition：錨定後不論地圖拖曳、縮放、或拖手把調整錨點，圓心都要跟座標即時同步，
-     不能有動畫內插——否則拖曳中會延遲落後、放開後才追上，看起來像「被干擾又自己跳回去」
-     2026.08修正：拿掉z-index數字。羅盤現在改用Leaflet官方createPane機制搬進地圖內部（見
-     initializeTravelMap），z-index改交給那個專屬pane本身管（travelCompassPane，設550，
-     夾在overlayPane 400／markerPane 600之間），元素自己不用再設z-index、留給pane決定即可。
-     這裡的left/top初始值（50%/50%）只是還沒被JS蓋掉前的暫時預設，實際位置一律由
-     applyTravelCompassPos()算好後直接設px蓋過去（含未錨定的置中狀態，因為羅盤現在活在
-     Leaflet自己的平移座標系統裡，不能再單純倚賴CSS百分比置中，見applyTravelCompassPos註解）。
-     副作用（已跟Eric確認可接受）：羅盤現在整體被.travel-map(z:0)框住，蓋不過
-     .travel-board-layer的開場過場動畫。 */
+  /* left/top不設transition：錨定後不論地圖拖曳/縮放/調整錨點，圓心都要跟座標即時同步，不能有動畫
+     內插，否則拖曳中會延遲落後。z-index交給專屬pane管（travelCompassPane，550，夾在overlayPane
+     400／markerPane 600之間），元素自己不用設。left/top初始值（50%/50%）只是暫時預設，實際位置
+     一律由applyTravelCompassPos()算好後直接設px蓋過去（羅盤活在Leaflet自己的平移座標系統裡，
+     不能單純倚賴CSS百分比置中）。取捨：羅盤現在被.travel-map(z:0)框住，蓋不過開場過場動畫。 */
   .travel-compass { position: absolute; left: 50%; top: 50%; display: flex; align-items: center; justify-content: center; pointer-events: none; opacity: 0; transform: translate(-50%,-50%) scale(.82); transition: opacity .28s ease .11s, transform .34s ease .11s; }
   .travel-overlay.is-open .travel-compass { opacity: 1; transform: translate(-50%,-50%) scale(1); }
   /* 用 vmax（螢幕長邊）作為基準，橫向裝置放大時才會覆蓋左右與四角。 */
@@ -979,19 +969,14 @@
   .travel-compass-disc .travel-compass-center { display: none; }
   /* 文字獨立為固定內圈：圓盤放大時不跟著放大，仍維持在圓心附近。 */
   .travel-compass-label-disc { position: absolute; width: min(60vmin, 380px); height: min(60vmin, 380px); flex: 0 0 auto; transition: transform .08s linear; }
-  /* 起點水滴：跟 travel-compass-disc／label-disc 平行的兄弟節點，不隨扇形旋轉；
-     left/top:50% 相對 .travel-compass 自身盒子（尺寸＝disc），跟 disc 的 SVG 幾何圓心天然對齊，
-     不需要另外算座標。transform 讓水滴「尖端」對準這個 50%,50% 的點，而非水滴的幾何中心 */
-  /* 2026.08修正：水滴改成獨立掛在travelStartPinPane（見initializeTravelMap，z-index 650，
-     蓋過markerPane的600），不再是.travel-compass的子節點——起點常跟GPS自動錨定同座標，
-     若仍留在travelCompassPane(550)裡會被markerPane(600)的GPS藍點蓋住一角。
-     left/top改由applyTravelCompassPos直接算px設定（跟compassEl用同一份layerPt），
-     不再依賴「相對.travel-compass盒子50%,50%」那套算法。 */
+  /* 水滴獨立掛在travelStartPinPane（650，蓋過markerPane的600），不是.travel-compass的子節點——
+     起點常跟GPS自動錨定同座標，留在travelCompassPane(550)裡會被markerPane(600)的GPS藍點蓋住一角。
+     left/top改由applyTravelCompassPos直接算px設定，不再依賴相對.travel-compass盒子50%,50%。 */
   .travel-compass-start-pin {
     position: absolute; display: none;
     transform: translate(-50%, -100%);
     line-height: 0; pointer-events: none;
-    /* 2026.08：選定「暖白」光暈（預覽稿變體D）——不用水滴自身的綠色（同色光暈疊在綠色本體上
+    /* 選定「暖白」光暈（預覽稿變體D）——不用水滴自身的綠色（同色光暈疊在綠色本體上
        層次不明顯），改用偏黃白的燈泡光色，兩層drop-shadow疊出柔光暈染 */
     filter:
       drop-shadow(0 0 3px rgba(255,250,220,1))
@@ -1013,12 +998,10 @@
   .travel-compass-dir { font-size: 14.25px; stroke: rgba(255,255,255,.9); stroke-width: 2.5px; }
   /* 卦名與方位字中間的分隔點，r 介於兩者之間 */
   .travel-compass-dot { font-size: 7.6px; stroke: rgba(255,255,255,.9); stroke-width: 2px; }
-  /* 門名單字：只有宮位被標記吉凶時才會有內容（見 updateTravelCompassSectorMarks），平常是空字串不佔視覺；
-     2026.08定案：字級24px（原12.35px太小），y座標182（原176）；用preview-compass-live.html工具
-     試過幾種間距組合後定案，跟其他文字同一套粗細（500），不再另外加粗 */
+  /* 門名單字：只有宮位被標記吉凶時才有內容（見updateTravelCompassSectorMarks），平常是空字串。
+     字級24px，y座標182，跟其他文字同一套粗細（500） */
   .travel-compass-gate { font-size: 24px; stroke: rgba(255,255,255,.95); stroke-width: 3px; }
-  /* 方位字與門名單字中間的分隔點，比照 .travel-compass-dot 的做法，同樣只在標記時才有內容；
-     2026.08定案：y座標166（原164），跟門名一起用調整工具試出來的間距 */
+  /* 方位字與門名單字中間的分隔點，比照.travel-compass-dot的做法，同樣只在標記時才有內容 */
   .travel-compass-gate-dot { font-size: 7.6px; stroke: rgba(255,255,255,.9); stroke-width: 2px; }
   /* 吉凶標記：標色文字（金＝吉、黑背景下凶改用紅避免混淆），不再整片扇形描邊 */
   .travel-compass-gua.mark-lucky,   .travel-compass-dir.mark-lucky,   .travel-compass-dot.mark-lucky,   .travel-compass-gate.mark-lucky,   .travel-compass-gate-dot.mark-lucky   { fill: #FFB700; stroke: #fff; stroke-width: 3.5px; }
@@ -1029,11 +1012,11 @@
     filter: drop-shadow(0 0 1.5px currentColor) drop-shadow(0 0 4px currentColor);
   }
   .travel-toolbar { position: absolute; z-index: 4; top: max(14px, env(safe-area-inset-top)); left: 14px; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; pointer-events: none; }
-  /* 2026.08補上box-shadow：原本純白底無陰影，跟地圖背景融在一起看不出是按鈕（Eric回報，
-     見對話記錄），比照方框內嵌地圖圓形按鈕（.travel-inline-exit等）同一套陰影參數 */
+  /* 補上box-shadow：原本純白底無陰影，跟地圖背景融在一起看不出是按鈕，
+     比照方框內嵌地圖圓形按鈕（.travel-inline-exit等）同一套陰影參數 */
   .travel-toolbar button { pointer-events: auto; border: none; border-radius: 18px; padding: 9px 13px; color: #333; background: rgba(255,255,255,.94); font: 13px "M PLUS Rounded 1c", sans-serif; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
-  /* 2026.08新增：「以現時重新計算」獨立移出travel-toolbar，置頂置中，樣式比照travel-toolbar
-     按鈕（同款圓角白底＋陰影），跟「返回盤面」／「?」這組左側工具列視覺上區隔開（Eric要求） */
+  /* 「以現時重起時盤」獨立移出travel-toolbar，置頂置中，樣式比照travel-toolbar
+     按鈕（同款圓角白底＋陰影），跟「返回盤面」／「?」這組左側工具列視覺上區隔開 */
   .travel-recast-btn {
     position: absolute; z-index: 4;
     top: max(14px, env(safe-area-inset-top));
@@ -1043,31 +1026,31 @@
     font: 13px "M PLUS Rounded 1c", sans-serif;
     box-shadow: 0 1px 3px rgba(0,0,0,.2);
   }
-  /* 2026.08新增：出行訣是全螢幕疊層（z-index:5000），會蓋住外層標題列的「?」說明鈕，導致使用者
-     在出行訣畫面裡完全點不到說明——故在疊層自己的工具列（travel-toolbar，z-index:4，疊層內部安全
-     範圍）另外放一顆同款「?」圓圈鈕，樣式比照外層.btn-help-icon，跟「返回盤面」並排 */
+  /* 出行訣是全螢幕疊層（z-index:5000），會蓋住外層標題列的「?」說明鈕，故在疊層自己的工具列
+     另外放一顆同款「?」圓圈鈕，樣式比照外層.btn-help-icon，跟「返回盤面」並排 */
   .travel-toolbar .btn-help-icon {
     width: 28px; height: 28px; border-radius: 50%; padding: 0;
     border: 1.5px solid #999; background: rgba(255,255,255,.94); color: #888;
     font-size: 14px; display: flex; align-items: center; justify-content: center;
   }
-  /* 2026.08：狀態泡泡與「啟用羅盤」提示卡合併為同一顆泡泡，移到下方（原本啟用卡片的位置）。
-     兩者原本各自獨立顯示／隱藏，但實際上是「先後接續」關係（先解決羅盤授權、才輪到平常狀態訊息），
-     不是「可能同時顯示」的關係，分成兩顆反而會在畫面上打架。合併後：
-     - 平常（travelOrientationState==='idle'）：只顯示文字，按鈕隱藏，行為等同原本的 setTravelStatus
-     - 尚待授權／授權失敗（'pending'／'error'）：顯示提示或錯誤文字＋啟用鈕，此時 setTravelStatus 的
-       呼叫會被暫時忽略（見 setTravelStatus 判斷），避免蓋掉尚未解決的授權提示；解決後由
-       startTravelCompass() 主動呼叫 setTravelStatus() 補上最新狀態文字，不會有訊息卡住不更新的問題
-     2026.08再修正：整套按鈕群間距統一為14px單位（離邊緣14px、彼此之間也14px）。
-     泡泡與按鈕列的間距目前是0（貼齊）：58 = 泡泡margin(14) + 泡泡固定高度(44) + 間距(0)。
-     泡泡高度已改成固定44px（見下方.travel-status），不會再因為有沒有按鈕而忽高忽低，
-     這個算式現在才是真正穩定可靠的，不用再依實機微調 */
+  /* 路徑記錄歷史鈕從右側按鈕群移到左上角工具列，跟「?」並列（同一個flex column），
+     樣式完全比照.btn-help-icon（同尺寸28px圓框），圖示從emoji🕘改成SVG線條圖示，
+     跟「?」、日曆鈕等App其他地方的線條圖示語彙一致，不用emoji */
+  .travel-toolbar .travel-track-history-btn {
+    width: 28px; height: 28px; border-radius: 50%; padding: 0;
+    border: 1.5px solid #999; background: rgba(255,255,255,.94); color: #888;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .travel-toolbar .travel-track-history-btn:active { background: #eee; }
+  /* 狀態泡泡跟「啟用羅盤」提示卡合併為同一顆（原本各自獨立顯示/隱藏，但兩者其實是先後接續關係，
+     分開反而在畫面上打架）。三態：idle只顯示文字；pending/error顯示提示文字＋啟用鈕，此時
+     setTravelStatus()的呼叫會被暫時忽略（見該函式），避免蓋掉尚未解決的授權提示，解決後由
+     startTravelCompass()補上最新狀態文字。泡泡高度固定44px（見.travel-status），跟按鈕列間距0，
+     按鈕群統一14px單位（離邊緣14px、彼此之間也14px）：58 = 泡泡margin(14) + 泡泡高度(44)。 */
   .travel-status { position: absolute; z-index: 5; left: 14px; right: 14px; bottom: max(14px, env(safe-area-inset-bottom)); height: 44px; display: flex; align-items: center; gap: 10px; border-radius: 12px; padding: 0 14px; background: rgba(255,255,255,.96); color: #333; font-size: 13px; pointer-events: auto; }
   .travel-status #travel-status-text { flex: 1; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  /* 2026.08修正：泡泡高度改固定44px（原本用min-height只設下限，「啟用」按鈕比文字內容撐得更高，
-     導致兩種狀態實際渲染高度不一樣，見實機截圖回饋比對）。按鈕改用inline-flex＋固定28px高度置中在
-     這個固定高度容器內，垂直padding從泡泡本身移除（改交給align-items:center處理），
-     這樣不管有沒有按鈕，泡泡高度都是同一個44px，不會再忽高忽低 */
+  /* 高度固定44px（原本用min-height只設下限，「啟用」按鈕比文字內容撐得更高，導致兩種狀態
+     渲染高度不一樣）。按鈕用inline-flex+固定28px高度置中，垂直padding交給align-items處理 */
   .travel-status #travel-orientation-btn { display: none; flex: 0 0 auto; align-items: center; justify-content: center; height: 28px; border: none; border-radius: 8px; padding: 0 12px; background: #555; color: #fff; font: 13px "M PLUS Rounded 1c", sans-serif; }
   .travel-status.show-btn #travel-orientation-btn { display: inline-flex; }
   /* 改用跟交通工具/點位（.expand-control）同一套橫向展開手感，
@@ -1078,38 +1061,41 @@
   .travel-size-options span { flex: 0 0 auto; }
   .travel-size-options input { flex: 0 0 auto; width: 110px; accent-color: #555; }
   /* 觸發鈕：白底圓，跟其他浮動按鈕（定位/交通工具/點位）同款；中間放一個模仿羅盤配色的小彩色圓點（8色，
-     對應扇形羅盤的水彩色票，見fan compass色票討論），跟旁邊的箭頭定位鈕（.travel-locate-btn）同一列 */
+     對應扇形羅盤的色票配置），跟旁邊的箭頭定位鈕（.travel-locate-btn）同一列 */
   .travel-size-trigger { width: 44px; height: 44px; flex: 0 0 auto; border-radius: 50%; border: none; background: rgba(255,255,255,.94); box-shadow: 0 2px 8px rgba(0,0,0,.18); display: flex; align-items: center; justify-content: center; pointer-events: auto; position: relative; z-index: 2; }
   .travel-size-trigger:active { background: #eee; }
   .travel-size-trigger .mini-compass-dot { width: 22px; height: 22px; border-radius: 50%; background: conic-gradient(#5EC4E0 0deg 45deg, #C97D3E 45deg 90deg, #8BC34A 90deg 135deg, #C5D96C 135deg 180deg, #FF7597 180deg 225deg, #E8B88A 225deg 270deg, #F5F0E6 270deg 315deg, #C7C4BC 315deg 360deg); box-shadow: inset 0 0 0 1px rgba(255,255,255,.6); opacity: .55; }
   /* 回到目前位置按鈕：跟羅盤大小觸發鈕同一列（見.travel-size-expand），bottom offset需保持一致 */
   .travel-locate-btn { position: absolute; z-index: 4; right: 14px; bottom: calc(max(14px, env(safe-area-inset-bottom)) + 58px); width: 44px; height: 44px; border-radius: 50%; border: none; font-size: 18px; background: rgba(255,255,255,.94); color: #2471a3; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,.18); pointer-events: auto; }
-  /* 右上角小羅盤：定位在 leaflet 內建縮放鈕（topright，見 .leaflet-top.leaflet-right）下方，避免疊在一起；
-     本體不接收點擊（純顯示用），故 pointer-events:none。
-     跟縮放鈕的垂直間距依實機回饋下調7px（81→95）：95 = 縮放鈕top(14) + 縮放鈕高度(約60) + 間距(21，已依實機校正) */
+  /* 右上角小羅盤：定位在leaflet內建縮放鈕下方，避免疊在一起；可點擊切換朝向鎖定（見
+     toggleTravelHeadingLock），故pointer-events:auto。垂直間距95px = 縮放鈕top(14)+高度(60)+間距(21) */
   .travel-mini-compass { position: absolute; z-index: 4; top: calc(max(14px, env(safe-area-inset-top)) + 95px); right: 14px; width: 44px; height: 44px; pointer-events: auto; cursor: pointer; }
   /* 圓底樣式對齊 .travel-locate-btn（同一批浮動圓形按鈕），視覺統一；鎖定中加藍色外框呼應「已固定」狀態 */
   .mini-compass-plate { width: 100%; height: 100%; border-radius: 50%; overflow: hidden; position: relative; background: rgba(255,255,255,.94); box-shadow: 0 2px 8px rgba(0,0,0,.18); transition: box-shadow .15s ease; }
   .travel-mini-compass.is-locked .mini-compass-plate { box-shadow: 0 0 0 2px #2471a3, 0 2px 8px rgba(0,0,0,.18); }
   .travel-mini-compass:active .mini-compass-plate { background: #eee; }
-  /* 指針本體直接沿用 #compassCell 的 .compass-ring／.compass-needle／.needle-half／.needle-s／.needle-n（見上方原始定義），
-     這裡只多包一層獨立的旋轉容器（同 .compass-ring 語意，但用不同 id 避免跟九宮中心那顆互相干擾），
-     角度公式在一般的 (360-heading) 之外再加 180°：素材靜止時 S在上、N在下（原本是為了配合九宮南上北下的畫面設計），
-     這裡拿來做獨立的正常羅盤（面北時N朝上）要多轉半圈基準 */
-  /* 預設180deg＝北上靜止姿勢（見 renderTravelMiniCompass 公式），素材原始姿勢是給九宮南上北下用的，
-     不加這個預設值的話，還沒收到任何朝向事件前會先閃一下素材原本的姿勢，跟「預設鎖定北上」矛盾 */
+  /* 指針本體沿用#compassCell的.compass-ring系列素材，這裡只多包一層獨立旋轉容器（用不同id
+     避免跟九宮中心那顆互相干擾）。角度公式在(360-heading)外再加180°：素材靜止時S在上/N在下
+     （配合九宮南上北下），這裡做獨立正常羅盤（面北時N朝上）要多轉半圈基準 */
+  /* 預設180deg＝北上靜止姿勢，不加的話還沒收到朝向事件前會先閃一下素材原本姿勢，跟預設鎖定北上矛盾 */
   .mini-compass-ring { position: relative; width: 100%; height: 100%; box-sizing: border-box; transition: transform 0.15s linear; transform: rotate(180deg); }
   /* 縮小指針：只在小羅盤這個實例套用，九宮中心原本那顆不受影響（選擇器多一層 .mini-compass-ring 限定範圍）；
      比例參考其他浮動圓鈕內的圖示大小（約落在44px圓底裡的一半左右），縮小後維持原本的長寬比例 */
   .mini-compass-ring .compass-needle { top: 22%; bottom: 22%; width: 18%; }
   .travel-locate-btn:active { background: #eee; }
-  /* 2026.08新增：路徑記錄「出發/停止」鈕，跟定位鈕同一列往上堆疊；錄製中改紅底提示狀態 */
-  /* 2026.08修正：原本110px跟pin-control（116px）幾乎完全疊在一起（發現時一併修正），
+  /* 路徑記錄「出發/停止」鈕，跟定位鈕同一列往上堆疊；錄製中改紅底提示狀態 */
+  /* 原本110px跟pin-control（116px）幾乎完全疊在一起（發現時一併修正），
      改移到transport-control（174px）上方，維持既有58px一階的堆疊間距慣例 */
   .travel-track-btn { position: absolute; z-index: 4; right: 14px; bottom: calc(max(14px, env(safe-area-inset-bottom)) + 232px); width: 44px; height: 44px; border-radius: 50%; border: none; font-size: 11px; font-weight: bold; font-family: inherit; background: rgba(255,255,255,.94); color: #27ae60; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,.18); pointer-events: auto; line-height: 1.15; text-align: center; }
   .travel-track-btn.is-recording { background: #e74c3c; color: #fff; animation: travel-track-pulse 1.6s ease-in-out infinite; }
   @keyframes travel-track-pulse { 0%,100% { box-shadow: 0 2px 8px rgba(0,0,0,.18); } 50% { box-shadow: 0 2px 8px rgba(0,0,0,.18), 0 0 0 6px rgba(231,76,60,.25); } }
   .travel-track-btn:active { filter: brightness(.92); }
+  /* 錄製中即時顯示已走多久，疊在出發/停止鈕正上方，只在travelTrackRecording為true時顯示，
+     每秒setInterval更新，累加邏輯跟stopTravelTrackRecording算「花費時間」共用同一組
+     travelTrackElapsedMs／travelTrackSegmentStartTime（見updateTravelTrackTimerDisplay）。
+     中線對齊下方按鈕群：用right:36px＋translateX(50%)，不管內容多寬中點都精準對在36px那條線上。 */
+  .travel-track-timer { display: none; position: absolute; z-index: 4; right: 36px; transform: translateX(50%); bottom: calc(max(14px, env(safe-area-inset-bottom)) + 284px); background: rgba(231,76,60,.92); color: #fff; border-radius: 11px; padding: 3px 8px; font: 11px "M PLUS Rounded 1c", sans-serif; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,.18); pointer-events: none; white-space: nowrap; }
+  .travel-track-timer.is-visible { display: block; }
   /* 清除路徑鈕：只在有記錄過、且非錄製中才顯示（見 updateTravelTrackButtons），疊在出發鈕左側 */
   .travel-track-clear-btn { position: absolute; z-index: 4; right: 64px; bottom: calc(max(14px, env(safe-area-inset-bottom)) + 232px); width: 36px; height: 36px; border-radius: 50%; border: none; font-size: 15px; background: rgba(255,255,255,.94); color: #999; display: none; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,.18); pointer-events: auto; }
   .travel-track-clear-btn:active { background: #eee; }
@@ -1119,14 +1105,8 @@
   .travel-track-clear-popup button { border: none; border-radius: 8px; width: 32px; height: 28px; font-size: 14px; }
   .travel-track-clear-popup .btn-cancel { background: #eee; color: #666; }
   .travel-track-clear-popup .btn-confirm { background: #e74c3c; color: #fff; }
-  /* 2026.08新增：路徑記錄歷史按鈕，跟清除路徑鈕同一排、再往左疊一個，永遠顯示（不像清除鈕要
-     有記錄過才出現——歷史是回顧過去的，不受「這次有沒有記錄」影響） */
-  .travel-track-history-btn { position: absolute; z-index: 4; right: 114px; bottom: calc(max(14px, env(safe-area-inset-bottom)) + 232px); width: 36px; height: 36px; border-radius: 50%; border: none; font-size: 15px; background: rgba(255,255,255,.94); color: #999; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,.18); pointer-events: auto; }
-  .travel-track-history-btn:active { background: #eee; }
-  /* 2026.08新增：路徑記錄歷史列表——從畫面底部滑出的面板，列出getTrackHistory()存的每一筆記錄，
-     每筆可展開看8方位完整分佈（跟結果泡泡share同一套renderTrackDirectionBreakdown渲染邏輯，
-     見showTrackHistoryPanel／renderTrackHistoryList）。清除全部歷史用面板內展開確認，
-     不用原生confirm()（開發準則：artifact預覽環境會擋原生對話框，一律改用inline確認UI） */
+  /* 路徑記錄歷史列表，從底部滑出，每筆可展開看8方位分佈（跟結果泡泡share同一套渲染邏輯，
+     見renderTrackDirectionBreakdown）。清除全部歷史用面板內展開確認，不用原生confirm() */
   .track-history-panel { display: none; position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.45); align-items: flex-end; justify-content: center; }
   .track-history-panel.is-visible { display: flex; }
   .track-history-sheet { width: 100%; max-width: 420px; max-height: 78vh; background: #fff; border-radius: 18px 18px 0 0; padding: 16px 16px calc(16px + env(safe-area-inset-bottom)); overflow-y: auto; box-shadow: 0 -4px 20px rgba(0,0,0,.3); box-sizing: border-box; }
@@ -1135,6 +1115,10 @@
   .track-history-header .close-btn { border: none; background: none; font-size: 20px; color: #999; padding: 4px 8px; line-height: 1; }
   .track-history-empty { text-align: center; color: #999; font-size: 13px; padding: 40px 0; font-family: "M PLUS Rounded 1c", sans-serif; }
   .track-history-item { border: 1px solid #eee; border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; font-family: "M PLUS Rounded 1c", sans-serif; }
+  /* 「進行中」即時卡片，紅色外框＋淡紅底色跟已完成的歷史記錄區隔開，
+     呼應出發/停止鈕錄製中的紅色語彙（.travel-track-btn.is-recording），見renderCurrentTripCardHTML */
+  .track-history-current { border-color: #e74c3c; background: #fff5f5; }
+  .track-history-current .current-badge { color: #e74c3c; font-weight: bold; }
   .track-history-item .row1 { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
   .track-history-item .date { font-size: 12px; color: #999; }
   .track-history-item .distance { font-size: 15px; font-weight: bold; color: #333; }
@@ -1149,10 +1133,8 @@
   .track-history-clear-confirm button { border: none; border-radius: 8px; width: 32px; height: 28px; font-size: 14px; }
   .track-history-clear-confirm .btn-cancel { background: #eee; color: #666; }
   .track-history-clear-confirm .btn-confirm { background: #e74c3c; color: #fff; }
-  /* 2026.08新增：路徑記錄「結果泡泡」——按「停止」時跳出，靈感來源Eric提供的跑步App截圖
-     （距離＋完成提示）。位置貼齊置頂的「以現時重新計算」鈕正下方、置中對齊，避免跟右側
-     堆疊的定位/路徑/導航按鈕群互相干擾。詳細方位分佈預設收合，點「詳細方位分佈」展開，
-     見showTravelTrackResultPopup／toggleTrackDirectionDetail */
+  /* 路徑記錄結果泡泡，按「停止」時跳出（距離＋完成提示，靈感來自跑步App）。位置貼齊置頂的
+     「以現時重起時盤」鈕正下方、置中，避免跟右側按鈕群互相干擾。詳細方位分佈預設收合 */
   .travel-track-result-popup { display: none; position: absolute; z-index: 6; left: 14px; right: 14px; top: calc(max(14px, env(safe-area-inset-top)) + 50px); max-width: 300px; margin: 0 auto; background: rgba(255,255,255,.98); border-radius: 14px; padding: 14px 16px; box-shadow: 0 4px 16px rgba(0,0,0,.24); font: 13px "M PLUS Rounded 1c", sans-serif; color: #333; pointer-events: auto; }
   .travel-track-result-popup.is-visible { display: block; }
   .track-result-close { position: absolute; top: 6px; right: 8px; border: none; background: none; color: #999; font-size: 15px; padding: 6px; line-height: 1; }
@@ -1168,12 +1150,16 @@
   .track-dir-label { width: 32px; flex: 0 0 auto; color: #666; }
   .track-dir-pct { width: 36px; flex: 0 0 auto; text-align: right; color: #999; }
   .track-dir-gate { flex: 1; }
-  .track-dir-ok .track-dir-gate { color: #27ae60; }
+  /* 顏色改依「門本身吉凶」決定（休生開景＝綠，傷杜死驚＝黑），不再是單純
+     「有沒有被排除就綠/灰」二分——排除的門維持原本設計不變（見track-dir-excluded），
+     只有「沒被排除」的情況才细分成吉門(綠)／凶門(黑)兩種，見renderTrackDirectionBreakdown */
+  .track-dir-lucky .track-dir-gate { color: #27ae60; }
+  .track-dir-unlucky .track-dir-gate { color: #333; }
   .track-dir-excluded .track-dir-gate { color: #999; }
   .track-dir-excluded .track-dir-gate small { color: #e74c3c; margin-left: 2px; }
-  /* 2026.08新增：跳外部地圖導航鈕，疊在路徑記錄鈕再上一階（290px），維持58px一階的堆疊間距慣例。
-     試驗性功能（Eric：「試試看好了，不合理再拿掉就是了」）——先加、不動既有OSRM站內算路線邏輯，
-     兩套並存讓Eric自己比較。只有已設終點時才顯示（沒有終點，跳出去也不知道要導去哪） */
+  /* 跳外部地圖導航鈕，疊在路徑記錄鈕再上一階（290px），維持58px一階的堆疊間距慣例。
+     試驗性功能（試驗性質，不合理可再拿掉）——先加、不動既有OSRM站內算路線邏輯，
+     兩套並存讓之後比較。只有已設終點時才顯示（沒有終點，跳出去也不知道要導去哪） */
   .travel-external-nav-btn { position: absolute; z-index: 4; right: 14px; bottom: calc(max(14px, env(safe-area-inset-bottom)) + 290px); width: 44px; height: 44px; border-radius: 50%; border: none; font-size: 20px; background: rgba(255,255,255,.94); color: #2471a3; display: none; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,.18); pointer-events: auto; }
   .travel-external-nav-btn:active { background: #eee; }
   .travel-external-nav-popup { display: none; position: absolute; z-index: 6; right: 14px; bottom: calc(max(14px, env(safe-area-inset-bottom)) + 334px); background: rgba(255,255,255,.98); border-radius: 12px; padding: 12px 14px; box-shadow: 0 4px 14px rgba(0,0,0,.22); text-align: center; font: 12px "M PLUS Rounded 1c", sans-serif; color: #333; pointer-events: auto; width: 200px; }
@@ -1211,18 +1197,15 @@
   .expand-options button:active { background: #eee; }
   .expand-options button.armed { background: #2471a3; color: #fff; }
   .expand-options button.disabled { opacity: .35; pointer-events: none; } /* 未設起點前鎖住中途點/終點；起點/終點各自設過一次後鎖住自己，需刪除才能重設 */
-  /* 2026.08：整套按鈕群間距統一14px，三顆鈕(定位58/點位116/交通工具174)兩兩間隔都是14
+  /* 整套按鈕群間距統一14px，三顆鈕(定位58/點位116/交通工具174)兩兩間隔都是14
      （58+44+14=116，116+44+14=174）；定位鈕跟下方泡泡貼齊、無額外間距，見.travel-status附近註解 */
   #transport-control { bottom: calc(max(14px, env(safe-area-inset-bottom)) + 174px); }
-  /* 2026.08新增：服務不可靠警示徽章——OSRM demo server對walking/cycling profile有已知問題
-     （表面接受請求、實際仍用driving路網計算，見calculateTravelRoute內checkTravelRouteProfileReliability
-     註解），非本工具程式邏輯問題。改成掛在「個別圖示」右上角的紅底驚嘆號（每個交通工具各自獨立
-     判定、各自記憶，見JS travelRouteProfileReliability），比疊在收合鈕上更能一眼看出哪個模式有問題。
-     收合鈕（#transport-trigger）跟展開後的三個選項鈕（#transport-options button）都各自可能顯示。
-     2026.08修正：位置從按鈕邊界外（負位移 top:-2px;right:-2px）改成完全縮在按鈕範圍內（top:0;right:0），
-     因為.expand-options容器有overflow-x:hidden（收合動畫需要，見該規則），最右側按鈕（收合狀態排在
-     row-reverse主軸起點）的徽章一旦凸出按鈕邊界，會被容器水平裁切裁掉一角——縮進按鈕內部就不會再
-     超出容器邊界，不管容器怎麼裁都不受影響，比另外加padding或改overflow更直接、更不會有副作用。 */
+  /* 服務不可靠警示徽章——OSRM demo server對walking/cycling profile有已知問題（表面接受請求、
+     實際仍用driving路網計算，見calculateTravelRoute內checkTravelRouteProfileReliability），
+     非本工具程式邏輯問題。掛在「個別圖示」右上角的紅底驚嘆號，每個交通工具各自獨立判定/記憶
+     （見travelRouteProfileReliability），比疊在收合鈕上更能一眼看出哪個模式有問題。
+     位置縮在按鈕範圍內（top:0;right:0，非負位移凸出邊界），因為.expand-options有
+     overflow-x:hidden，凸出邊界的徽章會被水平裁掉一角，縮進內部就不受影響。 */
   .transport-warning-badge {
     position: absolute; top: 0; right: 0; width: 14px; height: 14px; border-radius: 50%;
     background: #e74c3c; color: #fff; font-size: 9px; font-weight: 700; line-height: 14px;
@@ -1231,10 +1214,9 @@
   }
   .transport-warning-badge.is-visible { display: block; }
   #pin-control { bottom: calc(max(14px, env(safe-area-inset-bottom)) + 116px); }
-  /* 2026.08改版：搜尋鈕從獨立按鈕群組，收進pin-options水滴選單裡（終點紅水滴左邊，見#opt-search）。
-     觸發後彈出的搜尋泡泡改成獨立浮動面板，不再用.expand-options橫向展開那套：水平畫面置中、
-     疊在水滴選單那一排正上方（116px+按鈕高44px+間距12px≈172px），輸入框靠近按鈕、結果清單往上長
-     （flex-direction:column-reverse，配合HTML內input在前、results在後的順序，見travel-search-popup） */
+  /* 搜尋鈕收進pin-options水滴選單裡（終點紅水滴左邊，見#opt-search）。彈出的搜尋泡泡是獨立
+     浮動面板，水平置中疊在水滴選單正上方（116+44+12≈172px），輸入框靠近按鈕、結果清單往上長
+     （column-reverse，配合HTML內input在前、results在後） */
   .travel-search-popup { position: absolute; z-index: 6; left: 50%; bottom: calc(max(14px, env(safe-area-inset-bottom)) + 172px); transform: translateX(-50%); display: none; flex-direction: column-reverse; gap: 6px; width: min(260px, calc(100vw - 28px)); }
   .travel-search-popup.is-open { display: flex; }
   .travel-search-popup input { width: 100%; box-sizing: border-box; height: 38px; border: none; border-radius: 10px; padding: 0 14px; font: 16px "M PLUS Rounded 1c", sans-serif; background: rgba(255,255,255,.98); box-shadow: 0 2px 8px rgba(0,0,0,.2); pointer-events: auto; } /* 字體固定16px，避免iOS Safari在input focus時自動放大畫面（iOS已知行為：input字體<16px會觸發自動zoom-in，且blur後不會自動zoom回來） */
@@ -1253,13 +1235,10 @@
   /* 地圖上的起點/中途點/終點圖釘（L.divIcon），色碼跟展開選單裡的選項一致 */
   .travel-route-marker { pointer-events: auto; filter: drop-shadow(0 1px 3px rgba(0,0,0,.35)); }
 
-  /* 2026.08新增：GPS即時位置從實心圓點（L.circleMarker）改成方向箭頭圖示（L.marker+divIcon），
-     跟起點水滴一樣走pane機制、markerPane預設層級即可蓋過羅盤，不用額外指定。
-     箭頭本身不隨定位更新重繪DOM（見startTravelPositionWatch／locateTravelPosition改成setLatLng
-     重用同一個marker），只有.travel-gps-arrow這個內層div的transform會被handleTravelOrientation
-     即時改寫角度，跟位置更新（setLatLng）完全分開、互不干擾。
-     SVG本身畫成尖端朝上（0deg＝正北，跟地圖north-up方向天然對齊），heading增加時順時針轉，
-     跟手機實際朝向直覺一致。 */
+  /* GPS即時位置用方向箭頭圖示（L.marker+divIcon），走pane機制、markerPane層級即可蓋過羅盤。
+     箭頭不隨定位更新重繪DOM（改用setLatLng重用同一marker），只有內層div的transform被
+     handleTravelOrientation即時改寫角度，跟位置更新分開。SVG尖端朝上（0deg＝正北，跟地圖
+     north-up對齊），heading增加時順時針轉，跟手機實際朝向直覺一致。 */
   .travel-gps-icon-wrap { background: none; border: none; }
   .travel-gps-arrow {
     width: 26px; height: 26px;
@@ -1311,7 +1290,7 @@
     font-size: 15px; display: flex; align-items: center; justify-content: center;
     box-shadow: 0 1px 3px rgba(0,0,0,.2); flex-shrink: 0;
   }
-  /* 2026.08：原本分兩處定義（font-size一份、display/position/z-index一份），盤點冗餘時合併成一塊 */
+  /* 原本分兩處定義（font-size一份、display/position/z-index一份），盤點冗餘時合併成一塊 */
   .travel-inline-board-toggle { font-size: 12px; display: none; position: absolute; z-index: 5; top: 30px; right: -8px; }
   .travel-inline-board-toggle.active { background: #2471a3; color: #fff; }
   .travel-inline-board-toggle .eye-open, .travel-inline-board-toggle .eye-closed { display: none; }
@@ -1322,11 +1301,10 @@
   /* 階段三：全螢幕展開鈕，方框右上角，只在地圖模式（.travel-map-mode）常駐顯示，跟旋轉/盤面狀態無關 */
   .travel-inline-fullscreen { display: none; position: absolute; z-index: 5; top: -8px; right: -8px; font-size: 13px; }
   .outer.travel-map-mode .travel-inline-fullscreen { display: flex; }
-  /* 眼睛鈕（顯示/隱藏盤面）：改成跟 ←、⛶ 同一種「疊在方框邊框上、獨立浮動」做法，z-index:5，
-     不能放進 travel-inline-map-wrap（z-index:0）內部——該容器的堆疊層級整體低於九宮格（z-index:1），
-     即使內部元件自訂z-index也救不回來，會被盤面點擊層蓋住點不到。放在右上角、疊在全螢幕鈕正下方 */
+  /* 眼睛鈕（顯示/隱藏盤面）：跟←、⛶同一種「疊在方框邊框上、獨立浮動」做法，z-index:5，不能放進
+     travel-inline-map-wrap（z-index:0，整體低於九宮格的z-index:1）內部，否則會被盤面點擊層蓋住點不到 */
   .outer.travel-map-mode .travel-inline-board-toggle { display: flex; }
-  /* 2026.08新增：「顯示可用吉門」鈕，疊在眼睛鈕正下方（30+30高+8間距＝68px），同款圓形獨立浮動；
+  /* 「顯示可用吉門」鈕，疊在眼睛鈕正下方（30+30高+8間距＝68px），同款圓形獨立浮動；
      預設白底黃字「吉」，active（目前標記＝純自動預選結果、使用者尚未手動調整過）時改成黃底白字，
      跟眼睛鈕active時的填色/反白邏輯一致 */
   .travel-inline-lucky-toggle {
@@ -1375,23 +1353,20 @@
   .outer.travel-map-mode .gc-left {
     background: rgba(255,255,255,.74); border-radius: 0 0 8px 0;
   }
-  /* 指針(.dz-center)在地圖模式下維持顯示，讓使用者知道上方離9是南、下方坎1是北（跟九宮方位對照），
-     跟地圖是疊在一起的兩層投影片：指針固定跟九宮同步，不跟即時裝置朝向連動，只有點中宮（＝旋轉）時才一起翻轉
-     （見 JS setTravelCompassOrientation／travelCompassFrozen）。藍點（目前位置）另外保留，兩者並存。
-     過渡時間拉長跟地圖的 0.5s 同步，翻轉手感一致。 */
+  /* 指針(.dz-center)在地圖模式下維持顯示，讓使用者知道上方離9是南、下方坎1是北，跟地圖疊在
+     一起：指針固定跟九宮同步，不跟裝置朝向連動，只有點中宮才一起翻轉（見setTravelCompassOrientation）。
+     過渡時間拉長跟地圖的0.5s同步，翻轉手感一致。 */
   .outer.travel-map-mode .compass-ring { transition: transform .5s ease; }
-  /* 旋轉箭頭：只在方框內嵌地圖模式顯示（不含全螢幕扇形羅盤，見需求）；
-     用 #paipan-result 限定原始位置，出行訣全螢幕會把 .outer 節點暫時搬進 #travel-board-layer，
-     搬過去後這條規則自然不再命中，順便讓中宮在全螢幕快照期間維持不可點擊，不需要另外加 JS 判斷 */
+  /* 旋轉箭頭：只在方框內嵌地圖模式顯示（不含全螢幕扇形羅盤）；用#paipan-result限定原始位置，
+     出行訣全螢幕會把.outer節點暫時搬進#travel-board-layer，搬過去後這條規則自然不再命中，
+     順便讓中宮在全螢幕快照期間維持不可點擊，不用另外加JS判斷 */
   #paipan-result .outer.travel-map-mode .compass-rotate-bracket { opacity: .8; }
   #paipan-result .outer.travel-map-mode.travel-map-rotated .compass-rotate-bracket { color: #2471a3; }
   /* 中宮點擊：地圖模式下 .grid 整體 pointer-events:none（見上方規則），這裡單獨救回中宮指針，讓點擊可以觸發旋轉 */
   #paipan-result .outer.travel-map-mode .dz-center { pointer-events: auto; }
-  /* 2026.08新增：三個標記/確認泡泡（travel-ask-panel／yang-submode-confirm／travel-marking-banner）
-     都掛在中宮 .cell.center 底下，中宮格本身沒有 data-gong 屬性，不會被上面「board-visible時data-gong
-     宮位恢復pointer-events」那條規則救到——地圖從confirmTravelAsk就同步載入後（見該函式），標記期間
-     .grid仍是pointer-events:none，導致泡泡上的✕/✓按鈕看得到按不到。單獨救回這三個泡泡本身，
-     不去動整個中宮格，避免中宮其他內容（十二長生外圍地支等）在地圖模式下意外變成可點擊 */
+  /* 三個標記/確認泡泡都掛在中宮.cell.center底下，但中宮沒有data-gong屬性，不會被上面
+     「board-visible時data-gong宮位恢復pointer-events」那條規則救到，導致泡泡按鈕看得到按不到。
+     單獨救回這三個泡泡，不動整個中宮格，避免其他內容（十二長生外圍地支等）意外變成可點擊 */
   #paipan-result .outer.travel-map-mode .travel-marking-banner { pointer-events: auto; }
 
   /* 盤面顯示/隱藏：點右上角「盤」鈕切換，半透明疊加在地圖上方，固定在同一塊九宮框內，不出框 */
@@ -1409,23 +1384,20 @@
   .outer.travel-map-mode.board-visible .gc-center .dz9 {
     visibility: visible;
   }
-  /* 2026.08：原本「已標記宮位強制顯示門名/吉凶小字」的做法，改成合併顯示一個大字（見下方 .travel-mark-big）。
-     只在「未開盤（收起盤面看地圖）」時生效；開盤時（.board-visible）維持顯示宮位原本的完整資訊
-     （門/星/神/天干/地支等，跟未標記宮位一視同仁），大字這時反而要消失，見下方 .travel-mark-big 預設 display:none，
-     只有 :not(.board-visible) 且已標記時才亮出來，兩者互斥不會同時出現。 */
+  /* 已標記宮位改合併顯示一個大字（見下方.travel-mark-big），只在「未開盤（收起盤面看地圖）」時
+     生效；開盤時維持顯示宮位完整資訊，大字消失——兩者互斥，靠:not(.board-visible)控制不會同時出現 */
   .travel-mark-big {
     display: none;
     align-items: center; justify-content: center;
     pointer-events: none; /* 不擋點擊，標記循環／地圖操作仍由 .cell 本身承接 */
     background: rgba(255,255,255,.6);
   }
-  /* 2026.08修正：字體樣式搬到內層span，外層div只留背景色。
-     原本filter直接放在帶背景色的外層div上，drop-shadow會把整個半透明白底矩形的輪廓也算進陰影範圍，
-     導致暈開成整片色塊；內層span沒有背景，效果才會只落在文字筆畫本身。
-     陰影：單純做出立體感（曾試過同色光暈，在偏白地圖底色上對比不足看不太出來，改回一般陰影） */
+  /* 字體樣式搬到內層span，外層div只留背景色——filter若放在帶背景色的外層div上，drop-shadow
+     會把整個半透明白底矩形輪廓也算進陰影範圍、暈開成整片色塊；內層span沒背景，效果才會只落在
+     文字筆畫本身。陰影單純做出立體感（同色光暈在偏白地圖底色上對比不足，改用一般陰影） */
   .travel-mark-big span {
     font-family: "Noto Serif TC", "PMingLiU", serif;
-    font-weight: 400; /* 2026.08：原本700，但Google Fonts只有載入300/400/500三種字重(見<head>連結)，
+    font-weight: 400; /* 原本700，但Google Fonts只有載入300/400/500三種字重(見<head>連結)，
        700其實是瀏覽器合成的假粗體，改400後是真正有載入、渲染會比較穩定的字重 */
     font-size: 60px;
     line-height: 1;
@@ -1437,10 +1409,7 @@
     display: flex;
   }
 
-  /* ══════════════════════════════════════════════════════
-     奇門曆模式盤頭（2026.08 從 preview 移植，UI骨架，假資料互動已驗證，
-     引擎尚未接上——見 renderAlmanacCalendar 等函式）
-     ══════════════════════════════════════════════════════ */
+  /* 奇門曆模式盤頭 */
   :root {
     /* 奇門曆盤頭左右列高的單一真相來源：月曆星期列/日期格、左側查詢區間/
        方位選擇列全部套用同一個值，兩邊高度天生鎖死一致 */
@@ -1457,7 +1426,7 @@
     display: flex;
     flex-direction: column;
   }
-  /* 2026.08再次重寫：左欄改成「查詢區間標題／數值／方位選擇標題」三個固定小高度列
+  /* 再次重寫：左欄改成「查詢區間標題／數值／方位選擇標題」三個固定小高度列
      （flex:0 0 auto，高度由字級+padding自然決定，不寫死px），
      + 方位3x3九宮格吃掉剩下的全部空間（flex:1 + grid-template-rows:1fr，
      完全跟著剩餘空間走，不會跟右邊月曆固定151px的高度打架）。 */
@@ -1477,18 +1446,15 @@
     line-height: 1.4;
     padding: 1px 6px 2px;
   }
-  /* 2026.08：Eric回饋「08/11～08/31（21天）」整串置中時，日期本身會因為右邊
-     多了天數標籤而視覺上偏左。做法：右邊放真正顯示的天數標籤，左邊放一個內容
-     完全相同但visibility:hidden的鏡像標籤（照樣佔位、不可見），flex置中時
-     左右佔位對稱抵銷，中間的日期文字就會精確落在正中央，不受天數標籤影響。 */
+  /* 「08/11～08/31（21天）」整串置中時，日期本身會因右邊多了天數標籤而視覺上偏左。做法：
+     右邊放真正的天數標籤，左邊放一個內容相同但visibility:hidden的鏡像標籤（照樣佔位、不可見），
+     flex置中時左右佔位對稱抵銷，日期文字就會精確落在正中央 */
   .h-range-dates { font-size: 12px; color: #333; font-family: "MPLUS1Code", monospace; white-space: nowrap; }
   .h-range-days { font-size: 10px; color: #aaa; white-space: nowrap; }
   .h-range-days.ghost { visibility: hidden; }
 
-  /* 方位九宮格：3x3照真實方位擺放（西北/北/東北 一列...），中宮留空不可點擊。
-     跟門篩選chip同一套邏輯（複選、toggleAlmanacChip），預設全選。
-     grid-template-rows用1fr而非固定px：不管上面3個標題/數值列吃掉多少高度，
-     這裡永遠精確填滿剩下的空間，按鈕自動跟著壓扁或變高，不會溢出。 */
+  /* 方位九宮格：3x3照真實方位擺放，中宮留空不可點擊，跟門篩選chip同一套邏輯（複選，預設全選）。
+     grid-template-rows用1fr而非固定px：不管上面標題/數值列吃掉多少高度，這裡都精確填滿剩下空間 */
   .h-dir-compass {
     flex: 1;
     min-height: 0;
@@ -1551,7 +1517,7 @@
     border-radius: 4px;
   }
   .h-cal-day.out-of-month { visibility: hidden; }
-  /* 2026.08：Eric要求月曆日期數字預設灰字，只有落在目前查詢區間內（in-range，
+  /* 需求是月曆日期數字預設灰字，只有落在目前查詢區間內（in-range，
      含起訖點）才轉黑字，用來凸顯「這些日子才是目前查詢範圍」。起訖點本身背景
      反白（下面range-start/range-end規則），文字改白色，不受這條黑字規則影響。 */
   .h-cal-day.in-range { background: #e9e5dd; color: #333; }
@@ -1559,7 +1525,7 @@
   .h-cal-day.pending-start { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px #444; }
   .h-cal-day.today-marker { box-shadow: inset 0 0 0 1px #444; }
 
-  /* ── 奇門曆查詢結果清單（2026.08新增）── */
+  /* ── 奇門曆查詢結果清單（新增）── */
   #almanac-results {
     width: calc(100% - 44px);
     margin: 0 auto 16px;
@@ -1599,15 +1565,14 @@
     border-radius: 14px;
     padding: 4px 10px;
   }
-  /* 2026.08新增：可用（未排除）的吉門標籤可點擊，跳到單次排盤模式並直接產出該時段的盤，
+  /* 可用（未排除）的吉門標籤可點擊，跳到單次排盤模式並直接產出該時段的盤，
      方便使用者接著點羅盤啟動出行訣。排除掉的門（.ar-hit.excluded）不可點擊，維持原樣。 */
   .ar-hit.clickable { cursor: pointer; transition: background 0.12s; }
   .ar-hit.clickable:hover { background: #e4dfd2; }
   .ar-none { font-size: 12px; color: #ccc; }
-  /* 2026.08修正：Eric回饋希望每張卡片能各自收合，不要靠單一全域class統一控制。
-     改成每張 .ar-segment 自己的 expanded class 決定要不要顯示自己的已排除區塊；
-     全域按鈕（.ar-toggle-excluded）改為「批次展開/收合全部」的動作鈕，
-     行為上是幫每張卡片的class做批次set/unset，不是另一層獨立的顯示邏輯。 */
+  /* 每張卡片各自收合，不靠單一全域class統一控制：每張.ar-segment用自己的expanded class決定
+     要不要顯示已排除區塊；全域按鈕（.ar-toggle-excluded）是「批次展開/收合全部」，本質是幫
+     每張卡片的class做批次set/unset */
   .ar-seg-excluded { display: none; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
   .ar-segment.expanded .ar-seg-excluded { display: flex; }
   .ar-hit.excluded {
@@ -1621,13 +1586,9 @@
     text-decoration: none;
     margin-left: 2px;
   }
-  /* 2026.08：hint文字跟全域按鈕改放同一列（.ar-toolbar負責左右對齊＋外層margin），
-     兩者各自不再自帶margin/display:block，避免跟外層排版打架。
-     2026.08再調整：兩者都有時Eric要求恢復左右分散對齊（space-between）；但只有按鈕、
-     沒有提示文字時，若沿用space-between，CSS規範規定單一flex item時等同flex-start
-     （會跑到最左邊），跟「兩者都有」時按鈕落在最右邊的位置不一致，故只有按鈕時
-     額外用.end-only明確指定flex-end，確保按鈕右緣位置在兩種狀態下始終一致
-     （Eric回報按鈕位置不能跳動，見對話記錄）。*/
+  /* hint文字跟全域按鈕同一列（.ar-toolbar負責左右對齊＋外層margin），兩者都有時space-between
+     左右分散；只有按鈕時，CSS規範單一flex item等同flex-start（跑到最左邊），跟兩者都有時按鈕
+     在最右邊不一致，故用.end-only明確指定flex-end，確保按鈕位置在兩種狀態下一致不跳動。*/
   .ar-toolbar {
     display: flex;
     align-items: center;
@@ -1647,9 +1608,9 @@
     border-radius: 20px;
     cursor: pointer;
     font-family: inherit;
-    /* 2026.08：原本用min-width，但「只顯示可用的門」（7字）跟「顯示所有內容」（6字）
-       內容本身的寬度就超過min-width，還是會被撐開、兩種狀態大小仍不一致（Eric回報，
-       見對話記錄）。改用固定width（比min-width更長的7字版本再留一點餘裕），兩種狀態
+    /* 原本用min-width，但「只顯示可用的門」（7字）跟「顯示所有內容」（6字）
+       內容本身的寬度就超過min-width，還是會被撐開、兩種狀態大小仍不一致。
+       改用固定width（比min-width更長的7字版本再留一點餘裕），兩種狀態
        文字不論長短都框在同一個寬度內，搭配text-align:center置中顯示。 */
     width: 112px;
     text-align: center;
@@ -1660,10 +1621,9 @@
     font-size: 11px;
     color: #bbb;
   }
-  /* 單一卡片自己的展開/收合小按鈕，跟頁面上方全域批次按鈕（.ar-toggle-excluded）
-     是視覺上有意區隔的兩層——這顆更小、更不搶眼，因為是次要動作。
-     2026.08：搬進 .ar-seg-head 右側跟時間同一列左右對齊，不再是獨立一行；
-     font-family改指定回一般字型（不能用inherit，會被seg-head的monospace帶壞中文顯示）。 */
+  /* 單一卡片自己的展開/收合小按鈕，跟頁面上方全域批次按鈕（.ar-toggle-excluded）視覺上刻意
+     區隔——這顆更小更不搶眼，是次要動作。font-family指定回一般字型（不能inherit，會被
+     seg-head的monospace帶壞中文顯示）。 */
   .ar-seg-toggle {
     flex: 0 0 auto;
     padding: 2px 0;
@@ -1676,7 +1636,7 @@
     font-family: "M PLUS Rounded 1c", sans-serif;
     white-space: nowrap;
   }
-  /* 2026.08新增：年/月/日時分區標題＋日期子標題（依「年→月→日/時」順序顯示，
+  /* 年/月/日時分區標題＋日期子標題（依「年→月→日/時」順序顯示，
      比照tzchimen參考介面），以及吉門利別說明（僅開/休/生/景四個預設吉門有） */
   .ar-plate-title {
     font-size: 13px; font-weight: 700; color: #555;
@@ -1684,7 +1644,7 @@
     border-bottom: 1px solid #ddd;
   }
   .ar-plate-title:first-child { margin-top: 0; }
-  /* 2026.08新增：每個日期可折疊收合，標題本身是按鈕（點擊切換.ar-date-group的
+  /* 每個日期可折疊收合，標題本身是按鈕（點擊切換.ar-date-group的
      collapsed class），箭頭用CSS transform旋轉表示展開/收合狀態，預設展開。 */
   .ar-date-group { margin-bottom: 2px; }
   .ar-date-title {
@@ -1710,14 +1670,10 @@
   .ar-date-group.collapsed .ar-date-title-arrow { transform: rotate(-90deg); }
   .ar-date-group.collapsed .ar-date-group-body { display: none; }
   .ar-benefit { font-size: 11px; color: #8a7455; }
-  /* 2026.08新增：入墓不排除門，但用小字標記提醒該宮位有天干入墓（天盤/地盤各自標）。
-     顏色比 .ar-benefit 淡、偏灰，區隔「這是提醒」而非「這是好處」。
-     2026.08再修正：星伏／星反（老師第18堂課釐清出行訣不看九星旺衰反吟）也改用同一套
-     樣式，跟入墓一起合併進entombNotes顯示，語意上都是「純標記、不影響是否排除」。
-     2026.08三度修正：Eric朋友建議這類標記預設先藏起來，畫面單純只留吉門本身，改成跟
-     .ar-seg-excluded同一套display:none/expanded機制——好處是per-card個別展開按鈕
-     （almanacToggleCardExcluded，純切class不重新渲染）也能自動連動顯示/隱藏，不用
-     額外改JS邏輯。 */
+  /* 入墓不排除門，但用小字標記提醒該宮位有天干入墓（天盤/地盤各自標）。顏色比.ar-benefit淡、
+     偏灰，區隔「這是提醒」而非「這是好處」。星伏／星反（出行訣不看九星旺衰反吟）也用同一套樣式，
+     跟入墓合併進entombNotes顯示。預設先藏起來，跟.ar-seg-excluded同一套display:none/expanded
+     機制，per-card展開按鈕（almanacToggleCardExcluded）能自動連動，不用額外改JS。 */
   .ar-entomb-note { font-size: 11px; color: #a8a29a; display: none; }
   .ar-segment.expanded .ar-entomb-note { display: inline; }
 </style>
@@ -1755,7 +1711,7 @@
           <li>左上角日曆圖示：切換排盤／奇門曆模式</li>
           <li>右上角圖釘圖示：直接跳全螢幕出行訣地圖，等同「點中宮啟用羅盤→確認進出行訣→展開
             全螢幕」的捷徑；任何模式下都可以按（奇門曆會先切回排盤模式，命盤／陰盤會先切回陽盤）；
-            進入後可用全螢幕內的「以現時重新計算」直接排一張現時的盤</li>
+            進入後可用全螢幕內的「以現時重起時盤」直接排一張現時的盤</li>
         </ul>
 
         <div class="help-section-title">切換盤別</div>
@@ -1828,13 +1784,14 @@
           <li>「交通工具鈕」：以步行／腳踏車／開車模式計算路線；紅色驚嘆號代表該交通方式服務可能無法使用</li>
           <li>「右下箭頭鈕」：回到目前定位</li>
           <li>「右上小羅盤」：點擊啟動顯示手機朝向</li>
-          <li>「以現時重新計算」：用現在時間重新排盤，連盤面與吉凶標記一併更新</li>
+          <li>「以現時重起時盤」：用現在時間重新排盤，連盤面與吉凶標記一併更新</li>
           <li>「出發」／「停止」：記錄走過的路徑並畫成紫色路徑線，跟藍色的起點→終點規劃路線分開顯示；
-            按「停止」後路徑線仍保留，再按「出發」會接續記錄；「🗑」清除路徑需二次確認。離開全螢幕、
+            錄製中鈕正上方會即時顯示已經走了多久；按「停止」後路徑線仍保留，再按「出發」會接續記錄
+            （計時器也會接續累加，不會歸零）；「🗑」清除路徑需二次確認。離開全螢幕、
             切到排盤畫面時，只要沒按「停止」就會持續在背景記錄，直到分頁關閉才會消失</li>
           <li>按「停止」時會跳出結果泡泡（距離、花費時間、主要朝向對應的門），可展開查看8個方位的完整
-            分佈；此趟距離、花費時間、主要朝向與完整方位分佈也會存進歷史，按左側「🕘」查看（目前僅記錄
-            本機瀏覽器，可整批清除）</li>
+            分佈；此趟距離、花費時間、主要朝向與完整方位分佈也會存進歷史，按左上角「返回盤面」／「?」
+            旁的清單圖示查看（目前僅記錄本機瀏覽器，可整批清除）</li>
           <li>「🧭」（試驗性功能）：設定終點後才會出現，點擊可選擇跳轉 Google Maps 或 Apple Maps 導航；
             跳出去的期間，站內路徑記錄會因分頁被背景化而暫停，回來後才會恢復</li>
           <li>「← 返回盤面」：離開全螢幕，回到九宮框地圖或排盤畫面</li>
@@ -1913,9 +1870,8 @@
           <button class="export-btn" onclick="exportRecordsAsJSON()">匯出全部</button>
           <button class="export-btn" id="btn-import-records" onclick="document.getElementById('import-records-input').click()">匯入</button>
         </div>
-        <!-- 2026.08修正：匯出改成點下去直接輸出JSON備份，不再有預覽步驟（原本的文字版匯出／預覽已移除，
-             見exportRecordsAsJSON、handleImportRecordsFile上方註解）。2026.08新增：卡片可勾選多筆，
-             匯出時若有勾選只輸出所選；「刪除所選」可一次刪多筆，見toggleRecordSelect/askDeleteSelectedRecords -->
+        <!-- 匯出點下去直接輸出JSON備份，卡片可勾選多筆、匯出時只輸出所選；「刪除所選」可一次刪多筆
+             （見toggleRecordSelect/askDeleteSelectedRecords） -->
         <input type="file" id="import-records-input" accept="application/json,.json" style="display:none;" onchange="handleImportRecordsFile(event)">
         <div id="rec-list"></div>
       </div>
@@ -1926,7 +1882,7 @@
 <!-- 輸入區 -->
 <div class="input-area">
   <button class="mode-toggle-btn" id="mode-toggle-btn" aria-label="切換奇門曆" onclick="toggleAlmanacMode()">
-    <!-- 2026.08調整：Eric用互動調整工具試出的最終比例（整體放大＋往上位移一點），
+    <!-- 用互動調整工具試出的最終比例（整體放大＋往上位移一點），
          CSS .mode-toggle-btn svg 的固定width/height已配合改成16.2px（見該規則） -->
     <svg viewBox="0 0 24 24" width="16.2" height="16.2" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
       <g stroke-width="1.6" transform="translate(12 10.6) scale(1.08) translate(-12 -12)">
@@ -1935,10 +1891,9 @@
       </g>
     </svg>
   </button>
-  <!-- 2026.08新增：出行訣捷徑鈕，跟mode-toggle-btn鏡射對稱（右上角），直接跳全螢幕出行訣地圖，
-       不用先點中宮→啟用羅盤→確認進出行訣→再點展開全螢幕，省掉中間好幾步。圖示（展開括號＋地圖圖釘）
-       比例是Eric用互動調整工具試出的最終版本。2026.08放寬：任何模式都可以呼叫，不隱藏——奇門曆／
-       命盤／陰盤按下時，會自動切回排盤模式／陽盤再繼續（見jumpToTravelFullscreen） -->
+  <!-- 出行訣捷徑鈕，跟mode-toggle-btn鏡射對稱（右上角），直接跳全螢幕出行訣地圖，省掉中間
+       點中宮→啟用羅盤→確認→展開全螢幕好幾步。任何模式都可以呼叫——奇門曆／命盤／陰盤按下時，
+       會自動切回排盤模式／陽盤再繼續（見jumpToTravelFullscreen） -->
   <button class="travel-shortcut-btn" id="travel-shortcut-btn" aria-label="出行訣" onclick="jumpToTravelFullscreen()">
     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
       <g stroke-width="1.7" transform="translate(12 12) scale(0.9) translate(-12 -12)">
@@ -1999,7 +1954,7 @@
   </div>
 
   <!-- 奇門曆模式：查詢長度快捷＋門篩選；查詢區間文字、方位選擇在盤頭左半
-       （2026.08 從 preview 移植，UI骨架，引擎尚未接上，見 runAlmanacQuery） -->
+       （從 preview 移植，UI骨架，引擎尚未接上，見 runAlmanacQuery） -->
   <div id="mode-almanac-content" style="display:none;">
     <div class="plate-toggle" id="preset-row">
       <button type="button" class="plate-btn active" data-preset="today" onclick="applyAlmanacPreset('today')">當日</button>
@@ -2099,11 +2054,9 @@
 <div id="mode-almanac-header" style="display:none;">
   <div class="h-almanac-split">
     <div class="h-almanac-col-left">
-      <!-- 2026.08再次重寫：兩個標題（查詢區間／方位選擇）各自獨立一行，不跟數值同行。
-           方位九宮格rows改回1fr（不寫死px），讓grid直接吃掉扣掉兩個標題列+一個數值列後
-           剩下的所有空間——不管剩下多少，grid都會自動填滿、自動壓扁，不會跟右邊月曆的
-           固定高度打架（上一版寫死26px在剩餘空間不夠時會把整欄撐高，就是這裡出的問題）。
-           中宮格留空，只是視覺上湊滿3x3、不可點擊。 -->
+      <!-- 兩個標題（查詢區間／方位選擇）各自獨立一行，不跟數值同行。方位九宮格rows用1fr
+           （不寫死px），讓grid吃掉扣掉標題列+數值列後剩下的所有空間，自動填滿不跟右邊月曆的
+           固定高度打架。中宮格留空，只是視覺上湊滿3x3、不可點擊。 -->
       <div class="h-dir-title">查詢區間</div>
       <div class="h-range-value" id="range-caption">—</div>
       <div class="h-dir-title">方位選擇</div>
@@ -2166,13 +2119,13 @@
   <button type="button" class="travel-inline-exit" id="travel-inline-exit" aria-label="返回盤面">←</button>
   <!-- 出行訣 階段三：全螢幕展開鈕，方框右上角，點擊後進入既有的全螢幕扇形羅盤（travel-overlay） -->
   <button type="button" class="travel-inline-fullscreen" id="travel-inline-fullscreen" aria-label="展開全螢幕羅盤">⛶</button>
-  <!-- 眼睛圖示（Feather風格）：張開＝盤面顯示中（board-visible），閉眼（變形＋斜線）＝盤面隱藏（只看地圖）；預設閉眼，見CSS/JS同步切換。
-       位置在方框右上角、疊在全螢幕鈕正下方；必須是獨立浮動元件（不能放進 travel-inline-map-wrap，見CSS註解），
-       否則會被九宮格點擊層（board-visible時）蓋住，點不到、無法再次隱藏 -->
+  <!-- 眼睛圖示：張開＝盤面顯示中，閉眼＝盤面隱藏（只看地圖），預設閉眼。位置在方框右上角、
+       疊在全螢幕鈕正下方，必須是獨立浮動元件（不能放進travel-inline-map-wrap），否則會被九宮格
+       點擊層蓋住，點不到 -->
   <button type="button" class="travel-inline-board-toggle" id="travel-inline-board-toggle" aria-label="顯示/隱藏盤面"><svg class="eye-open" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12C1 12 5 5 12 5C19 5 23 12 23 12C23 12 19 19 12 19C5 19 1 12 1 12Z"/><circle cx="12" cy="12" r="3"/></svg><svg class="eye-closed" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 15.2C21.9 13.9 23 12 23 12C23 12 19 5 12 5C10.9 5 9.9 5.2 9 5.5M6.5 6.9C3.2 8.8 1 12 1 12C1 12 5 19 12 19C13.9 19 15.6 18.5 17 17.7"/><path d="M9.9 10C9.3 10.6 9 11.3 9 12C9 13.7 10.3 15 12 15C12.7 15 13.4 14.7 14 14.2"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button>
-  <!-- 2026.08新增：「顯示可用吉門」——沿用matchGates()自動預選，按下後宮位進入可編輯狀態，
+  <!-- 「顯示可用吉門」——沿用matchGates()自動預選，按下後宮位進入可編輯狀態，
        手動調整後這顆鈕會退回未點擊樣式（見cycleTravelMark／setTravelInlineLuckyActive）。
-       位置疊在眼睛鈕正下方，同款圓形獨立浮動按鈕，圓圈內放黃色「吉」字（Eric要求，見對話記錄）-->
+       位置疊在眼睛鈕正下方，同款圓形獨立浮動按鈕，圓圈內放黃色「吉」字-->
   <button type="button" class="travel-inline-lucky-toggle" id="travel-inline-lucky-toggle" aria-label="顯示可用吉門">吉</button>
 
   <!-- 出行訣 階段二 2a：方框內嵌地圖。z-index 低於 .grid，透過 .cell 背景透明讓地圖從九宮線縫間透出 -->
@@ -2255,7 +2208,7 @@
         <button type="button" class="travel-marking-confirm" onclick="confirmYangSubSwitch()" aria-label="是">✓</button>
       </div>
     </div>
-    <!-- 2026.08修正：回到置中泡泡版型（跟travel-ask-panel／yang-submode-confirm同款），
+    <!-- 回到置中泡泡版型（跟travel-ask-panel／yang-submode-confirm同款），
          只留一顆綠色✓當確認提醒鈕，拿掉取消鈕——地圖與標記現在從confirmTravelAsk就同步進入，
          這顆✓純粹只是關掉提示本身，不影響任何標記資料或地圖狀態（見dismissTravelMarkingHint） -->
     <div class="travel-marking-banner" id="travel-marking-banner">
@@ -2264,7 +2217,7 @@
         <button type="button" class="travel-marking-confirm" onclick="dismissTravelMarkingHint()" aria-label="確認">✓</button>
       </div>
     </div>
-    <!-- 2026.08新增：8個宮位自動判斷後全部都沒有可用吉門時顯示，同款置中泡泡，見autoMarkTravelLucky／hideTravelNoLuckyBanner -->
+    <!-- 8個宮位自動判斷後全部都沒有可用吉門時顯示，同款置中泡泡，見autoMarkTravelLucky／hideTravelNoLuckyBanner -->
     <div class="travel-marking-banner" id="travel-no-lucky-banner">
       <span>此刻無吉門可用</span>
       <div class="travel-marking-actions">
@@ -2385,7 +2338,7 @@
 </div><!-- end grid -->
 </div>
 
-<!-- 奇門曆查詢結果（2026.08新增）：只在奇門曆模式顯示，取代原本的九宮盤面 -->
+<!-- 奇門曆查詢結果（新增）：只在奇門曆模式顯示，取代原本的九宮盤面 -->
 <div id="almanac-results" style="display:none;"></div>
 
 <!-- 出行羅盤：吉方標記規則尚待討論；此層先固定呈現八宮五行色與即時朝向。 -->
@@ -2394,8 +2347,9 @@
   <div class="travel-board-layer" id="travel-board-layer"></div>
   <div class="travel-compass" aria-label="八方位羅盤">
     <svg class="travel-compass-disc" id="travel-compass-disc" viewBox="0 0 200 200">
-      <!-- 配色定案（2026.08）：五行對應色相，同屬性依陰陽分深淺（陽深陰淺，後天八卦分類：乾震坎艮為陽卦、坤巽離兌為陰卦）。
-           水(坎)＝暖調藍；火(離)＝暖珊瑚桃紅；木(震陽/巽陰)＝深/淺綠；土(艮陽/坤陰)＝深/淺黃褐；金(乾陽/兌陰)＝暖銀灰/近白珍珠，避免用黃（黃屬土非金） -->
+      <!-- 配色：五行對應色相，同屬性依陰陽分深淺（陽深陰淺，後天八卦：乾震坎艮為陽卦、坤巽離兌為陰卦）。
+           水(坎)＝暖調藍；火(離)＝暖珊瑚桃紅；木(震陽/巽陰)＝深/淺綠；土(艮陽/坤陰)＝深/淺黃褐；
+           金(乾陽/兌陰)＝暖銀灰/近白珍珠，避免用黃（黃屬土非金） -->
       <path class="travel-compass-sector" data-house="1" d="M100 100 L67.47 21.47 A85 85 0 0 1 132.53 21.47 Z" fill="#5EC4E0" vector-effect="non-scaling-stroke"/>
       <path class="travel-compass-sector" data-house="8" d="M100 100 L132.53 21.47 A85 85 0 0 1 178.53 67.47 Z" fill="#C97D3E" vector-effect="non-scaling-stroke"/>
       <path class="travel-compass-sector" data-house="3" d="M100 100 L178.53 67.47 A85 85 0 0 1 178.53 132.53 Z" fill="#8BC34A" vector-effect="non-scaling-stroke"/>
@@ -2429,8 +2383,8 @@
       <text class="travel-compass-dir" data-house="2" x="100" y="152" transform="rotate(45 100 100)"  fill="#222">西南</text>
       <text class="travel-compass-dir" data-house="7" x="100" y="152" transform="rotate(90 100 100)"  fill="#222">西</text>
       <text class="travel-compass-dir" data-house="6" x="100" y="152" transform="rotate(135 100 100)" fill="#222">西北</text>
-      <!-- 出行訣：宮位標記吉凶時才會顯示這一圈的門名單字（生/休/傷…）與跟方位字之間的分隔點，平常都是空的
-           （見 updateTravelCompassSectorMarks）；分隔點半徑落在 dir 圈（y=159）跟門名圈（y=172）之間 -->
+      <!-- 宮位標記吉凶時才顯示這一圈的門名單字與跟方位字之間的分隔點，平常都是空的
+           （見updateTravelCompassSectorMarks）；分隔點半徑落在dir圈(y=159)跟門名圈(y=172)之間 -->
       <text class="travel-compass-gate-dot" data-house="1" x="100" y="166" transform="rotate(180 100 100)" fill="#222"></text>
       <text class="travel-compass-gate-dot" data-house="8" x="100" y="166" transform="rotate(225 100 100)" fill="#222"></text>
       <text class="travel-compass-gate-dot" data-house="3" x="100" y="166" transform="rotate(270 100 100)" fill="#222"></text>
@@ -2474,8 +2428,7 @@
       <text class="travel-compass-dir" data-house="2" x="100" y="152" transform="rotate(45 100 100)"  fill="#222">西南</text>
       <text class="travel-compass-dir" data-house="7" x="100" y="152" transform="rotate(90 100 100)"  fill="#222">西</text>
       <text class="travel-compass-dir" data-house="6" x="100" y="152" transform="rotate(135 100 100)" fill="#222">西北</text>
-      <!-- 出行訣：宮位標記吉凶時才會顯示這一圈的門名單字（生/休/傷…）與跟方位字之間的分隔點，平常都是空的
-           （見 updateTravelCompassSectorMarks）；分隔點半徑落在 dir 圈（y=159）跟門名圈（y=172）之間 -->
+      <!-- 同上（另一個disc的門名圈/分隔點，同一套邏輯） -->
       <text class="travel-compass-gate-dot" data-house="1" x="100" y="166" transform="rotate(180 100 100)" fill="#222"></text>
       <text class="travel-compass-gate-dot" data-house="8" x="100" y="166" transform="rotate(225 100 100)" fill="#222"></text>
       <text class="travel-compass-gate-dot" data-house="3" x="100" y="166" transform="rotate(270 100 100)" fill="#222"></text>
@@ -2494,9 +2447,8 @@
       <text class="travel-compass-gate" data-house="6" x="100" y="182" transform="rotate(135 100 100)" fill="#222"></text>
       <circle class="travel-compass-center" cx="100" cy="100" r="3" fill="rgba(255,255,255,.9)"/>
     </svg>
-    <!-- 起點水滴：直接放在 .travel-compass 這一層（不隨扇形旋轉的外層容器，跟 travel-compass-disc／
-         travel-compass-label-disc 是平行的兄弟節點），圓心到哪水滴就自動跟到哪，不用另外同步座標。
-         尖端對齊圓心用 transform:translate(-50%,-100%)；預設隱藏，只在錨定時顯示（見 applyTravelCompassPos）-->
+    <!-- 起點水滴：放在.travel-compass這一層（不隨扇形旋轉），圓心到哪水滴就自動跟到哪。
+         尖端對齊圓心用transform:translate(-50%,-100%)；預設隱藏，只在錨定時顯示 -->
     <div class="travel-compass-start-pin" id="travel-compass-start-pin" style="color:#2ecc71">
       <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg>
     </div>
@@ -2504,21 +2456,25 @@
   <div class="travel-toolbar">
     <button type="button" onclick="closeTravelMode()">← 返回盤面</button>
     <button type="button" class="btn-help-icon" onclick="openHelpPanel()" aria-label="使用說明">?</button>
+    <!-- 從右側按鈕群移過來，跟「?」並列同一個工具列，樣式改成SVG線條圖示（清單），
+         不用emoji，見上方CSS .travel-toolbar .travel-track-history-btn -->
+    <button type="button" class="travel-track-history-btn" id="travel-track-history-btn" aria-label="路徑記錄歷史" onclick="showTrackHistoryPanel()">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M8 8h8M8 12h8M8 16h5"/>
+      </svg>
+    </button>
   </div>
-  <!-- 2026.08調整：原「自動判斷」在全螢幕地圖裡按第二次形同無效（盤面沒變，跑出來的結果
-       跟剛進來時一樣，見對話記錄）。改成「以現時重新計算」：用當下真實時間重新排一張全新的盤
-       （比照起盤時間欄位「現時」＋「排盤」的組合動作），連地盤/天盤/八門九星八神都一起更新，
-       排完再自動重新標記吉凶（見reCastTravelNow），這樣按下去才有實質意義。
-       獨立移出travel-toolbar、置頂置中，跟「返回盤面」／「?」這組左側工具列區隔開（Eric要求）。 -->
-  <button type="button" class="travel-recast-btn" onclick="reCastTravelNow()">以現時重新計算</button>
+  <!-- 原「自動判斷」在全螢幕地圖裡按第二次形同無效（盤面沒變，結果跟剛進來時一樣）。
+       改成「以現時重起時盤」：用當下真實時間重新排一張全新的盤（現時＋排盤的組合動作），
+       連地盤/天盤/八門九星八神都一起更新，排完再自動重新標記吉凶（見reCastTravelNow）。
+       獨立移出travel-toolbar、置頂置中。日/月/年盤整天/整月/整年才變一次，重新計算對它們
+       沒有實質意義，故改名精確反映範圍（reCastTravelNow內部邏輯不變，仍排當下選的子模式）。 -->
+  <button type="button" class="travel-recast-btn" onclick="reCastTravelNow()">以現時重起時盤</button>
   <div class="travel-status" id="travel-status"><span id="travel-status-text">載入地圖與定位中…</span><button type="button" id="travel-orientation-btn">啟用</button></div>
-  <!-- 右上角小羅盤：永遠跟著手機朝向即時轉動，讓使用者能看出自己目前面向哪個方位（見 renderTravelMiniCompass）；
-       指針沿用九宮中心 #compassCell 同一套 .compass-needle 素材，僅另包一層小圓盤＋獨立旋轉容器；
-       2026.08 新增：可點擊切換「朝向鎖定」（見 toggleTravelHeadingLock）——鎖定時小羅盤指針固定指向
-       正上方代表「已鎖定」狀態，跟指針原本「即時朝向」的功能分開，不會互相混淆。
-       2026.08修正：彩色扇形羅盤（travel-compass-disc）已經不會再跟著手機朝向轉動了（底圖本身固定
-       北朝上，扇形羅盤理應跟著固定，見 handleTravelOrientation 註解），這裡的「朝向鎖定」現在單純只
-       影響小羅盤指針本身，跟扇形羅盤完全無關 -->
+  <!-- 右上角小羅盤：永遠跟著手機朝向即時轉動（見renderTravelMiniCompass）；指針沿用九宮中心
+       #compassCell同一套素材，另包一層小圓盤＋獨立旋轉容器。可點擊切換「朝向鎖定」（見
+       toggleTravelHeadingLock）——鎖定時指針固定指向正上方，跟即時朝向功能分開。彩色扇形羅盤
+       已不隨手機朝向轉動（底圖固定北朝上，扇形羅盤跟著固定），朝向鎖定現在只影響小羅盤本身 -->
   <div class="travel-mini-compass is-locked" id="travel-mini-compass" onclick="toggleTravelHeadingLock()">
     <div class="mini-compass-plate">
       <div class="mini-compass-ring" id="mini-compass-ring">
@@ -2533,29 +2489,25 @@
     <button type="button" class="travel-size-trigger" aria-label="調整羅盤方圓距離" onclick="toggleTravelSizePopover()">
       <span class="mini-compass-dot"></span>
     </button>
-    <!-- 2026.08改版：滑桿改成設定「實際方圓距離」（公尺），不再是螢幕相對的百分比——原本的%
-         純粹是螢幕大小，跟地圖縮放無關，同樣的扇形放大/縮小地圖時代表的實際範圍完全不同，改成
-         距離後，圓盤在畫面上的像素大小會隨地圖縮放即時換算，維持代表同一個真實距離
-         （見 updateTravelCompassRealSize，掛在地圖 move/zoom 事件上）。Eric要求直接取代，
-         不用兩套並存。 -->
+    <!-- 滑桿設定「實際方圓距離」（公尺），不是螢幕相對百分比——原本%純粹是螢幕大小，跟地圖縮放
+         無關；改成距離後，圓盤像素大小會隨地圖縮放即時換算，維持代表同一個真實距離
+         （見updateTravelCompassRealSize，掛在地圖move/zoom事件上）。 -->
     <div class="travel-size-options" id="travel-size-control">
       <span id="travel-size-value">500m</span>
-      <input id="travel-size-range" type="range" min="100" max="5000" step="50" value="500" aria-label="調整羅盤方圓距離">
+      <input id="travel-size-range" type="range" min="300" max="30000" step="100" value="500" aria-label="調整羅盤方圓距離">
     </div>
   </div>
   <button type="button" class="travel-locate-btn" aria-label="回到目前位置" onclick="recenterTravelPosition()">
     <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 2 L19 21 L12 17 L5 21 Z"/></svg>
   </button>
-  <!-- 2026.08新增：路徑記錄，像跑步app那樣把走過的路畫成線。跟「起點→終點」的OSRM規劃路線
-       （travelRouteLine）是兩條獨立的線／獨立的資料，用不同顏色區分，不會互相干擾。
-       「出發」開始記錄／「停止」暫停記錄，暫停後線還在，之後再按「出發」會接續記錄（不會清掉舊的）；
-       要真的清空重新開始才需要另外按「清除路徑」，會跳確認泡泡。記錄用獨立的watchPosition
-       （travelTrackWatchId，跟GPS箭頭那個travelWatchId分開），只要沒按「停止」，就算離開全螢幕、
-       切到排盤/命盤畫面，也會持續在背景記點——直到分頁真的關掉才會遺失（見 startTravelTrackRecording）。 -->
+  <!-- 路徑記錄，像跑步app那樣把走過的路畫成線，跟起點→終點的OSRM規劃路線（travelRouteLine）
+       是兩條獨立的線/資料，用不同顏色區分。「出發」開始記錄／「停止」暫停（線還在，再按出發會
+       接續），要清空重來需另按「清除路徑」。記錄用獨立watchPosition（跟GPS箭頭那組分開），
+       只要沒按停止，離開全螢幕也會持續在背景記點，直到分頁關閉才會遺失。 -->
+  <!-- 錄製中即時顯示已走多久，見上方CSS .travel-track-timer -->
+  <div class="travel-track-timer" id="travel-track-timer">00:00</div>
   <button type="button" class="travel-track-btn" id="travel-track-btn" aria-label="出發" onclick="toggleTravelTrackRecording()">出發</button>
   <button type="button" class="travel-track-clear-btn" id="travel-track-clear-btn" aria-label="清除路徑" onclick="showTravelTrackClearPopup()">🗑</button>
-  <!-- 2026.08新增：路徑記錄歷史入口，永遠顯示（不受本次有沒有記錄影響），見showTrackHistoryPanel -->
-  <button type="button" class="travel-track-history-btn" id="travel-track-history-btn" aria-label="路徑記錄歷史" onclick="showTrackHistoryPanel()">🕘</button>
   <div class="track-history-panel" id="track-history-panel">
     <div class="track-history-sheet">
       <div class="track-history-header">
@@ -2572,16 +2524,13 @@
       <button type="button" class="btn-confirm" onclick="clearTravelTrack()">✓</button>
     </div>
   </div>
-  <!-- 2026.08新增：路徑記錄結果泡泡，按「停止」時由showTravelTrackResultPopup()填內容並顯示。
+  <!-- 路徑記錄結果泡泡，按「停止」時由showTravelTrackResultPopup()填內容並顯示。
        內容為JS動態產生（見該函式），這裡只放容器。 -->
   <div class="travel-track-result-popup" id="travel-track-result-popup"></div>
 
-  <!-- 2026.08新增（試驗性功能，Eric：「試試看好了，不合理再拿掉就是了」）：跳外部地圖App導航。
-       跟站內OSRM算路線（travelRouteLine／calculateTravelRoute）並存、互不影響，先兩套都留著讓
-       Eric自己比較好不好用，之後看情況決定要不要拿掉站內那套。只有設了終點才顯示（沒終點不知道
-       要導去哪）；點下去先跳確認泡泡選Google Maps／Apple Maps，不是按一下就直接跳出去——
-       離開分頁去外部App，站內路徑記錄（travelTrackWatchId）會因為分頁被背景化而停止記錄，
-       泡泡裡順便提醒這件事（見對話記錄）。 -->
+  <!-- 試驗性功能：跳外部地圖App導航，跟站內OSRM算路線並存、互不影響，先兩套都留著比較好不好用。
+       只有設了終點才顯示；點下去先跳確認泡泡選Google Maps／Apple Maps，不是按一下就直接跳出去——
+       離開分頁去外部App，站內路徑記錄會因分頁被背景化而停止，泡泡裡順便提醒這件事。 -->
   <button type="button" class="travel-external-nav-btn" id="travel-external-nav-btn" aria-label="外部地圖導航" onclick="showTravelExternalNavPopup()">🧭</button>
   <div class="travel-external-nav-popup" id="travel-external-nav-popup">
     選擇導航App
@@ -2621,24 +2570,21 @@
       <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg>
     </button>
     <div class="expand-options" id="pin-options">
-      <!-- 起點已跟原本獨立的錨定功能合一：放置起點時扇形羅盤圓心與朝向一併鎖定於此，
-           圖示沿用原本錨定按鈕的「水滴＋底下小小五行色羅盤」造型，提醒這顆按鈕同時具備兩種功能；
-           小圓盤透明度從0.45調到0.9——0.45時只要按鈕進入.armed深藍底狀態，淺色系會被背景吃掉看不出色彩 -->
+      <!-- 起點跟原本獨立的錨定功能合一：放置起點時扇形羅盤圓心與朝向一併鎖定於此，圖示沿用
+           「水滴＋底下小五行色羅盤」造型；小圓盤透明度0.9（0.45時淺色系在.armed深藍底狀態下會被吃掉） -->
       <button type="button" id="opt-start" onclick="armTravelRouteMode('start')" style="color:#2ecc71;"><svg viewBox="0 0 24 28" width="22" height="26"><g opacity="0.9"><path d="M12 24L23.2 24.0L19.92 26.83Z" fill="#29B6F6"/><path d="M12 24L19.92 26.83L12.0 28.0Z" fill="#6F4E37"/><path d="M12 24L12.0 28.0L4.08 26.83Z" fill="#2E7D32"/><path d="M12 24L4.08 26.83L0.8 24.0Z" fill="#66BB6A"/><path d="M12 24L0.8 24.0L4.08 21.17Z" fill="#D32F2F"/><path d="M12 24L4.08 21.17L12.0 20.0Z" fill="#C8A878"/><path d="M12 24L12.0 20.0L19.92 21.17Z" fill="#CFD5DC"/><path d="M12 24L19.92 21.17L23.2 24.0Z" fill="#8E9AAF"/></g><path fill="currentColor" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><rect x="9.7" y="8.6" width="4.6" height="3.6" rx="0.8" fill="#fff"/><path d="M10.6 8.6V7.4a1.4 1.4 0 0 1 2.8 0v1.2" fill="none" stroke="#fff" stroke-width="0.9" stroke-linecap="round"/><circle cx="12" cy="10.2" r="0.5" fill="currentColor"/></svg></button>
       <button type="button" id="opt-via" onclick="armTravelRouteMode('via')" style="color:#e67e22;"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg></button>
       <button type="button" id="opt-end" onclick="armTravelRouteMode('end')" style="color:#e74c3c;"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg></button>
-      <!-- 2026.08新增：目的地搜尋，接Nominatim（OpenStreetMap免費地址查詢）將地名轉經緯度，方便確認要去的
+      <!-- 目的地搜尋，接Nominatim（OpenStreetMap免費地址查詢）將地名轉經緯度，方便確認要去的
            地方是否在吉方。收在水滴選單裡，緊接在終點紅水滴後面——.expand-options是row-reverse排列，
            DOM順序在opt-end之後的元素會顯示在它左側，故直接接在這裡即可、不需額外CSS排序 -->
       <button type="button" id="opt-search" onclick="toggleTravelSearchPopup()" style="color:#2471a3;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
     </div>
   </div>
 
-  <!-- 搜尋泡泡：獨立浮動面板（不隨pin-options橫向展開），水平畫面置中、疊在水滴選單那一排正上方。
-       輸入框在下（靠近觸發它的按鈕）、結果清單往上長——DOM順序故意讓input排在results前面，
-       搭配.travel-search-popup的flex-direction:column-reverse，才會呈現「結果往上疊」的視覺效果。
-       搜尋出候選清單後，使用者需主動點選其中一筆才會真正放上終點圖釘（見confirmTravelSearchResult）——
-       不是打字當下就自動套用，避免誤選；沿用跟地圖點擊放終點同一套規則（須先有起點、且尚未有終點）。 -->
+  <!-- 搜尋泡泡：獨立浮動面板，水平置中疊在水滴選單正上方。輸入框在下、結果清單往上長
+       （DOM順序input在前，搭配column-reverse呈現「結果往上疊」）。使用者需主動點選候選才會
+       真正放上終點圖釘（見confirmTravelSearchResult），不是打字當下自動套用，避免誤選。 -->
   <div class="travel-search-popup" id="travel-search-popup">
     <input type="text" id="travel-search-input" placeholder="搜尋目的地…" oninput="handleTravelSearchInput()" onkeydown="if(event.key==='Enter'){event.preventDefault();runTravelSearch();}">
     <div class="travel-search-results" id="travel-search-results"></div>
@@ -2656,14 +2602,7 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-/* ═══════════════════════════════════════════════════════
-   奇門曆模式：輸入區＋盤頭 UI 骨架（2026.08 從 qimen-almanac-preview.html
-   移植整合）。目前仍是假資料互動骨架——月曆拖曳/點選起訖、快捷長度、
-   門/方位篩選開關都已可動，但「查詢」按鈕還沒接上真正的批次排盤引擎
-   （見 runAlmanacQuery，下一步是移植 lookup-chart-scratch.html 的
-   lookupChart() 引擎）。所有函式/變數刻意加 Almanac 字首，避免跟
-   下方既有的單次排盤邏輯（castChart 等）撞名。
-   ═══════════════════════════════════════════════════════ */
+// 奇門曆模式：輸入區＋盤頭。函式/變數統一加Almanac字首，避免跟單次排盤邏輯（castChart等）撞名。
 const almanacPad2 = n => String(n).padStart(2,'0');
 const almanacIsoOf = d => `${d.getFullYear()}-${almanacPad2(d.getMonth()+1)}-${almanacPad2(d.getDate())}`;
 const almanacSameDate = (a,b) => a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
@@ -2686,7 +2625,7 @@ let almanacPendingStartIso = null; // 有值＝已點了起點、等待點終點
 // 換算成奇門曆盤頭7列各自該有的高度，寫回 --al-row-h。
 // 為什麼要動態量而不是寫死px：preview階段是拿假的模擬卡片去比對高度，
 // 跟真正的 .h-table（4行、line-height 1.85）實際渲染高度有落差，
-// 寫死的猜測值（20px）套到真實盤頭後明顯偏高，見2026.08 Eric回報「列高跑掉了」。
+// 寫死的猜測值（20px）套到真實盤頭後明顯偏高，見回報「列高跑掉了」。
 function calibrateAlmanacRowHeight(){
   const chartHeader = document.getElementById('mode-chart-header');
   const h = chartHeader.getBoundingClientRect().height;
@@ -2697,9 +2636,9 @@ function calibrateAlmanacRowHeight(){
   }
 }
 
-// 2026.08新增：頁面標題文字（#title-row-line2）集中判斷，三種模式互斥：奇門曆 > 出行訣地圖模式 > 一般排盤。
+// 頁面標題文字（#title-row-line2）集中判斷，三種模式互斥：奇門曆 > 出行訣地圖模式 > 一般排盤。
 // 抽成獨立函式供toggleAlmanacMode／enterTravelMapMode／exitTravelMapMode共用，避免各自寫一份判斷邏輯。
-// 2026.08改版：標題拆成兩行（大標「奇門遁甲」固定不變＋小標模式名稱），此函式只負責更新小標那一行。
+// 標題拆成兩行（大標「奇門遁甲」固定不變＋小標模式名稱），此函式只負責更新小標那一行。
 function updateTitleRowText() {
   const el = document.getElementById('title-row-line2');
   if (!el) return;
@@ -2711,10 +2650,10 @@ function updateTitleRowText() {
 
 function toggleAlmanacMode(){
   currentMode = (currentMode === 'chart') ? 'almanac' : 'chart';
-  // 2026.08修正：離開排盤畫面（切去奇門曆）時，若出行訣的方框內嵌地圖還開著，先強制退出。
+  // 離開排盤畫面（切去奇門曆）時，若出行訣的方框內嵌地圖還開著，先強制退出。
   // 原本只有#outer-board style.display:none把畫面藏起來，沒有真的清掉travel-map-mode這個class，
   // 導致class卡在#outer-board上，之後開說明面板時openHelpPanel()誤判「還在出行訣」，
-  // 顯示錯的說明段落（實測案例：Eric回報奇門曆畫面點說明卻跳出出行訣內容，見對話記錄）
+  // 顯示錯的說明段落（實測案例：回報奇門曆畫面點說明卻跳出出行訣內容）
   if (currentMode === 'almanac') {
     const outerEl = document.getElementById('outer-board');
     if (outerEl && outerEl.classList.contains('travel-map-mode')) {
@@ -2732,14 +2671,14 @@ function toggleAlmanacMode(){
   document.getElementById('row-hour').classList.toggle('dim', currentMode==='almanac');
   document.getElementById('row-minute').classList.toggle('dim', currentMode==='almanac');
   document.getElementById('outer-board').style.display = (currentMode==='chart') ? '' : 'none';
-  document.getElementById('btn-quick-wrap').style.display = (currentMode==='chart') ? '' : 'none'; // 2026.08：前日/上時/下時/次日只對單次排盤有意義，奇門曆模式下移除
-  // 2026.08新增：奇門曆輸出的是一整串時段列表，不是單一盤面，「儲存目前盤面」的邏輯（讀單一組
-  // 年/月/日/時欄位）在這個模式下對不上畫面內容、會誤導，故此模式下紀錄鈕直接隱藏（Eric已確認：
-  // 奇門曆模式不開放紀錄功能，非本工具程式邏輯限制，是刻意的設計決定）
+  document.getElementById('btn-quick-wrap').style.display = (currentMode==='chart') ? '' : 'none'; // 前日/上時/下時/次日只對單次排盤有意義，奇門曆模式下移除
+  // 奇門曆輸出的是一整串時段列表，不是單一盤面，「儲存目前盤面」的邏輯（讀單一組
+  // 年/月/日/時欄位）在這個模式下對不上畫面內容、會誤導，故此模式下紀錄鈕直接隱藏——
+  // 奇門曆模式不開放紀錄功能，是刻意的設計決定，非程式邏輯限制
   document.getElementById('btn-records').style.display = (currentMode==='chart') ? '' : 'none';
   document.getElementById('almanac-results').style.display = 'none'; // 換模式時先收起舊結果，稍後若有上次查詢結果會重新顯示
   if (currentMode === 'almanac'){
-    // 2026.08新增：切回奇門曆模式時，若有上一次查詢結果（不論是正常來回切換，還是從
+    // 切回奇門曆模式時，若有上一次查詢結果（不論是正常來回切換，還是從
     // almanacUseSegment 卡片跳轉排盤回來），直接恢復顯示，不用重新查一次。
     // 欄位／日曆也換回查詢當時的起始日期，而不是沿用剛剛跳轉排盤時被覆蓋掉的時間，
     // 避免畫面（日曆/查詢區間文字）跟卡片結果對不起來。只有從沒查詢過（almanacLastResults
@@ -2782,15 +2721,15 @@ function setAlmanacNow(){
   applyAlmanacPreset(almanacState.activePreset || 'today');
 }
 function runAlmanacQuery(){
-  // 2026.08修正：查詢前先重新套用目前preset，強制重讀輸入區欄位當下的值。
+  // 查詢前先重新套用目前preset，強制重讀輸入區欄位當下的值。
   // 原本almanacState.startDate/endDate只有在明確按下當日/未來一週/未來一月/自訂或點小月曆
   // 時才會更新，若使用者直接在年/月/日欄位打字修改、沒有再按一次按鈕，畫面顯示的日期
   // 跟almanacState會脫鉤——查詢仍會用到舊的almanacState值，查出跟畫面對不上的結果
-  // （Eric實測回報：欄位改成08/20、按查詢卻仍從08/17開始，見對話記錄）。
+  // （欄位改成08/20、按查詢卻仍從08/17開始）。
   applyAlmanacPreset(almanacState.activePreset);
 
-  // ── lookupChart() 引擎串接（2026.08 從 lookup-chart-scratch.html 移植，已驗證6/6）──
-  // 2026.08再更新：不再只查PLATE_SUBMODE指定的單一plateType，改成年/月/日/時
+  // ── lookupChart() 引擎串接（從 lookup-chart-scratch.html 移植，已驗證6/6）──
+  // 再更新：不再只查PLATE_SUBMODE指定的單一plateType，改成年/月/日/時
   // 四種都對同一個查詢區間各自呼叫一次lookupChart()，結果分開存放，
   // renderAlmanacResults()再依「年→月→日/時」分段顯示（比照tzchimen參考介面）。
   // 四種各自獨立try/catch：其中一種超出已驗證錨點範圍時，不影響其他三種正常顯示。
@@ -2826,7 +2765,7 @@ function runAlmanacQuery(){
     document.getElementById('input-error-msg').style.display = 'none';
   }
 
-  // 2026.08新增：查詢起始日＝今天時，時盤自動只顯示「現在」之後的時段，
+  // 查詢起始日＝今天時，時盤自動只顯示「現在」之後的時段，
   // 已經過去的時辰區塊不再列出，避免清單被過去的時段佔滿。
   // 只套用在時盤（年/月/日盤沒有這個「已經過去的時辰」問題，不受影響）。
   // 判斷基準沿用全專案「用 UTC 欄位存放本地牆鐘時間」的慣例（見 enumerateHourBlocks／
@@ -2850,7 +2789,7 @@ function runAlmanacQuery(){
 let almanacLastResults = null; // 保留最近一次查詢結果（{year,month,day,time}四組陣列）
 let almanacSegmentRegistry = []; // 點擊吉門跳轉排盤用的索引表，見 renderAlmanacResults／almanacUseSegment
 
-// 2026.08新增：點擊奇門曆結果清單裡的吉門標籤，跳到單次排盤模式，直接用該張卡片
+// 點擊奇門曆結果清單裡的吉門標籤，跳到單次排盤模式，直接用該張卡片
 // （時/日/月/年盤皆適用）的時間排出那張盤，接著使用者可自行點羅盤啟動出行訣。
 // 代表時刻的取法刻意跟 lookupChart 引擎自己算這張卡片時用的時間點保持一致：
 //   - 時盤：區塊起點+30分（見 lookupChartTime 的 rep）
@@ -2889,7 +2828,7 @@ function almanacUseSegment(segIdx){
   clearHighlight();
   castChart();
 }
-// 2026.08修正：Eric回饋希望每張卡片能各自收合，不是全域單一開關統一控制。
+// 有回饋希望每張卡片能各自收合，不是全域單一開關統一控制。
 // 改成：預設每張卡片各自收合（只顯示可用的門），卡片下方各自有一顆小按鈕可單獨展開；
 // almanacShowExcluded 這個變數改為「全域批次展開/收合」動作鈕的目前模式——
 // 不是嚴格雙向同步的狀態（使用者事後仍可個別展開/收合單一卡片，不受全域鈕影響），
@@ -2898,7 +2837,7 @@ let almanacShowExcluded = false;
 
 function toggleAlmanacExcludedVisibility(){
   almanacShowExcluded = !almanacShowExcluded;
-  // 2026.08修正：改成整段重新渲染（呼叫renderAlmanacResults），不再只是切換既有DOM節點的
+  // 改成整段重新渲染（呼叫renderAlmanacResults），不再只是切換既有DOM節點的
   // class——原本那樣切class，處理不了「完全無可用門」的段落（例如伏吟／反吟／五不遇時整盤
   // 排除），因為這類段落根本沒有DOM節點存在（見filterEmpty修正），開啟顯示已排除時需要把
   // 它們重新加回畫面，不是既有節點顯示/隱藏能做到的，必須整段重算+重繪。
@@ -2918,23 +2857,23 @@ const GATE_BENEFIT = { '開門':'利工作事業', '休門':'利婚戀感情', '
 // 把 lookupChart() 四組結果（年/月/日/時）畫成分段清單：年盤→月盤→日/時盤（依日期分組），
 // 每段一張卡片，吉門用圓角標籤列出（附利別說明），被排除的門預設收合、卡片各自可展開，
 // 展開後用刪除線+灰色列出，附排除原因（門迫/擊刑/空亡/白虎/門伏/門反/五不遇時/門制；
-// 入墓自2026.08起不再是排除理由，星伏/星反2026.08起也不再是排除理由（老師第18堂課
-// 釐清出行訣只重八門狀態、不看九星旺衰反吟），兩者皆改為inline小字標記，見matchGates註解）
+// 入墓、星伏/星反皆不再是排除理由（出行訣只重八門狀態、不看九星旺衰反吟，見排盤規則.md），
+// 兩者改為inline小字標記，見matchGates註解）
 function renderAlmanacResults(resultsObj){
   const box = document.getElementById('almanac-results');
   box.style.display = 'block';
   const raw = resultsObj || {};
-  // 2026.08新增：每次重新渲染時清空、重建「卡片索引→seg物件」對照表，供點擊吉門
+  // 每次重新渲染時清空、重建「卡片索引→seg物件」對照表，供點擊吉門
   // 跳轉排盤（almanacUseSegment）用。用index而不是把日期序列化進onclick字串，
   // 避免Date物件在HTML屬性裡轉來轉去。
   almanacSegmentRegistry = [];
 
-  // 2026.08新增：完全沒有可用吉門的段落（此段無符合的吉門，例如伏吟／反吟／五不遇時整盤
-  // 共通排除，8個宮位無一倖免）預設濾掉，不進入渲染——Eric回饋這類段落大多數時候只是雜訊，
+  // 完全沒有可用吉門的段落（此段無符合的吉門，例如伏吟／反吟／五不遇時整盤
+  // 共通排除，8個宮位無一倖免）預設濾掉，不進入渲染——有回饋這類段落大多數時候只是雜訊，
   // 只留下真正有用的資訊。濾掉的數量記下來，在清單最上方留一句小提示，避免使用者以為資料
-  // 漏掉了。2026.08修正：改成只在almanacShowExcluded關閉時才濾掉——原本不管全域「顯示已
+  // 漏掉了。改成只在almanacShowExcluded關閉時才濾掉——原本不管全域「顯示已
   // 排除項目」開關狀態一律濾掉，導致這類段落連按鈕都叫不出來，等於「顯示已排除」名不符實
-  // （Eric實測發現：伏吟盤按下按鈕後仍然看不到）。開啟後這些段落也要正常進入渲染，讓下面
+  // （伏吟盤按下按鈕後仍然看不到）。開啟後這些段落也要正常進入渲染，讓下面
   // renderHitsHTML本來就有的「全部排除」分支（included為空時顯示"（此段無符合的吉門）"、
   // excludedHTML照常列出全部)接手顯示，不需要另外處理。
   const hasUsableGate = seg => seg.hits.some(h => !h.excluded);
@@ -2949,7 +2888,7 @@ function renderAlmanacResults(resultsObj){
   const day = filterEmpty(raw.day || []);
   const time = filterEmpty(raw.time || []);
 
-  // 2026.08修正：totalExcluded改成從raw（篩選前）算，不能用filterEmpty後的year/month/day/time——
+  // totalExcluded改成從raw（篩選前）算，不能用filterEmpty後的year/month/day/time——
   // 否則當某個查詢區間「全部段落都是全排除」（例如整段都落在同一張伏吟盤裡）時，
   // almanacShowExcluded關閉狀態下這些段落早被filterEmpty濾光，算出來的totalExcluded會是0，
   // 導致「顯示細節」這顆按鈕的觸發條件（見下方hasGlobalToggle）判斷成「沒東西可顯示」
@@ -2957,7 +2896,7 @@ function renderAlmanacResults(resultsObj){
   // 不管目前濾掉了多少段落，按鈕永遠會出現。
   const totalExcluded = [...(raw.year||[]), ...(raw.month||[]), ...(raw.day||[]), ...(raw.time||[])]
     .reduce((sum, seg) => sum + seg.hits.filter(h => h.excluded).length, 0);
-  // 2026.08新增：跟renderHitsHTML內的hasNotes同樣道理，全域按鈕的出現條件也不能只看
+  // 跟renderHitsHTML內的hasNotes同樣道理，全域按鈕的出現條件也不能只看
   // totalExcluded——可能整個查詢區間沒有任何門被排除，但有門帶著星伏/星反/入墓標記，
   // 這種情況一樣要讓「顯示細節」按鈕出現，不然這些標記永遠叫不出來
   const hasAnyNotes = [...(raw.year||[]), ...(raw.month||[]), ...(raw.day||[]), ...(raw.time||[])]
@@ -2967,9 +2906,9 @@ function renderAlmanacResults(resultsObj){
     const p = n => String(n).padStart(2,'0');
     return `${p(d.getUTCMonth()+1)}/${p(d.getUTCDate())} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`;
   };
-  // 2026.08新增：年盤的立春～立春區間常跨兩個不同西元年（如2026/02/04～2027/02/04），
-  // 只顯示月/日容易看不出實際是哪一年，額外加上年份（Eric要求，見對話記錄）。
-  // 2026.08調整：4位數年份+時分會撐爆卡片寬度換行，改用兩位數年份，前後兩個日期格式一致
+  // 年盤的立春～立春區間常跨兩個不同西元年（如2026/02/04～2027/02/04），
+  // 只顯示月/日容易看不出實際是哪一年，額外加上年份。
+  // 4位數年份+時分會撐爆卡片寬度換行，改用兩位數年份，前後兩個日期格式一致
   // （不要一邊4位一邊2位，那樣反而不好比對），這個工具使用範圍本來就在西元1900年後，
   // 兩位數不會有世紀歧義。
   const fmtDTY = d => {
@@ -2989,7 +2928,7 @@ function renderAlmanacResults(resultsObj){
   const renderHitsHTML = (hits, segIdx) => {
     const included = hits.filter(h => !h.excluded);
     const excluded = hits.filter(h => h.excluded);
-    // 2026.08新增：獨立記錄「這組hits裡有沒有任何星伏/星反/入墓標記」，跟excludedCount分開——
+    // 獨立記錄「這組hits裡有沒有任何星伏/星反/入墓標記」，跟excludedCount分開——
     // 一個門可能沒被排除、卻仍帶有這些標記（例如星伏但門沒伏），這種情況下光看excludedCount
     // 判斷要不要顯示「顯示細節」按鈕會漏掉，導致標記永遠叫不出來，見renderSegmentCard／
     // 全域按鈕的hasGlobalToggle判斷處
@@ -3003,7 +2942,7 @@ function renderAlmanacResults(resultsObj){
       : '<span class="ar-none">（此段無符合的吉門）</span>';
     const excludedHTML = excluded.length
       ? `<div class="ar-seg-excluded">${excluded.map(h => {
-          // 2026.08：entombNotes（現在也包含星伏／星反，見matchGates）以前只有included分支
+          // entombNotes（現在也包含星伏／星反，見matchGates）以前只有included分支
           // 才顯示，已排除的門完全沒帶出來——星伏／星反是整盤共通資訊，跟這個門有沒有被
           // 別的理由排除無關，排除清單裡一併補上，維持跟included分支一致的呈現方式
           const entombNote = (h.entombNotes && h.entombNotes.length) ? h.entombNotes.join('、') : '';
@@ -3013,15 +2952,14 @@ function renderAlmanacResults(resultsObj){
     return { includedHTML, excludedHTML, excludedCount: excluded.length, hasNotes };
   };
 
-  // 2026.08：Eric回饋「顯示已排除的門」按鈕想搬到卡片右上角，跟時間同一列、左右對齊，
+  // 有回饋「顯示已排除的門」按鈕想搬到卡片右上角，跟時間同一列、左右對齊，
   // 不要跟吉門標籤擠在同一段。改成 renderHitsHTML 只回傳資料，toggle 按鈕交給
   // renderSegmentCard 自己組進 .ar-seg-head（flex space-between，時間靠左、按鈕靠右）。
   const renderSegmentCard = (seg, headLabel) => {
     const segIdx = almanacSegmentRegistry.push(seg) - 1;
     const { includedHTML, excludedHTML, excludedCount, hasNotes } = renderHitsHTML(seg.hits, segIdx);
-    // 2026.08改名：「顯示已排除」改叫「顯示細節」（後續又從「顯示完整資訊」再改一次名，見更新歷程）——這顆按鈕現在同時控制已排除的門
-    // 跟星伏/星反/入墓標記的顯示（見.ar-entomb-note的expanded CSS規則），「已排除」
-    // 已經不夠準確描述按鈕實際會叫出來的內容（Eric朋友建議＋確認新名稱）。
+    // 「顯示細節」鈕同時控制已排除的門跟星伏/星反/入墓標記的顯示（見.ar-entomb-note的
+    // expanded CSS規則），「已排除」不足以描述按鈕實際內容，故用此名稱。
     // 判斷要不要顯示這顆按鈕，也從「只看excludedCount」改成「排除的門或標記任一存在即可」，
     // 否則「沒被排除、但帶標記」這種門會沒有入口叫出自己的標記（見renderHitsHTML的hasNotes）。
     const hasHiddenInfo = excludedCount > 0 || hasNotes;
@@ -3031,10 +2969,10 @@ function renderAlmanacResults(resultsObj){
       ? `<button type="button" class="ar-seg-toggle" data-show-label="${showLabel}"
           onclick="almanacToggleCardExcluded(this)">${almanacShowExcluded ? '隱藏細節' : showLabel}</button>`
       : '';
-    // 2026.08：月/日/時盤只顯示地支（月建、日支、時支傳統上單獨用地支即可辨識、不重複，
+    // 月/日/時盤只顯示地支（月建、日支、時支傳統上單獨用地支即可辨識、不重複，
     // 如「申月」「寅日」「子時」；唯獨年干支60甲子一輪、地支12年一輪，同一地支60年內會重複
-    // 5次，單講「午年」無法確定是哪一年，須干支合稱如「丙午年」，故年盤保留完整stemBranch，
-    // 見對話記錄與Eric確認），並各自加上單位字方便辨識
+    // 5次，單講「午年」無法確定是哪一年，須干支合稱如「丙午年」，故年盤保留完整stemBranch），
+    // 各自加上單位字方便辨識
     const PLATE_UNIT = { year: '年', month: '月', day: '日', time: '時' };
     const stemBranchDisplay = (seg.plateType === 'year' ? seg.stemBranch : seg.stemBranch.slice(1))
       + (PLATE_UNIT[seg.plateType] || '');
@@ -3066,7 +3004,7 @@ function renderAlmanacResults(resultsObj){
       ? `<button type="button" class="ar-toggle-excluded" id="ar-toggle-excluded-btn"
           onclick="toggleAlmanacExcludedVisibility()">${almanacShowExcluded ? '只顯示可用的門' : '顯示所有內容'}</button>`
       : '';
-    // 2026.08：三種組合各自對應CSS：兩者都有→space-between（左右分散，Eric要求恢復）；
+    // 三種組合各自對應CSS：兩者都有→space-between（左右分散，需求是恢復）；
     // 只有按鈕沒有提示文字→end-only（明確flex-end，避免space-between單一項目跑到最左邊，
     // 見上方.ar-toolbar CSS註解）；只有提示文字沒有按鈕→single（置中，無按鈕位置疑慮）
     const rowClass = (hasHint && hasGlobalToggle) ? 'ar-toolbar'
@@ -3096,7 +3034,7 @@ function renderAlmanacResults(resultsObj){
   }
 
   // 日／時依「歸屬日期」分組：同一天的日盤（1段）跟時盤（多段2小時區塊）擺在同一個日期標題底下
-  // 2026.08修正：子時跨日——23:00起算的時盤區塊，牆鐘時間雖仍是前一天，但依排盤規則.md「子時
+  // 子時跨日——23:00起算的時盤區塊，牆鐘時間雖仍是前一天，但依排盤規則.md「子時
   // 跨日」規則（呼應getGanZhiAt／enumerateHourBlocks同一套處理），實際歸屬次日子時，分組用的
   // 日期須做同樣的+1天調整，否則23:00~01:00這格會被誤歸到前一天標題下（資料本身戊子日柱等
   // 排盤內容並無錯誤，純粹是分組顯示對不上）。
@@ -3127,7 +3065,7 @@ function renderAlmanacResults(resultsObj){
       // 標題要顯示調整後、真正歸屬的日期，否則會出現「標題08/20、內容卻含23:00 08/19字樣」的錯位
       const [ky, km, kd] = k.split('-').map(Number);
       const groupDate = new Date(Date.UTC(ky, km, kd));
-      // 2026.08新增：日期標籤旁加上地支（如「子日」），比照個別段落卡片的呈現方式。
+      // 日期標籤旁加上地支（如「子日」），比照個別段落卡片的呈現方式。
       // 獨立用getGanZhiAt算，不直接抓dayByDate[k].stemBranch——這樣即使某天的日盤段落因為
       // 超出已驗證錨點範圍或篩選後被拿掉，標籤上的地支仍然算得出來，不會因為dayByDate[k]
       // 不存在而缺漏。取正午（12:00）當代表時刻，避開子時跨日調整在日期邊界上的干擾。
@@ -3137,7 +3075,7 @@ function renderAlmanacResults(resultsObj){
       (timeByDate[k] || []).forEach(seg => {
         bodyHTML += renderSegmentCard(seg, fmtHourRange(seg.start, seg.end));
       });
-      // 2026.08新增：每個日期可折疊收合（Eric要求），標題本身是按鈕，點擊切換
+      // 每個日期可折疊收合，標題本身是按鈕，點擊切換
       // .ar-date-group 的 collapsed class；預設展開，跟結果清單原本行為一致。
       html += `<div class="ar-date-group">
         <button type="button" class="ar-date-title" onclick="almanacToggleDateGroup(this)">
@@ -3266,11 +3204,11 @@ function almanacHandleDayClick(iso){
     return;
   }
   // 第二次點擊：跟起點一起決定最終區間（順序不拘，點反了自動對調）
-  // 2026.08修正：必須先清空 almanacPendingStartIso 再呼叫 almanacFinalizeRange，
+  // 必須先清空 almanacPendingStartIso 再呼叫 almanacFinalizeRange，
   // 因為 finalize 內部會呼叫 updateAlmanacCaption()/renderAlmanacCalendar()，
   // 這兩者都靠 almanacPendingStartIso 是否為真來判斷該顯示「請點選終點」還是完整區間；
   // 原本寫成「先finalize、後清空」，導致finalize內部render時pending還是舊值，
-  // 畫面永遠停在「請點選終點」，即使almanacState背後其實已經算對了（見Eric回報）。
+  // 畫面永遠停在「請點選終點」，即使almanacState背後其實已經算對了（見回報）。
   const startIso = almanacPendingStartIso;
   almanacPendingStartIso = null;
   almanacFinalizeRange(startIso, iso);
@@ -3296,7 +3234,7 @@ function toggleMoreAlmanacGates(){
   btn.textContent = expanding ? '－' : '＋';
 }
 
-// ==================== 奇門曆 lookupChart() 引擎（2026.08 從 lookup-chart-scratch.html
+// ==================== 奇門曆 lookupChart() 引擎（從 lookup-chart-scratch.html
 //   移植，已驗證6/6，依賴下方已存在的 computeChart / getYangChartNumber /
 //   getYearSanYuanJu / getMonthWuXingJu / getDayJu / isGateConstraint /
 //   isGateSuppress / WUBUYU_TABLE / _yangLoadJieQiTableForYear 等——雖然這些
@@ -3346,11 +3284,11 @@ function splitByBoundaries(startDT, endDT, boundaries) {
   return segments;
 }
 
-// 2026.08新增：年盤／月盤卡片顯示的日期範圍，找「真正」的節氣邊界（不受查詢區間裁切）。
+// 年盤／月盤卡片顯示的日期範圍，找「真正」的節氣邊界（不受查詢區間裁切）。
 // splitByBoundaries算出的seg.start/seg.end只在查詢區間內剛好跨到節氣邊界時才等於真實邊界，
 // 若查詢區間整段都落在同一個節氣區間內（沒跨到立春/月建節氣），seg.start/seg.end就只是查詢
 // 區間本身的起訖，會誤導成「這組局數只在查詢那幾天有效」，但實際上該局數/局面在真正的節氣
-// 區間內都成立（Eric回報：查08/17~08/24，年盤卻顯示「08/17～08/24 丙午年」，見對話記錄）。
+// 區間內都成立（查08/17~08/24，年盤卻顯示「08/17～08/24 丙午年」）。
 // 傳入該段代表時刻rep，往前後各抓一年份節氣表，找出真正夾住rep的前後邊界。
 function findTrueSegmentRange(plateType, rep) {
   const names = getBoundaryJieqiNames(plateType);
@@ -3408,7 +3346,7 @@ function enumerateHourBlocks(startDT, endDT) {
 
 // 掃過八個宮位（中宮5不算），比對門集合／方位集合，附上排除原因
 // chartLevelExclusionReasons：門伏/門反/五不遇時，整張盤共用的排除狀態，不分宮位
-// chartLevelStarNotes：2026.08老師第18堂課釐清——出行訣只重八門狀態，「九星的旺衰、
+// chartLevelStarNotes：老師第18堂課釐清——出行訣只重八門狀態，「九星的旺衰、
 // 反吟與否是預測用的判斷依據，出行訣不予考慮」，故星伏／星反不再是排除理由，改成跟
 // 入墓一樣的inline小字標記（見下方starNotes），不影響excluded判斷。門伏／門反因為
 // 直接反映的是「門」本身的狀態，跟星無關，仍照常排除。
@@ -3432,8 +3370,8 @@ function matchGates(chart, gates, directions, extraFlags) {
 
     const reasons = chartLevelReasons.slice();
     if (isGateConstraint(gate, h)) reasons.push('門迫');
-    if (isGateSuppress(gate, h)) reasons.push('門制'); // 不算傳統四害，但使用者要求一併可篩選排除
-    // 2026.08老師釐清：入墓是「某天干在這個宮位使不上力」，不是神/星/門/宮位本身有問題。
+    if (isGateSuppress(gate, h)) reasons.push('門制'); // 不算傳統四害，出行訣仍列入可篩選排除項目
+    // 老師釐清：入墓是「某天干在這個宮位使不上力」，不是神/星/門/宮位本身有問題。
     // 奇門曆／出行訣找的是各方位理氣，篩的是門本身能不能用、方位吉不吉，跟天干無關，
     // 故這裡（matchGates，只有奇門曆／出行訣兩條路徑會呼叫，見上方呼叫處）不拿入墓
     // 當排除門的理由。★這條規則只適用奇門曆／出行訣★——預測佈局判斷仍要考慮入墓，
@@ -3443,7 +3381,7 @@ function matchGates(chart, gates, directions, extraFlags) {
     if (chart.voidHouses.includes(h)) reasons.push('空亡');
     if (chart.spiritMap[h] === '白虎') reasons.push('白虎'); // 白虎主凶煞、傷病、血光，落宮直接排除，不論門本身吉凶
 
-    // 2026.08新增：入墓不排除門（見上方2026.08老師釐清），但保留一個小標記讓使用者知道
+    // 入墓不排除門（見上方老師釐清），但保留一個小標記讓使用者知道
     // 這個宮位有天干入墓（用神／天干本身使不上力），標記天盤/地盤各自哪個字入墓。
     // 不影響 excluded／reasons，純粹是額外資訊，包括已排除的門也照樣附上。
     const entHeaven = (chart.entombed[h] && chart.entombed[h].heaven) || [];
@@ -3543,7 +3481,7 @@ const ENTOMBED_TABLE = { '癸':2, '乙':6,'丙':6,'戊':6, '丁':8,'己':8,'庚'
 const PENALIZED_TABLE = { '戊':3, '己':2, '庚':8, '辛':9, '壬':4, '癸':4 };
 
 // ── 四害判定：抽成獨立 pure predicate（單一天干字元版本），不組HTML ──
-// 2026.08重構：原本判斷邏輯內嵌在 renderStemHTML 裡（只能拿到組好的HTML字串），
+// 重構：原本判斷邏輯內嵌在 renderStemHTML 裡（只能拿到組好的HTML字串），
 // 抽出後 renderStemHTML（畫面顯示）與 computeChart（奇門曆等批次運算用的資料層）
 // 可以共用同一套是非判斷，避免同一條規則寫兩份、日後改一邊忘記改另一邊。
 // isDutyHouse: 此格是否為符頭天干所在宮位（甲入墓判定用，天盤地盤皆適用）
@@ -3643,7 +3581,7 @@ function applyYongshenEcho(stemChar) {
 }
 
 // 出行訣（標記模式／方框地圖／全螢幕羅盤）只適用陽盤；切到陰盤或命盤時，三層一起收掉，不留在背景
-// 2026.08簡化：travelMarkingActive 變數已移除（標記狀態現在完全跟著 travel-map-mode 走，見
+// 簡化：travelMarkingActive 變數已移除（標記狀態現在完全跟著 travel-map-mode 走，見
 // travelMarkEditable／changshengClickDisabled 說明），這裡不用再另外處理標記收尾，
 // exitTravelMapMode() 內部已經會一併做好
 function closeTravelEverything() {
@@ -3891,6 +3829,30 @@ function captureChart() {
   alert('請直接使用手機截圖儲存。');
 }
 
+// 共用：指南針權限請求（iOS需要DeviceOrientationEvent.requestPermission()、Android等不需要），
+// 取得授權/確認可用後執行 startFn() 啟動指南針、再呼叫 onReady() 接續後續動作；被拒或不支援
+// 則跳對應錯誤訊息。供中宮點擊（compassCell click）與出行訣捷徑鈕（jumpToTravelFullscreen）共用。
+function requestCompassPermission(startFn, onReady) {
+  if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+    DeviceOrientationEvent.requestPermission().then(function(state) {
+      if (state === 'granted') {
+        startFn();
+        onReady();
+      } else {
+        alert('未取得方向感測器權限，指南針無法使用。');
+      }
+    }).catch(function(err) {
+      alert('無法啟用指南針：' + err.message);
+    });
+  } else if (typeof DeviceOrientationEvent !== 'undefined') {
+    // Android 等不需要額外授權的瀏覽器
+    startFn();
+    onReady();
+  } else {
+    alert('此裝置或瀏覽器不支援方向感測器。');
+  }
+}
+
 // ── 指南針（中5宮正中央格）──
 (function() {
   const compassCell = document.getElementById('compassCell');
@@ -3925,7 +3887,7 @@ function captureChart() {
     window.addEventListener('deviceorientation', handleOrientation, true);
   }
 
-  // 2026.08新增：陽盤下，第一次點擊中宮（啟用指南針的同一次點擊）直接一併詢問是否進入出行訣，
+  // 陽盤下，第一次點擊中宮（啟用指南針的同一次點擊）直接一併詢問是否進入出行訣，
   // 不用像過去那樣分兩次點（第一次純啟用指南針、第二次才問）。僅限陽盤——陰盤／命盤本來就不會問這件事，
   // 維持原樣：第一次點擊只單純啟用指南針，不觸發任何後續動作。
   function afterCompassEnabled() {
@@ -3937,14 +3899,14 @@ function captureChart() {
   compassCell.addEventListener('click', function() {
     // 羅盤已啟用 → 這次點擊不是要開權限，而是詢問是否進入出行訣吉凶標記模式
     if (compassActive) {
-      // 已經在方框內嵌地圖模式中：點中宮＝旋轉（2026.08 併入指針，取代原本獨立的⟳按鈕）；
+      // 已經在方框內嵌地圖模式中：點中宮＝旋轉（併入指針，取代原本獨立的⟳按鈕）；
       // pointer-events 只在 #paipan-result 底下的原始位置開放（見 CSS），搬進全螢幕快照層後這裡不會被觸發，不需另外判斷
       const outerEl = document.getElementById('outer-board');
       if (outerEl && outerEl.classList.contains('travel-map-mode')) {
         toggleTravelMapRotate();
         return;
       }
-      // 2026.08移除：原本這裡還有「if (travelMarkingActive) return;」，但標記狀態現在跟travel-map-mode
+      // 移除：原本這裡還有「if (travelMarkingActive) return;」，但標記狀態現在跟travel-map-mode
       // 永遠同進同出（見travelMarkEditable說明），上面那個判斷式已經會攔到，這行是打不到的死碼，故拿掉
       // 出行訣開放給所有陽盤（時/日/月/年家皆可）；僅陰盤、命盤不適用；兩者都永遠不會進出行訣，直接不反應，不跳提示
       if (typeof PLATE_MODE === 'undefined' || PLATE_MODE !== 'yang' || (typeof MING_PAN_MODE !== 'undefined' && MING_PAN_MODE)) {
@@ -3953,27 +3915,10 @@ function captureChart() {
       showTravelAskPanel();
       return;
     }
-    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-      DeviceOrientationEvent.requestPermission().then(function(state) {
-        if (state === 'granted') {
-          startCompass();
-          afterCompassEnabled();
-        } else {
-          alert('未取得方向感測器權限，指南針無法使用。');
-        }
-      }).catch(function(err) {
-        alert('無法啟用指南針：' + err.message);
-      });
-    } else if (typeof DeviceOrientationEvent !== 'undefined') {
-      // Android 等不需要額外授權的瀏覽器
-      startCompass();
-      afterCompassEnabled();
-    } else {
-      alert('此裝置或瀏覽器不支援方向感測器。');
-    }
+    requestCompassPermission(startCompass, afterCompassEnabled);
   });
 
-  // 2026.08新增：把compassActive／startCompass暴露到全域，供輸入區右上角的出行訣捷徑鈕
+  // 把compassActive／startCompass暴露到全域，供輸入區右上角的出行訣捷徑鈕
   // （jumpToTravelFullscreen）重用同一套羅盤啟用邏輯，不用複製一份或把整個IIFE攤平
   window.__travelCompass = {
     get active() { return compassActive; },
@@ -3981,12 +3926,12 @@ function captureChart() {
   };
 })();
 
-// 2026.08新增：出行訣捷徑鈕（輸入區右上角）——直接跳全螢幕出行訣地圖，等同「點中宮啟用羅盤→
+// 出行訣捷徑鈕（輸入區右上角）——直接跳全螢幕出行訣地圖，等同「點中宮啟用羅盤→
 // 確認進出行訣→點展開全螢幕」這一串動作的濃縮版，中間跳過「確定載入出行訣圖資？」的詢問泡泡
 // （按這顆鈕本身就是明確的進入意圖，不需要再問一次）。
-// 2026.08放寬：任何模式都可以呼叫，鈕本身永遠顯示、不隱藏——奇門曆模式會先切回排盤模式，
-// 命盤／陰盤會先切回陽盤，皆為一次性的自動情境切換（Eric確認：這裡本來就是「我要用出行訣」
-// 的明確意圖，不需要額外確認，直接切過去即可，見對話記錄）。
+// 任何模式都可以呼叫，鈕本身永遠顯示、不隱藏——奇門曆模式會先切回排盤模式，
+// 命盤／陰盤會先切回陽盤，皆為一次性的自動情境切換（這裡本來就是「我要用出行訣」
+// 的明確意圖，不需要額外確認，直接切過去即可）。
 function jumpToTravelFullscreen() {
   // 奇門曆模式：先切回排盤模式（chart），toggleAlmanacMode()內部會處理好所有需要連動的顯示狀態
   if (typeof currentMode !== 'undefined' && currentMode === 'almanac') {
@@ -4000,11 +3945,24 @@ function jumpToTravelFullscreen() {
     exitMingPanMode();
     applyPlateMode('yang');
   } else if (typeof PLATE_MODE !== 'undefined' && PLATE_MODE !== 'yang') {
-    applyPlateMode('yang'); // 陰盤：自動切成陽盤，維持原本的陽盤子模式（時/日/月/年家）
+    applyPlateMode('yang'); // 陰盤：自動切成陽盤
   }
-  // 2026.08修正：拿掉原本「請先排盤」的檢查——#paipan-result .outer九宮格容器本來就一直存在
+  // 無條件強制切成時家(置閏)——出行訣本來就是為時盤設計的（日/月/年盤整天/整月/
+  // 整年不變，「以現時重起時盤」對它們幾乎沒有實質意義），不管之前選的是哪個
+  // 陽盤子模式，按這顆捷徑鈕就是要用時盤，直接切過去。跳過setYangSubMode()原本切換前的確認泡泡
+  // （這顆鈕本身就是明確意圖，不需要再問一次），但清空舊標記的步驟要保留（比照confirmYangSubSwitch），
+  // 否則已標記的吉凶會是對應切換前那個子模式的宮位，套到新盤面上會對不上
+  if (typeof PLATE_SUBMODE !== 'undefined' && PLATE_SUBMODE !== 'time') {
+    TRAVEL_MARK_HOUSES.forEach(h => {
+      travelMarks[h] = null;
+      renderTravelMark(h);
+    });
+    updateTravelCompassSectorMarks();
+    applyYangSubMode('time');
+  }
+  // 拿掉原本「請先排盤」的檢查——#paipan-result .outer九宮格容器本來就一直存在
   // （頁面載入就有，只是內容可能是空的），不需要先排過盤才能進全螢幕；全螢幕地圖本身就有
-  // 「以現時重新計算」可以直接排一張現時的盤，兩者不用重複要求（Eric確認，見對話記錄）
+  // 「以現時重起時盤」可以直接排一張現時的盤，兩者不用重複要求
   const outerEl = document.getElementById('outer-board');
   // 已經在方框內嵌地圖模式中：不用重跑一次授權/確認鏈，直接展開全螢幕即可
   if (outerEl && outerEl.classList.contains('travel-map-mode')) {
@@ -4022,43 +3980,36 @@ function jumpToTravelFullscreen() {
     proceedToTravelMode();
     return;
   }
-  // 羅盤尚未啟用：走跟中宮點擊完全相同的授權請求邏輯（見上方IIFE），取得授權後直接續走進出行訣，
-  // 不像中宮點擊那樣只彈出詢問泡泡等使用者再確認一次
-  if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-    DeviceOrientationEvent.requestPermission().then(function(state) {
-      if (state === 'granted') {
-        if (compass) compass.start();
-        proceedToTravelMode();
-      } else {
-        alert('未取得方向感測器權限，指南針無法使用。');
-      }
-    }).catch(function(err) {
-      alert('無法啟用指南針：' + err.message);
-    });
-  } else if (typeof DeviceOrientationEvent !== 'undefined') {
-    // Android 等不需要額外授權的瀏覽器
-    if (compass) compass.start();
-    proceedToTravelMode();
-  } else {
-    alert('此裝置或瀏覽器不支援方向感測器。');
-  }
+  // 羅盤尚未啟用：走跟中宮點擊共用同一套授權請求邏輯（見 requestCompassPermission），
+  // 取得授權後直接續走進出行訣，不像中宮點擊那樣只彈出詢問泡泡等使用者再確認一次
+  requestCompassPermission(function() { if (compass) compass.start(); }, proceedToTravelMode);
 }
+
+// ══════════════════════════════════
+// 地圖圖資來源：Mapbox（2026.08取代未授權的Google Maps圖磚）
+// token已在Mapbox後台設定URL restriction（僅限qimen.therootshollow.com、qimen.trh.nyc、
+// qimen4all.vercel.app、localhost可呼叫），外流也無法被盜用額度
+// ══════════════════════════════════
+const MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoiZXJpYzEyMzU2IiwiYSI6ImNtdDNsdWNrYzA1YnIzM3BrNm0xeDZpMGUifQ.sHlCc4OGENNpgNzW2sLfSw';
+const MAPBOX_STYLE_ID = 'streets-v12'; // 可選：streets-v12（一般街道）／outdoors-v12（含等高線）／light-v11（極簡淺色）
+const MAPBOX_TILE_URL = 'https://api.mapbox.com/styles/v1/mapbox/' + MAPBOX_STYLE_ID + '/tiles/{z}/{x}/{y}@2x?access_token=' + MAPBOX_ACCESS_TOKEN;
+const MAPBOX_TILE_OPTIONS = { maxZoom: 20, tileSize: 512, zoomOffset: -1, attribution: '© <a href="https://www.mapbox.com/about/maps/">Mapbox</a> © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' };
 
 // ══════════════════════════════════
 // 出行訣 階段一：吉凶標記模式（不含地圖，純 UI；地圖載入是階段二的工作）
 // 觸發鏈：羅盤已啟用 → 中5宮再次點擊 → 詢問是否載入出行訣圖資 → 是 → 進入標記模式
 // ══════════════════════════════════
 const TRAVEL_MARK_HOUSES = [1,2,3,4,6,7,8,9];
-let travelMarks = {}; // { house: '吉' | '凶' | null }，null＝未標記；2026.08一度簡化為只留吉，
-// 後來Eric確認「偶爾還是會想知道」，故恢復三態循環（見cycleTravelMark）
+let travelMarks = {}; // { house: '吉' | '凶' | null }，null＝未標記；一度簡化為只留吉，
+// 後來確認「偶爾還是會想知道」，故恢復三態循環（見cycleTravelMark）
 TRAVEL_MARK_HOUSES.forEach(h => { travelMarks[h] = null; });
 
-// 2026.08新增：快取castChart()內部算出的完整chart物件（含gateMap/門迫/空亡/白虎/擊刑/門反/伏吟盤
+// 快取castChart()內部算出的完整chart物件（含gateMap/門迫/空亡/白虎/擊刑/門反/伏吟盤
 // 等四害判斷），供出行訣「自動判斷」功能呼叫matchGates()重新使用，不必另外重算一次排盤邏輯。
 // 每次castChart()跑完就覆蓋更新，只反映「畫面上目前顯示的盤」，跟排出的盤永遠同步。
 let _currentCastChart = null;
 
-// 2026.08簡化：原本有獨立的 travelMarkingActive 變數判斷「標記模式開了沒」，但confirmTravelAsk
+// 簡化：原本有獨立的 travelMarkingActive 變數判斷「標記模式開了沒」，但confirmTravelAsk
 // 改成一次同時觸發enterTravelMarkingMode()＋enterTravelMapMode()（見該函式），exitTravelMapMode()
 // 離開時也一併收尾標記狀態——兩者現在永遠同進同出，沒有任何路徑會讓其中一個開、另一個關，
 // 拆成兩個變數已經是歷史包袱、沒有實際好處，故移除travelMarkingActive，只留「地圖模式＋盤面顯示」
@@ -4078,7 +4029,7 @@ function confirmTravelAsk(yes) {
   hideTravelAskPanel();
   if (yes) {
     enterTravelMarkingMode();
-    // 2026.08新增：Eric觀察到標記畫面其實跟後面「地圖模式＋顯示盤面」視覺上是同一種畫面，
+    // 可觀察到標記畫面其實跟後面「地圖模式＋顯示盤面」視覺上是同一種畫面，
     // 不需要等標記完成才載入地圖——改成一確認要進出行訣，就同步把地圖背景叫出來，
     // 標記全程都能看到地圖（board-visible讓盤面疊在地圖上方，宮位維持可點擊，見CSS
     // .outer.travel-map-mode.board-visible .cell[data-gong] 那條規則）
@@ -4123,7 +4074,7 @@ function renderTravelMark(house) {
   }
 }
 
-// 三態循環：未標記 → 吉 → 凶 → 未標記（2026.08恢復，Eric確認偶爾還是需要標凶，見travelMarks宣告處註解）
+// 三態循環：未標記 → 吉 → 凶 → 未標記（恢復，確認偶爾還是需要標凶，見travelMarks宣告處註解）
 function cycleTravelMark(house) {
   const cur = travelMarks[house];
   travelMarks[house] = cur === null ? '吉' : (cur === '吉' ? '凶' : null);
@@ -4133,11 +4084,11 @@ function cycleTravelMark(house) {
   clearHighlight();
   const cell = document.querySelector('.cell[data-gong="' + house + '"]');
   if (cell) applyHouseHighlight(cell);
-  setTravelInlineLuckyActive(false); // 2026.08新增：手動調整過，當下狀態不再等於純自動預選，「吉」鈕退回未點擊樣式
+  setTravelInlineLuckyActive(false); // 手動調整過，當下狀態不再等於純自動預選，「吉」鈕退回未點擊樣式
 }
 
 // 階段三：把 travelMarks 目前狀態套到全螢幕扇形羅盤（travel-compass-disc）的宮位文字上
-// 金字＝吉、黑字＝凶，不改動扇形本身的顏色與分隔線（整片扇形描邊視覺上太笨重，見「還是高亮文字」的討論）
+// 金字＝吉、黑字＝凶，不改動扇形本身的顏色與分隔線（整片扇形描邊視覺上太笨重，改用文字顏色標示即可）
 // 標記時額外在扇形上加一個門名單字（如「生」，取自 #gate-N 目前顯示的門名第一個字，門名固定是「X門」兩字，
 // 迫/制標籤是附加在後面的第三個字，取第一字不受影響）＋跟方位字之間的分隔點，未標記則兩者都清空、不佔視覺
 function updateTravelCompassSectorMarks() {
@@ -4159,9 +4110,9 @@ function updateTravelCompassSectorMarks() {
   });
 }
 
-// 2026.08合併：抽出共用迴圈，供enterTravelMarkingMode／enterTravelMapMode共用（原本兩處
+// 合併：抽出共用迴圈，供enterTravelMarkingMode／enterTravelMapMode共用（原本兩處
 // 各自重複一次「顯示標記格＋renderTravelMark」，僅差在是否加travel-marking-active這個class，
-// 純屬防呆結構性重複、非bug，見對話記錄；withMarkingClass=true時額外加該class）
+// 純屬防呆結構性重複、非bug；withMarkingClass=true時額外加該class）
 function showTravelMarkHouses(withMarkingClass) {
   TRAVEL_MARK_HOUSES.forEach(h => {
     const markEl = document.getElementById('travel-mark-' + h);
@@ -4174,13 +4125,13 @@ function showTravelMarkHouses(withMarkingClass) {
   });
 }
 
-// 2026.08新增：出行訣「自動判斷」——沿用奇門曆同一套matchGates()規則（開/休/生/景四吉門，
+// 出行訣「自動判斷」——沿用奇門曆同一套matchGates()規則（開/休/生/景四吉門，
 // 扣掉門迫/空亡/白虎/擊刑/門反/伏吟盤等排除理由，見排盤規則.md 十.3），套用在目前畫面上
 // 已排出的盤（_currentCastChart）。只標記「吉」，符合條件的宮位標吉，其餘一律清成未標記
-// （不使用「凶」，見travelMarks宣告處註解——Eric確認未標記本身就代表不建議，不需要凶）。
+// （不使用「凶」，見travelMarks宣告處註解——確認未標記本身就代表不建議，不需要凶）。
 // 呼叫時機：(1) enterTravelMarkingMode() 進入標記模式時自動套用一次；(2) 使用者隨時按
-// 「自動判斷」按鈕重新套用——兩者皆可，兩種情境都會覆蓋掉當下的手動標記（Eric確認，見對話記錄）。
-// 2026.08新增：追蹤畫面上目前的吉凶標記是否「純粹」等於自動預選結果（true）
+// 「自動判斷」按鈕重新套用——兩者皆可，兩種情境都會覆蓋掉當下的手動標記。
+// 追蹤畫面上目前的吉凶標記是否「純粹」等於自動預選結果（true）
 // 或已被使用者手動調整過（false）——只影響.travel-inline-lucky-toggle鈕本身的active視覺樣式，
 // 不影響travelMarks實際資料或標記是否可編輯
 let travelInlineLuckyActive = false;
@@ -4200,8 +4151,8 @@ function autoMarkTravelLucky() {
     renderTravelMark(h);
   });
   updateTravelCompassSectorMarks();
-  setTravelInlineLuckyActive(true); // 2026.08新增：跑完自動預選，當下狀態必定=純自動結果，鈕改亮
-  // 2026.08新增：8個宮位全部都沒有可用吉門時，中宮跳出提示（跟travel-marking-banner同款泡泡）；
+  setTravelInlineLuckyActive(true); // 跑完自動預選，當下狀態必定=純自動結果，鈕改亮
+  // 8個宮位全部都沒有可用吉門時，中宮跳出提示（跟travel-marking-banner同款泡泡）；
   // 每次自動判斷都重新計算/覆蓋這個顯示狀態，不需要另外清理殘留（見toggleTravelInlineLucky關閉分支的hideTravelNoLuckyBanner）
   const noLuckyBanner = document.getElementById('travel-no-lucky-banner');
   if (noLuckyBanner) noLuckyBanner.classList.toggle('is-open', usableHouses.size === 0);
@@ -4212,12 +4163,12 @@ function hideTravelNoLuckyBanner() {
   if (banner) banner.classList.remove('is-open');
 }
 
-// 2026.08新增：方框內嵌地圖「吉」鈕的點擊處理——確保宮位進入可編輯狀態（travel-map-mode＋
+// 方框內嵌地圖「吉」鈕的點擊處理——確保宮位進入可編輯狀態（travel-map-mode＋
 // board-visible，即travelMarkEditable()的判斷依據）並顯示標記格，再套用自動預選。
 // 會強制把「盤」鈕（board-visible）打開，理由：吉門標記疊在九宮格上，格子本身不顯示的話
 // 標記也沒有意義，一併開啟才能真的看到效果。
-// 2026.08調整：改成真正的開關——已經是點選狀態（travelInlineLuckyActive===true）時再按一次，
-// 清空所有標記、鈕退回未點擊樣式（Eric回報原本不管按幾次都只會重新套用，沒有取消的路徑）
+// 改成真正的開關——已經是點選狀態（travelInlineLuckyActive===true）時再按一次，
+// 清空所有標記、鈕退回未點擊樣式（回報原本不管按幾次都只會重新套用，沒有取消的路徑）
 function toggleTravelInlineLucky() {
   if (travelInlineLuckyActive) {
     TRAVEL_MARK_HOUSES.forEach(h => {
@@ -4226,7 +4177,7 @@ function toggleTravelInlineLucky() {
     });
     updateTravelCompassSectorMarks();
     setTravelInlineLuckyActive(false);
-    hideTravelNoLuckyBanner(); // 2026.08新增：關閉自動標記時，一併收掉可能還開著的「此刻無吉門可用」提示
+    hideTravelNoLuckyBanner(); // 關閉自動標記時，一併收掉可能還開著的「此刻無吉門可用」提示
     return;
   }
   setTravelBoardVisible(true);
@@ -4235,8 +4186,8 @@ function toggleTravelInlineLucky() {
 }
 document.getElementById('travel-inline-lucky-toggle').addEventListener('click', toggleTravelInlineLucky);
 
-// 2026.08新增：全螢幕地圖裡「現在重排」按鈕——單純重跑autoMarkTravelLucky()在這裡沒有意義
-// （盤面沒變，結果會跟剛進來時一樣，見對話記錄），故連盤面本身一起用現在時間重排：
+// 全螢幕地圖裡「現在重排」按鈕——單純重跑autoMarkTravelLucky()在這裡沒有意義
+// （盤面沒變，結果會跟剛進來時一樣），故連盤面本身一起用現在時間重排：
 // 比照起盤時間欄位「現時」＋「排盤」的組合動作（setNow()填欄位→castChart()重新排盤，
 // 過程中會同步更新_currentCastChart，見castChart內），排完再呼叫autoMarkTravelLucky()
 // 依新盤面重新標記吉凶。地盤/天盤/八門九星八神等九宮格內容也會一併刷新（castChart()寫入
@@ -4249,7 +4200,7 @@ function reCastTravelNow() {
 }
 
 function enterTravelMarkingMode() {
-  // 2026.08移除：原本這裡有「if (travelMarkingActive) return;」防重入，但travelMarkingActive變數
+  // 移除：原本這裡有「if (travelMarkingActive) return;」防重入，但travelMarkingActive變數
   // 已移除（見上方travelMarkEditable說明）；此函式現在只有confirmTravelAsk一個呼叫來源，
   // 且該路徑本身已經被compassCell點擊處理擋掉「已在地圖模式中」的重複觸發，不會重入，故不需要另外防呆
   // 進入出行訣標記：宮位點擊改切換吉凶用途，先清掉十二長生原本可能留著的高亮／內容，避免混在一起
@@ -4262,8 +4213,8 @@ function enterTravelMarkingMode() {
   const yongshenEl = document.getElementById('hb-yongshen');
   if (yongshenEl) yongshenEl.textContent = '—';
   showTravelMarkHouses(true);
-  autoMarkTravelLucky(); // 2026.08新增：進入標記模式時先自動預選一次，使用者可再手動調整
-  // 2026.08修正：泡泡改回置中版型，只留綠色✓當確認提醒鈕（見HTML），
+  autoMarkTravelLucky(); // 進入標記模式時先自動預選一次，使用者可再手動調整
+  // 泡泡改回置中版型，只留綠色✓當確認提醒鈕（見HTML），
   // 點✓純粹關閉提示本身，不用點確認/取消才能繼續操作宮位；關閉靠 dismissTravelMarkingHint()
   document.getElementById('travel-marking-banner').classList.add('is-open');
 }
@@ -4273,7 +4224,7 @@ function dismissTravelMarkingHint() {
   document.getElementById('travel-marking-banner').classList.remove('is-open');
 }
 
-// 2026.08修正：原本這裡是cancelTravelMarking/confirmTravelMarking兩個各自綁在✕/✓按鈕上的函式，
+// 原本這裡是cancelTravelMarking/confirmTravelMarking兩個各自綁在✕/✓按鈕上的函式，
 // 現在提示只剩單顆✓（見enterTravelMarkingMode／dismissTravelMarkingHint，純粹關閉提示），
 // 沒有「取消」入口可以觸發整體收尾，改成統一在離開地圖模式時（exitTravelMapMode，
 // 對應左上角「←」退出鈕）一起處理，見該函式。
@@ -4283,7 +4234,7 @@ function exitTravelMarkingModeUI() {
     if (cell) cell.classList.remove('travel-marking-active');
   });
   document.getElementById('travel-marking-banner').classList.remove('is-open');
-  hideTravelNoLuckyBanner(); // 2026.08新增：離開標記模式一併收掉，避免下次重進時短暫殘留舊狀態
+  hideTravelNoLuckyBanner(); // 離開標記模式一併收掉，避免下次重進時短暫殘留舊狀態
   clearHighlight(); // 退出標記模式，順手清掉標記期間留下的高亮框，回到一般排盤畫面時不留殘影
 }
 
@@ -4311,11 +4262,7 @@ function initializeInlineTravelMap() {
   // dragging 預設關閉：南上北下（預設方向）時容器整體旋轉180度，拖曳座標判讀會反向；
   // 轉正（北上南下，見 toggleTravelMapRotate）後不再反向，屆時才開放拖曳
   inlineTravelMap = L.map('travel-inline-map', { zoomControl: false, attributionControl: false, dragging: false }).setView([20, 0], 2);
-  L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
-    maxZoom: 20,
-    subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
-    attribution: 'Map data © Google'
-  }).addTo(inlineTravelMap);
+  L.tileLayer(MAPBOX_TILE_URL, MAPBOX_TILE_OPTIONS).addTo(inlineTravelMap);
 }
 
 function locateInlineTravelPosition(forceZoom) {
@@ -4350,8 +4297,8 @@ function setTravelCompassOrientation(rotated) {
   if (ring) ring.style.transform = rotated ? 'rotate(180deg)' : 'rotate(0deg)';
 }
 
-// 2026.08新增：進出九宮框內嵌地圖模式時，頁面標題文字暫時改成「出行訣」，離開時還原
-// （2026.08修正：原本誤改成document.title/瀏覽器分頁標題，手機瀏覽器根本看不到分頁標題，
+// 進出九宮框內嵌地圖模式時，頁面標題文字暫時改成「出行訣」，離開時還原
+// （原本誤改成document.title/瀏覽器分頁標題，手機瀏覽器根本看不到分頁標題，
 // 沒有效果；真正該改的是頁面上顯示的 #title-row-text，改用updateTitleRowText()統一處理）
 
 function enterTravelMapMode() {
@@ -4362,13 +4309,13 @@ function enterTravelMapMode() {
   wrap.style.display = '';
   renderYiganDisplay(); // 進地圖模式：引干位置改顯示宮位方位（見renderYiganDisplay註解）
   initializeInlineTravelMap();
-  // 2026.08新增：九宮框地圖顯示期間，標題列的「紀錄」按鈕一併隱藏（Eric要求，見對話記錄）——
+  // 九宮框地圖顯示期間，標題列的「紀錄」按鈕一併隱藏——
   // 出行訣模式下紀錄面板本來就不是重點功能，留著容易誤點；離開地圖模式時（exitTravelMapMode）會restore
   const recBtn = document.getElementById('btn-records');
   if (recBtn) recBtn.style.display = 'none';
   // 階段三＋：地圖模式期間，吉凶標記格保持可顯示狀態（實際看不看得到由「盤」鈕的 board-visible 控制），
   // 這樣按「盤」鈕顯示盤面時，之前標記的吉凶會一起現形，也可以繼續點擊修改
-  // （2026.08合併：改用showTravelMarkHouses共用函式，見enterTravelMarkingMode；這裡不加
+  // （合併：改用showTravelMarkHouses共用函式，見enterTravelMarkingMode；這裡不加
   // travel-marking-active class，因地圖模式不等於標記模式，該class仍由enterTravelMarkingMode控制）
   showTravelMarkHouses(false);
   // 指針凍結：地圖模式期間指針不跟即時裝置朝向連動，改固定跟著九宮方位（見 setTravelCompassOrientation）
@@ -4392,7 +4339,7 @@ function exitTravelMapMode() {
   renderYiganDisplay(); // 離開地圖模式：引干位置改回顯示引干本身
   updateTitleRowText();
   document.getElementById('travel-inline-board-toggle').classList.remove('active');
-  setTravelInlineLuckyActive(false); // 2026.08新增：離開地圖模式時一併清掉「吉」鈕的active樣式，避免殘留
+  setTravelInlineLuckyActive(false); // 離開地圖模式時一併清掉「吉」鈕的active樣式，避免殘留
   wrap.style.display = 'none';
   // 離開地圖模式，回到一般排盤畫面：吉凶標記格收起（資料 travelMarks 仍保留，下次進地圖模式會沿用）
   TRAVEL_MARK_HOUSES.forEach(h => {
@@ -4400,16 +4347,16 @@ function exitTravelMapMode() {
     if (markEl) markEl.style.display = 'none';
   });
   travelCompassFrozen = false; // 解凍，指針恢復跟隨即時裝置朝向（若羅盤本來就是啟用狀態，下一個朝向事件會自動接手）
-  // 2026.08新增：離開出行訣模式，恢復紀錄按鈕顯示（跟toggleAlmanacMode同一套currentMode判斷，
+  // 離開出行訣模式，恢復紀錄按鈕顯示（跟toggleAlmanacMode同一套currentMode判斷，
   // 保險起見不寫死''，避免萬一離開時currentMode不是'chart'的邊界情況）
   const recBtn = document.getElementById('btn-records');
   if (recBtn) recBtn.style.display = (currentMode === 'chart') ? '' : 'none';
-  // 2026.08簡化：travelMarkingActive已移除，exitTravelMarkingModeUI()本身是冪等操作（reset不存在的
+  // 簡化：travelMarkingActive已移除，exitTravelMarkingModeUI()本身是冪等操作（reset不存在的
   // class/沒開的提示都是安全no-op），改成無條件呼叫，不用先判斷條件
   exitTravelMarkingModeUI();
 }
 
-// 2026.08新增：抽出共用函式，供「盤」鈕（toggleTravelBoardOverlay，需要toggle切換）與
+// 抽出共用函式，供「盤」鈕（toggleTravelBoardOverlay，需要toggle切換）與
 // confirmTravelAsk（進出行訣時需要明確設成true，不是toggle）共用，避免兩處各自重寫一次同樣的邏輯
 function setTravelBoardVisible(visible) {
   const outer = document.getElementById('outer-board');
@@ -4455,7 +4402,7 @@ function swapTravelHousePair(a, b) {
   swapDomNodes(cellA, cellB);
 }
 
-// 2026.08新增：引干內容的集中渲染——出行訣地圖模式顯示宮位方位，其餘模式顯示引干本身。
+// 引干內容的集中渲染——出行訣地圖模式顯示宮位方位，其餘模式顯示引干本身。
 // 抽成獨立函式而非寫死在castChart()的迴圈裡，因為進出地圖模式（enterTravelMapMode／exitTravelMapMode）
 // 只是切換travel-map-mode這個class，不會重新呼叫castChart()，若不獨立出來呼叫，切換當下畫面不會刷新，
 // 要等下一次重新排盤才會更新，會有一拍延遲的錯誤畫面。用_currentCastChart（castChart內同步快取的
@@ -4482,7 +4429,7 @@ function renderYiganDisplay() {
   });
 }
 
-// 2026.08新增：外圍引干（yin-N）不是 .grid 的子元素，是靠固定 class 絕對定位在四角/四邊，
+// 外圍引干（yin-N）不是 .grid 的子元素，是靠固定 class 絕對定位在四角/四邊，
 // swapTravelHousePair 的 DOM 節點搬動對它們沒有作用（絕對定位不受 DOM 順序影響）。
 // 改用「交換兩者的定位 class」：id（對應宮位）不動，只讓內容顯示的螢幕位置跟著宮位一起轉到對面。
 const YIGAN_POSITION_CLASSES = ['yigan-top','yigan-bottom','yigan-left','yigan-right','yigan-tl','yigan-tr','yigan-bl','yigan-br'];
@@ -4497,7 +4444,7 @@ function swapYiganPosition(a, b) {
   elB.classList.remove(posB); elB.classList.add(posA);
 }
 
-// 2026.08新增：中宮地支環（巳午未...）是固定畫死代表真實地理方位（預設南上北下），跟宮位無關，
+// 中宮地支環（巳午未...）是固定畫死代表真實地理方位（預設南上北下），跟宮位無關，
 // 旋轉按鈕本身不會去動它。轉180度＝地支換成沖的那個（子午/丑未/寅申/卯酉/辰戌/巳亥皆互為對宮），
 // 同步換 data-dz 屬性＋顯示文字。不需重繪十二長生：出行訣模式下 .gc-tian 本來就 visibility:hidden，
 // 十二長生點不到，進場時 enterTravelMarkingMode() 也已經 clearChangsheng() 清過。
@@ -4526,7 +4473,7 @@ function toggleTravelMapRotate() {
   swapTravelHousePair(9, 1);
   swapTravelHousePair(2, 8);
   swapTravelHousePair(7, 3);
-  // 引干與地支環跟著九宮格一起轉（2026.08修正：原本只轉九宮格本體，這兩處被漏掉）
+  // 引干與地支環跟著九宮格一起轉（原本只轉九宮格本體，這兩處被漏掉）
   swapYiganPosition(4, 6);
   swapYiganPosition(9, 1);
   swapYiganPosition(2, 8);
@@ -4547,28 +4494,29 @@ document.getElementById('travel-inline-fullscreen').addEventListener('click', op
 // ══════════════════════════════════
 let travelMap = null;
 let travelPositionMarker = null;
-let travelWatchId = null; // 2026.08新增：navigator.geolocation.watchPosition() 的id，出行訣模式開啟時持續追蹤，關閉時clearWatch，不背景常駐
+let travelWatchId = null; // navigator.geolocation.watchPosition() 的id，出行訣模式開啟時持續追蹤，關閉時clearWatch，不背景常駐
 let travelCompassEnabled = false;
-let travelHeadingLocked = true; // 2026.08新增：小羅盤指針點擊切換的「朝向鎖定」開關，跟起點錨定各自獨立（見 toggleTravelHeadingLock）
-// 預設鎖定北上（2026.08再調整）：進全螢幕時彩色羅盤/權限請求維持原樣自動啟動，但小指針本身預設不
+let travelHeadingLocked = true; // 小羅盤指針點擊切換的「朝向鎖定」開關，跟起點錨定各自獨立（見 toggleTravelHeadingLock）
+// 預設鎖定北上：進全螢幕時彩色羅盤/權限請求維持原樣自動啟動，但小指針本身預設不
 // 自動跟著轉，先固定指向北，提醒使用者「畫面上方＝北」、方便自行轉身對齊方位；有需要看即時朝向
 // （例如錨定後想知道自己正朝哪走）才點一下小指針切換成跟隨模式
 let travelLastHeading = 0; // 最近一次收到的即時朝向，解除鎖定時用來立刻讓小羅盤指針恢復正確角度，不用等下一個感應器事件
 let travelBoardPlaceholder = null;
 let travelInlineWrapPrevDisplay = null; // 階段三：記住展開全螢幕前，方框內嵌地圖(travel-inline-map-wrap)原本的 display 值，供關閉全螢幕時還原
+let travelWakeLock = null; // Screen Wake Lock sentinel，路徑記錄期間（出發→停止）持有，防止螢幕休眠
 
 // 圓心錨定：已跟起點合一，不再是獨立開關（見 placeTravelRoutePoint／confirmTravelRouteRemove／
 // resetTravelRoute）。放置起點時自動開啟並鎖定於起點座標，起點被刪除或整個路線重置時自動關閉；
 // 只影響羅盤在畫面上的「位置」（螢幕正中央 vs 固定在起點座標，見 applyTravelCompassPos），跟朝向
 // 旋轉無關——彩色扇形羅盤已經不會再跟著手機朝向轉動了（見 handleTravelOrientation 註解）；
-// 2026.08改版：拿掉獨立拖曳手把，起點圖釘本身直接可拖曳（Leaflet原生 draggable，見 createTravelRouteMarker），
+// 拿掉獨立拖曳手把，起點圖釘本身直接可拖曳（Leaflet原生 draggable，見 createTravelRouteMarker），
 // 不再需要另一個疊在圖釘正上方、把圖釘完全蓋住的手把元件（見使用者實測回報）；
-// 即時位置圖示（travelPositionMarker，2026.08起改為方向箭頭，見travelGpsIcon）不受影響，兩者並存
+// 即時位置圖示（travelPositionMarker，起改為方向箭頭，見travelGpsIcon）不受影響，兩者並存
 let travelCompassAnchored = false;
 let travelCompassAnchorLatLng = null; // L.LatLng
 
 
-// 2026.08：'idle' = 平常狀態文字模式；'pending' = 等待羅盤授權；'error' = 授權失敗待重試。
+// 'idle' = 平常狀態文字模式；'pending' = 等待羅盤授權；'error' = 授權失敗待重試。
 // 後兩者期間泡泡由 showTravelOrientationPrompt() 接管顯示，setTravelStatus() 呼叫暫不生效，
 // 避免一般狀態訊息（定位中、已設起點等）蓋掉尚未解決的授權提示。
 let travelOrientationState = 'idle';
@@ -4600,12 +4548,8 @@ function initializeTravelMap() {
   // 未取得定位前維持中性世界視角；不可預設任何國家或地區。
   travelMap = L.map('travel-map', { zoomControl: false, attributionControl: true }).setView([20, 0], 2);
   L.control.zoom({ position: 'topright' }).addTo(travelMap);
-  L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
-    maxZoom: 20,
-    subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
-    attribution: 'Map data © Google'
-  }).addTo(travelMap);
-  // 2026.08修正：改用Leaflet官方「自訂pane」機制（createPane），而不是直接把羅盤塞進
+  L.tileLayer(MAPBOX_TILE_URL, MAPBOX_TILE_OPTIONS).addTo(travelMap);
+  // 改用Leaflet官方「自訂pane」機制（createPane），而不是直接把羅盤塞進
   // travelMap.getContainer()（那樣只是跟.leaflet-map-pane平行的兄弟節點，不是它的子節點——
   // Leaflet替.leaflet-map-pane套用平移用的CSS transform，transform本身就會單獨建立一個堆疊
   // 環境，把裡面所有pane的z-index都「關」在那個環境裡跟外面的比不到。實測發現羅盤仍蓋住
@@ -4619,7 +4563,7 @@ function initializeTravelMap() {
   travelMap.getPane('travelCompassPane').style.pointerEvents = 'none'; // 羅盤本身不接收地圖互動（點擊/拖曳要穿透到markers/地圖）
   const compassEl = document.querySelector('.travel-compass');
   if (compassEl) travelMap.getPane('travelCompassPane').appendChild(compassEl);
-  // 2026.08新增：起點水滴（#travel-compass-start-pin）獨立開一個pane，z-index 650，
+  // 起點水滴（#travel-compass-start-pin）獨立開一個pane，z-index 650，
   // 蓋過markerPane(600)——起點常因autoAnchor跟GPS藍點同座標，若水滴仍留在travelCompassPane
   // (550)裡會被GPS藍點蓋住一角（實測發現）。水滴視覺上純粹是圖示，真正互動（拖曳/刪除）
   // 是另一顆opacity:0的隱形L.marker（見.travel-route-marker-ghost），故pointerEvents照樣關閉。
@@ -4648,9 +4592,9 @@ function initializeTravelMap() {
   });
 }
 
-// 2026.08新增：GPS方向箭頭圖示，只建立一次、重複使用同一份 L.divIcon（跟起點水滴的SVG同一套做法）。
+// GPS方向箭頭圖示，只建立一次、重複使用同一份 L.divIcon（跟起點水滴的SVG同一套做法）。
 // 箭頭尖端朝上＝正北，rotate(heading deg) 直接對應手機朝向，見 handleTravelOrientation。
-// 2026.08修正：改成lazy初始化（getTravelGpsIcon），不能在頂層直接執行 L.divIcon(...)——
+// 改成lazy初始化（getTravelGpsIcon），不能在頂層直接執行 L.divIcon(...)——
 // 頂層程式碼是頁面一載入就跑，這時候Leaflet(L)不保證已經就緒（無論是CDN載入時序、或本工具
 // 在部分預覽環境對外部CDN的存取限制），會直接炸出「Script error.」（外部腳本錯誤訊息本來就
 // 會被瀏覽器吃掉細節，難以判斷成因）。原本所有L.*呼叫都包在函式裡（如initializeTravelMap），
@@ -4713,7 +4657,7 @@ function stopTravelPositionWatch() {
 // ── 路徑記錄（像跑步app畫出走過的路）──
 // 獨立於travelWatchId（GPS箭頭那組）之外，自己開一個watchPosition，理由：travelWatchId只在
 // 全螢幕開著時運作（closeTravelMode會clearWatch），但路徑記錄要求「離開全螢幕、切到排盤畫面
-// 也要繼續記」（Eric要求，見對話記錄），兩者生命週期不同，不能共用同一個watch。
+// 也要繼續記」，兩者生命週期不同，不能共用同一個watch。
 let travelTrackRecording = false;
 let travelTrackWatchId = null;
 let travelTrackPoints = []; // L.LatLng 陣列，記錄到目前為止的完整路徑
@@ -4721,9 +4665,9 @@ let travelTrackLine = null; // L.Polyline，畫在travelMap上；travelMap本身
                              // 這條線也不用每次重建，離開全螢幕再回來畫面依然還在
 const TRAVEL_TRACK_MIN_DISTANCE = 5; // 公尺；兩點間距小於這個值視為GPS雜訊，不記錄新點，避免路徑線鋸齒狀亂跳
 
-// 2026.08新增：結果泡泡＋簡易歷史所需的額外狀態（見showTravelTrackResultPopup）。
+// 結果泡泡＋簡易歷史所需的額外狀態（見showTravelTrackResultPopup）。
 // travelTrackChartSnapshot：整趟路程固定對照「出發當下」算出的那張盤（_currentCastChart），
-// 不隨中途換時辰而更動——Eric確認的設計，只在「全新一趟」（travelTrackPoints為空）才重新快取，
+// 不隨中途換時辰而更動——確認的設計，只在「全新一趟」（travelTrackPoints為空）才重新快取，
 // 暫停後接續記錄（points還在）沿用原本快取的盤，見startTravelTrackRecording。
 let travelTrackChartSnapshot = null;
 // 累積「錄製中」的總時長（跨越多次出發/停止相加），停止的當下才把本段時間併入；
@@ -4733,9 +4677,15 @@ let travelTrackSegmentStartTime = null; // 本次「出發」的時間戳，停�
 // 依8個方位（用宮位編號1/2/3/4/6/7/8/9代表，對應HOUSE_DIRECTION）累積移動距離，供「主要朝向」
 // 與展開式方位分佈統計使用；累加依據是「該路徑點相對於錨點(起點)的地理方位角」，即該點落在
 // 彩色扇形羅盤（travelCompassAnchorLatLng為圓心）的哪一色扇形，不是裝置朝向（heading）——
-// 2026.08改版，Eric指出這樣才會跟畫面上實際看到的彩色扇形一致，且不受指北感應器精度/權限影響，
+// 改版，這裡這樣才會跟畫面上實際看到的彩色扇形一致，且不受指北感應器精度/權限影響，
 // 見bearingBetween／compassAngleToHouse／appendTravelTrackPoint
 let travelTrackDirectionDistance = { 1:0, 2:0, 3:0, 4:0, 6:0, 7:0, 8:0, 9:0 };
+// 同一趟行程（出發→停止→接續出發→再停止…，中途沒按清除路徑）的歷史記錄識別碼。
+// 全新一趟（travelTrackPoints為空）才重置為null，見startTravelTrackRecording／clearTravelTrack；
+// 每次停止存歷史時，這個id若已存在就更新舊的那一筆，不存在才新增一筆，確保「接續記錄」的行程
+// 在歷史列表裡永遠只有一筆、且內容永遠是最新總計（見showTravelTrackResultPopup），
+// 不會像修正前那樣，同一趟行程因為中途停過幾次就被存成好幾筆累加的重複記錄。
+let travelTrackCurrentTripId = null;
 
 function toggleTravelTrackRecording() {
   if (travelTrackRecording) stopTravelTrackRecording();
@@ -4750,10 +4700,13 @@ function startTravelTrackRecording() {
     // 全新一趟記錄的起點，才重新快取盤面與方位統計；暫停後接續記錄則沿用原本快取（見上方變數註解）
     travelTrackChartSnapshot = _currentCastChart || null;
     travelTrackDirectionDistance = { 1:0, 2:0, 3:0, 4:0, 6:0, 7:0, 8:0, 9:0 };
+    travelTrackCurrentTripId = null; // 全新一趟才重置，讓下次停止時存成新的一筆歷史（見showTravelTrackResultPopup）
   }
   travelTrackRecording = true;
   travelTrackSegmentStartTime = Date.now();
   updateTravelTrackButtons();
+  startTravelTrackTimerDisplay(); // 出發當下開始每秒更新即時計時器
+  requestTravelWakeLock();
   travelTrackWatchId = navigator.geolocation.watchPosition(function(position) {
     const latLng = L.latLng(position.coords.latitude, position.coords.longitude);
     appendTravelTrackPoint(latLng);
@@ -4764,19 +4717,65 @@ function startTravelTrackRecording() {
 
 function stopTravelTrackRecording() {
   travelTrackRecording = false;
+  releaseTravelWakeLock();
   if (travelTrackSegmentStartTime !== null) {
     travelTrackElapsedMs += Date.now() - travelTrackSegmentStartTime;
     travelTrackSegmentStartTime = null;
   }
   updateTravelTrackButtons();
+  stopTravelTrackTimerDisplay(); // 停止時同步收起即時計時器
   if (travelTrackWatchId !== null) {
     navigator.geolocation.clearWatch(travelTrackWatchId);
     travelTrackWatchId = null;
   }
-  showTravelTrackResultPopup(); // 2026.08新增：停止當下跳結果泡泡＋存一筆簡易歷史
+  showTravelTrackResultPopup(); // 停止當下跳結果泡泡＋存一筆簡易歷史
+  // 若歷史面板剛好開著（顯示「進行中」卡片），停止當下重繪一次，讓它立刻變成
+  // 一筆正常的已完成記錄，不用等使用者關掉面板再重開才會同步
+  const historyPanel = document.getElementById('track-history-panel');
+  if (historyPanel && historyPanel.classList.contains('is-visible')) {
+    trackHistoryClearConfirmPending = false;
+    renderTrackHistoryList();
+  }
 }
 
-// 2026.08新增：算「from → to」的地理方位角（0=正北，順時針，0-360度），標準的
+// 出發後即時顯示已經走了多久，疊在出發/停止鈕正上方。跟stopTravelTrackRecording算
+// 「花費時間」共用同一組travelTrackElapsedMs（跨暫停累加）／travelTrackSegmentStartTime
+// （本段錄製起點），確保即時顯示的數字跟最後結果泡泡/歷史存的花費時間邏輯一致，不會兜不起來。
+let travelTrackTimerInterval = null;
+
+function formatLiveTrackTimer(ms) {
+  const totalSec = Math.floor(ms / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  const pad = n => String(n).padStart(2, '0');
+  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+}
+
+function updateTravelTrackTimerDisplay() {
+  const el = document.getElementById('travel-track-timer');
+  if (el) el.textContent = formatLiveTrackTimer(computeTrackLiveElapsedMs());
+  updateCurrentTripCardIfOpen(); // 歷史面板若開著且有「進行中」卡片，順便局部更新它的距離／時間
+}
+
+function startTravelTrackTimerDisplay() {
+  const el = document.getElementById('travel-track-timer');
+  if (el) el.classList.add('is-visible');
+  updateTravelTrackTimerDisplay();
+  if (travelTrackTimerInterval) clearInterval(travelTrackTimerInterval); // 防呆：理論上不會重複啟動，但避免萬一疊出兩個interval
+  travelTrackTimerInterval = setInterval(updateTravelTrackTimerDisplay, 1000);
+}
+
+function stopTravelTrackTimerDisplay() {
+  if (travelTrackTimerInterval) {
+    clearInterval(travelTrackTimerInterval);
+    travelTrackTimerInterval = null;
+  }
+  const el = document.getElementById('travel-track-timer');
+  if (el) el.classList.remove('is-visible');
+}
+
+// 算「from → to」的地理方位角（0=正北，順時針，0-360度），標準的
 // initial bearing公式（great-circle）。純經緯度運算，不靠任何感應器，供appendTravelTrackPoint
 // 判斷路徑點相對於錨點(起點)落在彩色扇形羅盤哪個方位使用。
 function bearingBetween(from, to) {
@@ -4790,7 +4789,7 @@ function bearingBetween(from, to) {
 
 // 方位角（0-360度，0=北，順時針）換算成8個方位對應的宮位編號，每45度一桶、以桶中心
 // ±22.5度切界，桶的順序跟HOUSE_DIRECTION（宮位→方位文字）互為對照。原本吃的是裝置朝向
-// (heading)，2026.08改吃bearingBetween()算出的地理方位角，函式本身（角度→宮位的換算）不變。
+// (heading)，改吃bearingBetween()算出的地理方位角，函式本身（角度→宮位的換算）不變。
 const COMPASS_ANGLE_HOUSE_ORDER = [1, 8, 3, 4, 9, 2, 7, 6]; // 北→東北→東→東南→南→西南→西→西北，順時針
 function compassAngleToHouse(angle) {
   const norm = ((angle % 360) + 360) % 360;
@@ -4801,8 +4800,8 @@ function compassAngleToHouse(angle) {
 function appendTravelTrackPoint(latLng) {
   const last = travelTrackPoints[travelTrackPoints.length - 1];
   if (last && last.distanceTo(latLng) < TRAVEL_TRACK_MIN_DISTANCE) return;
-  // 2026.08改版：不用GPS朝向(heading)，改用「這個點相對於錨點(起點)的地理方位角」判斷落在
-  // 彩色扇形羅盤哪一色——這樣才會跟畫面上實際顯示的彩色扇形一致（Eric要求，見對話記錄），
+  // 不用GPS朝向(heading)，改用「這個點相對於錨點(起點)的地理方位角」判斷落在
+  // 彩色扇形羅盤哪一色——這樣才會跟畫面上實際顯示的彩色扇形一致，
   // 且純粹是經緯度運算，不依賴裝置指北感應器，不受感應器精度/授權問題影響。沒有錨點
   // （尚未設定起點，或起點被移除）時無法判斷落在哪個扇形，這段移動距離不計入統計，
   // 結果泡泡會在完全沒有資料時顯示「未設定起點」提示（見showTravelTrackResultPopup）。
@@ -4815,7 +4814,7 @@ function appendTravelTrackPoint(latLng) {
   travelTrackPoints.push(latLng);
   if (!travelMap) return;
   if (!travelTrackLine) {
-    // 顏色故意跟起點→終點的規劃路線（travelRouteLine，#2471a3藍）區分開，避免混淆（Eric要求）
+    // 顏色故意跟起點→終點的規劃路線（travelRouteLine，#2471a3藍）區分開，避免混淆
     travelTrackLine = L.polyline(travelTrackPoints, { color: '#8e44ad', weight: 4, opacity: .85 }).addTo(travelMap);
   } else {
     travelTrackLine.setLatLngs(travelTrackPoints);
@@ -4849,12 +4848,13 @@ function hideTravelTrackClearPopup() {
 
 function clearTravelTrack() {
   travelTrackPoints = [];
-  // 2026.08新增：一併清掉結果泡泡相關的累積狀態，確保下次「出發」被視為全新一趟
+  // 一併清掉結果泡泡相關的累積狀態，確保下次「出發」被視為全新一趟
   // （見startTravelTrackRecording裡travelTrackPoints.length===0的判斷）
   travelTrackChartSnapshot = null;
   travelTrackElapsedMs = 0;
   travelTrackSegmentStartTime = null;
   travelTrackDirectionDistance = { 1:0, 2:0, 3:0, 4:0, 6:0, 7:0, 8:0, 9:0 };
+  travelTrackCurrentTripId = null; // 一併重置，下次出發視為全新一趟，存成新的一筆歷史
   hideTravelTrackResultPopup();
   if (travelTrackLine && travelMap) {
     travelMap.removeLayer(travelTrackLine);
@@ -4864,11 +4864,11 @@ function clearTravelTrack() {
   updateTravelTrackButtons();
 }
 
-// ── 路徑記錄結果泡泡＋簡易歷史（2026.08新增）──
-// 靈感來源：Eric提供的跑步App截圖（按停止時跳出「距離＋完成」提示泡泡）。查詢8個方位各自的門
+// ── 路徑記錄結果泡泡＋簡易歷史（新增）──
+// 靈感來源：參考跑步App的設計（按停止時跳出「距離＋完成」提示泡泡）。查詢8個方位各自的門
 // 沿用matchGates()同一套排除規則（門迫/白虎/擊刑/空亡/門反/門伏等，見排盤規則.md 十.3），
 // 對照「出發當下」快取的那張盤（travelTrackChartSnapshot，整趟路程固定用同一張，不隨中途
-// 換時辰更動，Eric確認的設計），查出主要朝向對應的門，並附上可展開的8方位完整分佈。
+// 換時辰更動，確認的設計），查出主要朝向對應的門，並附上可展開的8方位完整分佈。
 const TRACK_HISTORY_KEY = 'qimenTrackHistory';
 const TRACK_HISTORY_MAX = 30; // 只留最近30筆，避免localStorage無限長大
 
@@ -4907,14 +4907,24 @@ function dominantTrackHouse() {
   return best;
 }
 
-function showTravelTrackResultPopup() {
-  const distM = totalTrackDistanceMeters();
-  if (distM < TRAVEL_TRACK_MIN_DISTANCE) return; // 幾乎沒移動（例如手滑誤按出發又立刻停止），不跳結果、也不存歷史
-  const distKm = distM / 1000;
-  const durationText = formatTrackDuration(travelTrackElapsedMs);
+// 算「目前累積的錄製時長」——跨暫停累加的travelTrackElapsedMs，
+// 加上「還在跑的這一段」（travelTrackSegmentStartTime非null時）。停止後segmentStartTime
+// 會被設回null，此時單純回傳travelTrackElapsedMs，所以這個函式在錄製中／已停止兩種情況都適用，
+// 供即時計時器、結果泡泡、歷史「進行中」卡片共用同一套算法，不必各自維護一份。
+function computeTrackLiveElapsedMs() {
+  let elapsed = travelTrackElapsedMs;
+  if (travelTrackSegmentStartTime !== null) elapsed += Date.now() - travelTrackSegmentStartTime;
+  return elapsed;
+}
 
-  // matchGates()只算一次，結果同時供「主要朝向」摘要行、展開後的8方位明細、以及存歷史共用，避免重複計算；
-  // gates傳null取全部8個宮位（明細列表要完整顯示8個方位，不只吉門），excluded與否交給下面判斷
+// 把「距離／花費時間／主要朝向摘要／方位明細」這組計算整理成共用函式，
+// 供停止時的結果泡泡（含存歷史）跟歷史面板裡「進行中」即時卡片共用，避免同一套邏輯寫兩份。
+function buildTrackSummary() {
+  const distM = totalTrackDistanceMeters();
+  const distKm = distM / 1000;
+  const durationMs = computeTrackLiveElapsedMs();
+  const durationText = formatTrackDuration(durationMs);
+
   const hits = travelTrackChartSnapshot ? matchGates(travelTrackChartSnapshot, null, null, {}) : [];
   const hitsByHouse = {};
   hits.forEach(h => { hitsByHouse[h.house] = h; });
@@ -4931,19 +4941,33 @@ function showTravelTrackResultPopup() {
     summaryLine = '主要朝向：（移動中未取得足夠方向資料，需先設定起點/錨點）';
   }
 
-  const breakdownData = buildTrackDirectionBreakdownData(hitsByHouse); // 結構化資料，同時供畫面展開明細與存歷史使用
+  const breakdownData = buildTrackDirectionBreakdownData(hitsByHouse);
+  return { distM, distKm, durationMs, durationText, summaryLine, domInfo, breakdownData };
+}
+
+function showTravelTrackResultPopup() {
+  const summary = buildTrackSummary();
+  if (summary.distM < TRAVEL_TRACK_MIN_DISTANCE) return; // 幾乎沒移動（例如手滑誤按出發又立刻停止），不跳結果、也不存歷史
+  const { distKm, durationMs, durationText, summaryLine, domInfo, breakdownData } = summary;
+
   const detailHTML = renderTrackDirectionBreakdown(breakdownData);
 
-  // 2026.08新增：歷史連同「主要朝向摘要」跟「8方位完整分佈」一起存，不再只存距離／花費時間
-  // （Eric確認：既然要做查看歷史的介面，就一併存完整詳情，見對話記錄）
-  const history = getTrackHistory();
-  history.unshift({
-    ts: Date.now(),
+  // 同一趟行程（接續記錄，中途沒按清除路徑）之前會每次停止都新增一筆歷史，
+  // 導致同一趟被存成好幾筆、且每筆都是從最初累加到當下的總數，看起來像好幾趟不相關的重複記錄
+  // 。改成用travelTrackCurrentTripId識別「這是不是同一趟的接續」：
+  // 第一次停止（id為null）才新增一筆並記住id；之後同一趟行程再停止，找到同一個id就地更新內容、
+  // 並移到列表最前面（代表最近有更新），不再往下多開一筆。
+  if (travelTrackCurrentTripId === null) travelTrackCurrentTripId = Date.now();
+  const record = {
+    id: travelTrackCurrentTripId,
+    ts: Date.now(), // 最近一次停止的時間，用於顯示與排序
     distanceKm: distKm,
-    durationMs: travelTrackElapsedMs,
+    durationMs: durationMs,
     dominant: domInfo ? { label: domInfo.direction, gate: domInfo.gate, excluded: !!domInfo.excluded, reasons: domInfo.excluded ? domInfo.exclusionReasons : [] } : null,
     breakdown: breakdownData
-  });
+  };
+  let history = getTrackHistory().filter(item => item.id !== record.id); // 移除同一趟行程的舊版本（如果有）
+  history.unshift(record);
   saveTrackHistory(history.slice(0, TRACK_HISTORY_MAX));
 
   const popup = document.getElementById('travel-track-result-popup');
@@ -4973,7 +4997,7 @@ function toggleTrackDirectionDetail() {
   if (btn) btn.textContent = open ? '詳細方位分佈 ▴' : '詳細方位分佈 ▾';
 }
 
-// 2026.08新增：把8方位的距離佔比＋對照盤面查出的門與可用狀態整理成結構化資料（不是HTML字串），
+// 把8方位的距離佔比＋對照盤面查出的門與可用狀態整理成結構化資料（不是HTML字串），
 // 讓結果泡泡的即時展開明細（renderTrackDirectionBreakdown）跟存歷史（showTravelTrackResultPopup）
 // 能共用同一份運算，不用各自重算一次
 function buildTrackDirectionBreakdownData(hitsByHouse) {
@@ -4995,18 +5019,26 @@ function buildTrackDirectionBreakdownData(hitsByHouse) {
 }
 
 // 8方位明細的HTML渲染，供結果泡泡即時展開、以及歷史列表項目展開共用
+const TRACK_LUCKY_GATE_SET = new Set(['開門', '休門', '生門', '景門']); // 傷/杜/死/驚為凶門，不在此集合內
 function renderTrackDirectionBreakdown(breakdownData) {
   if (!breakdownData || breakdownData.length === 0) return '<div class="track-detail-empty">尚未取得足夠的方位資料（需先設定起點/錨點）</div>';
   return breakdownData.map(d => {
     const gateText = d.gate
       ? `${d.gate}${d.excluded ? `<small>（${d.reasons.join('、')}）</small>` : ''}`
       : '（無盤面資料）';
-    const cls = d.gate && !d.excluded ? 'track-dir-ok' : 'track-dir-excluded';
+    // 排除的門（或沒有盤面資料）維持原本樣式不變；沒被排除的門則依吉凶門本身
+    // 分色（休生開景＝綠，傷杜死驚＝黑），不再只是單純「有沒有被排除」的二分
+    let cls;
+    if (!d.gate || d.excluded) {
+      cls = 'track-dir-excluded';
+    } else {
+      cls = TRACK_LUCKY_GATE_SET.has(d.gate) ? 'track-dir-lucky' : 'track-dir-unlucky';
+    }
     return `<div class="track-dir-row ${cls}"><span class="track-dir-label">${d.label}</span><span class="track-dir-pct">${d.pct}%</span><span class="track-dir-gate">${gateText}</span></div>`;
   }).join('');
 }
 
-// ── 路徑記錄歷史列表面板（2026.08新增）──
+// ── 路徑記錄歷史列表面板（新增）──
 // 從畫面底部滑出，列出getTrackHistory()存的每一筆記錄（距離/花費時間/主要朝向/8方位完整分佈），
 // 每筆可各自展開明細，跟結果泡泡共用同一套renderTrackDirectionBreakdown渲染邏輯。
 let trackHistoryClearConfirmPending = false; // 「清除全部歷史」的inline確認狀態，見requestClearTrackHistory
@@ -5034,8 +5066,13 @@ function renderTrackHistoryList() {
   if (!list) return;
   const history = getTrackHistory();
 
+  // 正在錄製中的話，最上面加一張「進行中」即時卡片，跟已完成的歷史記錄區隔開
+  // （紅色外框＋跳動圓點，呼應出發/停止鈕錄製中的紅色語彙）；距離／花費時間之後由updateTravelTrackTimerDisplay
+  // 每秒局部更新（見該函式與updateCurrentTripCardIfOpen），不用每秒重繪整個列表、避免展開狀態被重置
+  const currentCardHTML = travelTrackRecording ? renderCurrentTripCardHTML() : '';
+
   const itemsHTML = history.length === 0
-    ? '<div class="track-history-empty">還沒有路徑記錄</div>'
+    ? (currentCardHTML ? '' : '<div class="track-history-empty">還沒有路徑記錄</div>')
     : history.map((item, idx) => {
         const dateText = formatTrackHistoryDate(item.ts);
         const durationText = formatTrackDuration(item.durationMs);
@@ -5070,7 +5107,42 @@ function renderTrackHistoryList() {
       : `<button type="button" class="track-history-clear-btn" onclick="requestClearTrackHistory()">清除全部歷史</button>`
   );
 
-  list.innerHTML = itemsHTML + footerHTML;
+  list.innerHTML = currentCardHTML + itemsHTML + footerHTML;
+}
+
+// 正在錄製中時，歷史面板頂部顯示的即時卡片，用同一套buildTrackSummary()跟
+// 已完成記錄／結果泡泡共用計算邏輯。id用'current'字串（跟一般記錄的數字idx區隔），
+// toggleTrackHistoryItemDetail()本身不限定idx型別，字串一樣能正常運作
+function renderCurrentTripCardHTML() {
+  const summary = buildTrackSummary();
+  const detailHTML = renderTrackDirectionBreakdown(summary.breakdownData);
+  return `
+    <div class="track-history-item track-history-current" id="track-history-current-card">
+      <div class="row1"><span class="date current-badge">● 進行中</span><span class="distance">${summary.distKm.toFixed(2)} km</span></div>
+      <div class="row2">花費時間：${summary.durationText}</div>
+      <div class="summary-line">${summary.summaryLine}</div>
+      <button type="button" class="toggle" onclick="toggleTrackHistoryItemDetail('current')">詳細方位分佈 ▾</button>
+      <div class="detail" id="track-history-detail-current">${detailHTML}</div>
+    </div>
+  `;
+}
+
+// 每秒tick時（跟即時計時器共用同一個setInterval，見startTravelTrackTimerDisplay）
+// 若歷史面板剛好開著、且「進行中」卡片存在，局部更新距離／花費時間文字——只動這兩個變動最快的欄位，
+// 不重繪整張卡片／整個列表，避免使用者展開中的「詳細方位分佈」被重置收合
+function updateCurrentTripCardIfOpen() {
+  const panel = document.getElementById('track-history-panel');
+  if (!panel || !panel.classList.contains('is-visible')) return;
+  if (!travelTrackRecording) return;
+  const card = document.getElementById('track-history-current-card');
+  if (!card) return; // 面板開著但卡片不存在，代表打開當下還沒在錄製，下次重開面板時會自然出現，不強求同步
+
+  const distM = totalTrackDistanceMeters();
+  const durationText = formatTrackDuration(computeTrackLiveElapsedMs());
+  const distEl = card.querySelector('.distance');
+  const row2El = card.querySelector('.row2');
+  if (distEl) distEl.textContent = (distM / 1000).toFixed(2) + ' km';
+  if (row2El) row2El.textContent = '花費時間：' + durationText;
 }
 
 function toggleTrackHistoryItemDetail(idx) {
@@ -5097,7 +5169,7 @@ function doClearTrackHistory() {
   renderTrackHistoryList();
 }
 
-// ── 外部地圖App導航（試驗性功能，見上方HTML註解／對話記錄）──
+// ── 外部地圖App導航（試驗性功能，見上方HTML註解）──
 // Google Maps的travelmode跟目前選定的交通工具（travelRouteProfile）直接對應；
 // Apple Maps的dirflg沒有獨立的「腳踏車」選項（只有d/w/r，r是大眾運輸），騎車退而求其次用w（走路）起始，
 // 使用者進App後還是可以自己切換成腳踏車模式，這裡只是給個最接近的起始狀態
@@ -5148,17 +5220,17 @@ function locateTravelPosition(forceZoom, autoAnchor) {
   }
   setTravelStatus('定位中…');
   navigator.geolocation.getCurrentPosition(function(position) {
-    // 2026.08修正：改用 L.latLng()（含 .lat/.lng 屬性）而非純陣列 [lat,lng]。
+    // 改用 L.latLng()（含 .lat/.lng 屬性）而非純陣列 [lat,lng]。
     // 純陣列在 L.marker() 建立時 Leaflet 內部能自動轉換，畫面上看起來正常；
     // 但這個值後續會被 placeTravelRoutePoint() 原封不動存進 travelRoutePoints，
     // calculateTravelRoute() 組OSRM座標字串時是直接讀 p.latlng.lng / p.latlng.lat，
     // 陣列沒有這兩個屬性，讀出來是undefined，導致起點座標變成"undefined,undefined"
     // 混入送給OSRM的query string，OSRM因此回報[InvalidQuery] malformed（實測案例：
-    // 2026.08 Eric回報「找不到路線」，狀態列顯示InvalidQuery/malformed close to，
-    // 診斷後定位到此處，非CORS問題、非OSRM服務問題，見對話記錄）。
+    // 回報「找不到路線」，狀態列顯示InvalidQuery/malformed close to，
+    // 診斷後定位到此處，非CORS問題、非OSRM服務問題）。
     const latLng = L.latLng(position.coords.latitude, position.coords.longitude);
     if (!travelMap) initializeTravelMap();
-    // 2026.08修正：改呼叫updateTravelPositionMarker()重用同一個marker（setLatLng移動），
+    // 改呼叫updateTravelPositionMarker()重用同一個marker（setLatLng移動），
     // 不再每次removeLayer+重新create——理由見該函式註解（避免箭頭轉向角度被重建重置）。
     // pane/圖示（L.marker+divIcon）也一併改掉，見travelGpsIcon定義。
     updateTravelPositionMarker(latLng);
@@ -5167,7 +5239,7 @@ function locateTravelPosition(forceZoom, autoAnchor) {
     } else {
       travelMap.panTo(latLng); // 只平移，不更動使用者當下手動調整過的縮放比例
     }
-    // 2026.08新增：地圖預設北在上、扇形羅盤啟動前也是北在上，等於本來就對齊好了，
+    // 地圖預設北在上、扇形羅盤啟動前也是北在上，等於本來就對齊好了，
     // 不需要再讓使用者多按一次「起點」才能錨定。只在剛進出行訣、GPS第一次定位成功、
     // 且使用者還沒設起點時才自動錨定（autoAnchor旗標由openTravelMode()傳入）；
     // 「回到目前位置」按鈕（recenterTravelPosition）不會重新觸發，避免使用者手動移除
@@ -5188,7 +5260,7 @@ function recenterTravelPosition() {
   locateTravelPosition(false);
 }
 
-// 2026.08移除：renderTravelCompass(heading) 原本負責讓彩色扇形羅盤即時跟著手機朝向轉動，
+// 移除：renderTravelCompass(heading) 原本負責讓彩色扇形羅盤即時跟著手機朝向轉動，
 // 已拿掉呼叫處（見 handleTravelOrientation 註解），函式本身也一併刪除，避免留下沒人呼叫的死碼。
 
 // 右上角小羅盤：不受扇形羅盤錨定凍結影響，永遠即時跟著手機朝向轉動（見 handleTravelOrientation 呼叫處）；
@@ -5209,14 +5281,14 @@ let travelRoutePoints = [];       // [{type, latlng, marker}]，依實際點擊�
 let travelRouteProfile = 'walking'; // OSRM profile：driving | walking | cycling，預設步行
 let travelRouteLine = null;       // 算出來的路線圖層（L.geoJSON）
 let travelRoutePendingRemoveIndex = null; // 目前跳出「移除？」小泡泡、等待確認的點位索引
-// 2026.08新增：各交通工具各自獨立記憶「上次實測是否可靠」，見checkTravelRouteProfileReliability。
+// 各交通工具各自獨立記憶「上次實測是否可靠」，見checkTravelRouteProfileReliability。
 // null＝尚未實測過（不顯示驚嘆號，避免誤報）；true＝已證實不可靠（demo server用driving路網頂替）；
 // false＝已證實可靠。三個模式各自累積、互不影響，只要曾經測出不可靠就先掛著提醒，直到下次同模式重新
 // 算出可靠結果才會消掉（不會因為切換到別的模式或清空點位而重置，因為這是服務本身的狀態、不是這條路線的狀態）。
 let travelRouteProfileReliability = { walking: null, cycling: null, driving: null };
 
 const TRAVEL_TRANSPORT_ICONS = { walking: '🚶', cycling: '🚲', driving: '🚗' };
-// 2026.08新增：狀態列文字用的中文名稱，對應checkTravelRouteProfileReliability回傳的profile字串
+// 狀態列文字用的中文名稱，對應checkTravelRouteProfileReliability回傳的profile字串
 const TRAVEL_TRANSPORT_LABELS = { walking: '行走', cycling: '騎車', driving: '駕駛' };
 const TRAVEL_ROUTE_MARKER_COLORS = { start: '#2ecc71', via: '#e67e22', end: '#e74c3c' };
 const PIN_TRIGGER_COLORS = { start: '#2ecc71', via: '#e67e22', end: '#e74c3c' };
@@ -5240,7 +5312,7 @@ function toggleExpandControl(id) {
 
 function selectTravelTransportMode(mode) {
   travelRouteProfile = mode;
-  // 2026.08修正：改寫 #transport-trigger-icon（圖示專用的內層span），不能再直接寫
+  // 改寫 #transport-trigger-icon（圖示專用的內層span），不能再直接寫
   // #transport-trigger 本身的 textContent——那樣會把徽章span一併清掉（見HTML結構調整）
   const iconEl = document.getElementById('transport-trigger-icon');
   if (iconEl) iconEl.textContent = TRAVEL_TRANSPORT_ICONS[mode];
@@ -5267,7 +5339,7 @@ function updateTravelRoutePointAvailability() {
   const endReady = ready && !hasTravelEndPoint();
   const endBtn = document.getElementById('opt-end');
   if (endBtn) { endBtn.disabled = !endReady; endBtn.classList.toggle('disabled', !endReady); }
-  // 2026.08新增：外部地圖導航鈕，只有設了終點才顯示（見上方HTML註解）
+  // 外部地圖導航鈕，只有設了終點才顯示（見上方HTML註解）
   const navBtn = document.getElementById('travel-external-nav-btn');
   if (navBtn) navBtn.style.display = hasTravelEndPoint() ? 'flex' : 'none';
 }
@@ -5316,7 +5388,7 @@ function armTravelRouteMode(mode) {
   setTravelStatus(travelRouteMode ? hintMap[travelRouteMode] : '選擇下方模式後點地圖設點');
 }
 
-// 2026.08 改版：起點＝目前GPS定位（地圖藍點），按下 #opt-start 直接以此設點並錨定，
+// 改版：起點＝目前GPS定位（地圖藍點），按下 #opt-start 直接以此設點並錨定，
 // 不再需要先「進入起點模式」才能點地圖放置——起點本來就該是「我現在在哪」，多一道點地圖的手續是多餘的。
 function placeTravelStartAtCurrentLocation() {
   if (hasTravelStartPoint()) { setTravelStatus('已有起點，請先刪除再重新設置'); return; }
@@ -5329,7 +5401,7 @@ function placeTravelStartAtCurrentLocation() {
   const latlng = travelPositionMarker.getLatLng();
   // GPS藍點只有在按「回到目前位置」或剛進全螢幕時才會更新座標，若使用者後續手動把地圖平移到別處，
   // 藍點座標會跟目前畫面範圍脫節；這裡先把地圖平移過去，確保放置後的起點跟扇形羅盤落在看得到的範圍內
-  // （2026.08 使用者實測回報：起點「消失」，實際上是放到畫面外看不到的地方，非真的沒放成功）
+  // （使用者實測回報：起點「消失」，實際上是放到畫面外看不到的地方，非真的沒放成功）
   travelMap.panTo(latlng);
   placeTravelRoutePoint(latlng, 'start');
 }
@@ -5354,7 +5426,7 @@ function placeTravelRoutePoint(latlng, type) {
 }
 
 // ══════════════════════════════════
-// 出行訣：目的地搜尋（2026.08新增）
+// 出行訣：目的地搜尋（新增）
 // ══════════════════════════════════
 // 用途：方便使用者確認「要去的地方是否在吉方」，不用自己憑印象點地圖找位置。
 // 串接 Nominatim（OpenStreetMap 免費地址查詢服務，跟本工具已在用的 OSRM 同屬一個開源地圖生態系，
@@ -5366,7 +5438,7 @@ let travelSearchDebounceTimer = null;
 let travelLastSearchRequestTime = 0; // 上一次真正發送Nominatim請求的時間戳，節流保險用
 const TRAVEL_SEARCH_MIN_INTERVAL = 1500; // Nominatim政策要求全站合計請求數不得超過每秒1次，這裡抓1.5秒留緩衝（吸收網路延遲/計時器誤差）
 
-// 2026.08：搜尋鈕收進pin-options水滴選單後，點下去要做兩件事——收合水滴選單（跟armTravelRouteMode
+// 搜尋鈕收進pin-options水滴選單後，點下去要做兩件事——收合水滴選單（跟armTravelRouteMode
 // 選start/via/end時的行為一致）、改開獨立的搜尋泡泡（travel-search-popup，非.expand-control機制）
 function toggleTravelSearchPopup() {
   const pinControl = document.getElementById('pin-control');
@@ -5395,7 +5467,7 @@ async function runTravelSearch() {
   if (query.length < 2) { resultsEl.innerHTML = ''; return; } // 太短的查詢字串沒有意義，也避免浪費請求
   // 節流保險：上面的500ms debounce只防「打字連續觸發」，這裡再加一層底層保護，確保不管上層邏輯
   // 未來怎麼改，實際發出去的請求間隔一定 >= 1秒（Nominatim政策硬性要求），避免短時間內多次
-  // 違規累積被fail2ban判定濫用而封鎖IP（見討論：官方2025.12才剛把「已被封鎖過的IP」處理得更快更嚴）
+  // 違規累積被fail2ban判定濫用而封鎖IP（Nominatim官方2025.12起對重複違規IP的封鎖更嚴格快速）
   const now = Date.now();
   const elapsed = now - travelLastSearchRequestTime;
   if (elapsed < TRAVEL_SEARCH_MIN_INTERVAL) {
@@ -5406,7 +5478,7 @@ async function runTravelSearch() {
   travelLastSearchRequestTime = now;
   resultsEl.innerHTML = '<div class="no-result">搜尋中…</div>';
   try {
-    // 2026.08修正：viewbox若不搭配bounded=1，只是「軟性加權」，力道壓不過精準字面比對
+    // viewbox若不搭配bounded=1，只是「軟性加權」，力道壓不過精準字面比對
     // （實測案例：搜「Gem home」在紐約地圖下，仍搜到肯亞Gem地區——那邊真的有地名剛好叫Gem，
     // Nominatim文字比對權重比地理位置權重高，光靠軟性加權蓋不過去）。改用bounded=1強制過濾，
     // 範圍外結果直接排除，不再只是排序上優先而已。
@@ -5478,7 +5550,7 @@ function createTravelRouteMarker(latlng, type) {
   // 圓心到哪水滴就自動到哪，不用另外同步座標，也不會有「複製疊圖對不準」的問題（見使用者實測回報）。
   // 這裡建立的 L.marker 對起點來說只保留互動功能（拖曳／點擊移除），視覺上用 travel-route-marker-ghost
   // 隱形處理，真正看到的水滴是扇形羅盤裡那個固定在圓心的版本。
-  // 中途點／終點沒有這層考量，維持一般可見的marker——2026.08曾一度改成「隱形marker+另外畫假圖釘」
+  // 中途點／終點沒有這層考量，維持一般可見的marker——曾一度改成「隱形marker+另外畫假圖釘」
   // 來解決被彩色羅盤蓋住的問題，後改用「把羅盤搬進地圖pane、夾在tile跟marker之間」的方案（見
   // initializeTravelMap），markers天生就會蓋過羅盤，不再需要假圖釘那層，這裡改回最單純的寫法。
   const ghost = (type === 'start');
@@ -5488,7 +5560,7 @@ function createTravelRouteMarker(latlng, type) {
     iconSize: [28, 28],
     iconAnchor: [14, 28] // 尖端對齊點擊座標
   });
-  // 起點圖釘可拖曳（2026.08改版，取代原本疊在圖釘正上方、會蓋住圖釘的獨立手把）；
+  // 起點圖釘可拖曳（改版，取代原本疊在圖釘正上方、會蓋住圖釘的獨立手把）；
   // 中途點／終點維持不可拖曳，跟原本一樣只能點擊移除、重新點地圖放置
   const draggable = (type === 'start');
   const marker = L.marker(latlng, { icon: icon, draggable: draggable }).addTo(travelMap);
@@ -5587,15 +5659,15 @@ function calculateTravelRoute() {
   if (points.length < 2) return; // 沒點位可算路線，但徽章代表的是「服務本身是否可靠」，跟目前有沒有路線無關，不用跟著清
   const hasEnd = points[points.length - 1].type === 'end';
   const coordStr = points.map(function(p) { return p.latlng.lng + ',' + p.latlng.lat; }).join(';');
-  // 2026.08修正：只有真的有中途點（3個以上點）需要排序最佳化時，才用/trip/（TSP旅行商問題）端點；
+  // 只有真的有中途點（3個以上點）需要排序最佳化時，才用/trip/（TSP旅行商問題）端點；
   // 只有起點+終點（或起點+單一中途點）這種2點情境，根本沒有排序問題可解，改用更單純的/route/端點。
   // 實測發現：只有2點時硬套/trip/端點，即使driving/walking都切換過仍回傳「找不到路線」
   // （data.trips為空，但不是網路/伺服器錯誤，代表demo伺服器有正常回應、只是算不出trip結果）；
   // /route/是更基礎、更常被使用的服務，穩定性理論上優於/trip/，兩點情境下功能等價（順序不重要時本來就一樣）
   const useTrip = points.length > 2;
-  // 2026.08新增：加上steps=true，讓回應內每個路段附帶mode欄位（見checkTravelRouteProfileReliability），
+  // 加上steps=true，讓回應內每個路段附帶mode欄位（見checkTravelRouteProfileReliability），
   // 用來偵測OSRM demo server對walking/cycling profile的已知問題（表面接受請求，實際仍以driving路網
-  // 計算，實測驗證見對話記錄；官方問題見 github.com/Project-OSRM/osrm-backend/issues/4868）。
+  // 計算（官方問題見 github.com/Project-OSRM/osrm-backend/issues/4868）。
   const url = useTrip
     ? 'https://router.project-osrm.org/trip/v1/' + travelRouteProfile + '/' + coordStr +
       '?source=first&destination=' + (hasEnd ? 'last' : 'any') + '&roundtrip=false&overview=full&geometries=geojson&steps=true'
@@ -5604,7 +5676,7 @@ function calculateTravelRoute() {
   setTravelStatus('計算路線中…');
   fetch(url).then(function(r) { return r.json(); }).then(function(data) {
     const route = useTrip ? (data.trips && data.trips[0]) : (data.routes && data.routes[0]);
-    // 2026.08暫時性除錯：找不到路線時，把OSRM實際回傳的code/message顯示出來，而不是只顯示
+    // 暫時性除錯：找不到路線時，把OSRM實際回傳的code/message顯示出來，而不是只顯示
     // 「找不到路線」四個字——方便判斷是OSRM本身回報NoRoute，還是我們解析邏輯有問題（若route
     // 真的存在但抓不到，data.code應該是"Ok"；若OSRM本身找不到，data.code會是"NoRoute"等其他值）
     if (!route) { setTravelStatus('找不到路線 [' + (data.code || '無code') + '] ' + (data.message || '')); return; }
@@ -5621,13 +5693,13 @@ function calculateTravelRoute() {
       (result.unreliable ? '　⚠️' + TRAVEL_TRANSPORT_LABELS[travelRouteProfile] + '服務不可用，目前顯示為' +
         (TRAVEL_TRANSPORT_LABELS[result.actualMode] || result.actualMode) + '路線' : ''));
   }).catch(function(err) {
-    // 2026.08暫時性除錯：把fetch本身失敗的錯誤訊息也顯示出來（例如CORS阻擋時，錯誤訊息通常會是
+    // 暫時性除錯：把fetch本身失敗的錯誤訊息也顯示出來（例如CORS阻擋時，錯誤訊息通常會是
     // "Failed to fetch"或"Load failed"這類字眼），比單純「請確認網路連線」更能定位問題
     setTravelStatus('路線計算失敗：' + (err && err.message ? err.message : '未知錯誤'));
   });
 }
 
-// 2026.08新增：判斷OSRM這次回傳的路線是否「掛羊頭賣狗肉」——demo server對walking/cycling profile
+// 判斷OSRM這次回傳的路線是否「掛羊頭賣狗肉」——demo server對walking/cycling profile
 // 有已知問題，表面上照樣回傳code:"Ok"的成功結果，但骨子裡其實是用driving路網算的（實測：對同一組
 // 座標分別打walking/driving，回傳JSON裡legs[].steps[].mode兩者都是"driving"）。三種模式一視同仁
 // 都檢查（不特別放行driving），只要有任何一個step的mode跟目前選定的travelRouteProfile不同就算不可靠
@@ -5652,7 +5724,7 @@ function checkTravelRouteProfileReliability(route) {
   return { unreliable: sawAnyMode ? false : null, actualMode: null };
 }
 
-// 2026.08新增：把 travelRouteProfileReliability 目前記錄的各模式狀態，同步畫到畫面上的驚嘆號徽章——
+// 把 travelRouteProfileReliability 目前記錄的各模式狀態，同步畫到畫面上的驚嘆號徽章——
 // 展開選單裡三顆圖示（#transport-badge-walking/cycling/driving）各自獨立顯示；收合鈕
 // （#transport-trigger-badge）額外顯示「目前選定模式」的狀態，方便收合時也能一眼看到。
 // null（尚未實測過）一律視為不顯示，避免尚未測試就顯示警示、造成誤報。
@@ -5669,7 +5741,7 @@ function clearAllTravelRoutePoints() {
   travelRoutePoints.forEach(function(p) { if (travelMap) travelMap.removeLayer(p.marker); });
   travelRoutePoints = [];
   if (travelRouteLine && travelMap) { travelMap.removeLayer(travelRouteLine); travelRouteLine = null; }
-  // 2026.08修正：徽章代表「服務本身是否可靠」的既有測試結果，跟目前畫面上有沒有路線點位無關，
+  // 徽章代表「服務本身是否可靠」的既有測試結果，跟目前畫面上有沒有路線點位無關，
   // 清空點位時不重置，維持已知狀態（不像過去的單一警示邏輯需要每次歸零）
 }
 
@@ -5695,7 +5767,7 @@ function resetTravelRoute() {
 // 關閉：羅盤浮在畫面正中央；開啟：羅盤圓心固定在 travelCompassAnchorLatLng 這個地理座標，
 // 隨地圖平移/縮放重算螢幕位置；起點水滴（#travel-compass-start-pin）畫在 .travel-compass
 // 內部、不隨扇形旋轉的那一層，圓心到哪水滴就自動到哪，這裡只需要開關顯示，不用另外同步座標。
-// 2026.08：羅盤搬進Leaflet自訂pane（見initializeTravelMap）後，它現在活在Leaflet自己的平移
+// 羅盤搬進Leaflet自訂pane（見initializeTravelMap）後，它現在活在Leaflet自己的平移
 // 座標系統裡（pane本身會被套上pan/zoom用的CSS transform），不能再直接拿「螢幕/容器座標」當
 // left/top用（那樣會被pane的transform疊加、位置算兩次）。兩種狀態都先算出「容器座標」（螢幕
 // 正中央，或錨點對應的容器座標），再用 containerPointToLayerPoint() 換算成pane自己座標系下的
@@ -5718,7 +5790,7 @@ function applyTravelCompassPos() {
   const layerPt = travelMap.containerPointToLayerPoint(containerPt);
   compassEl.style.left = layerPt.x + 'px';
   compassEl.style.top = layerPt.y + 'px';
-  // 2026.08新增：水滴現在是travelStartPinPane裡的獨立節點（見initializeTravelMap），
+  // 水滴現在是travelStartPinPane裡的獨立節點（見initializeTravelMap），
   // 不再是.travel-compass的子節點、不能再靠CSS的50%,50%相對定位，要用同一份layerPt直接設px，
   // 這樣兩者代表的地理座標（羅盤圓心＝起點錨點）才會保持完全對齊。
   if (pinEl) {
@@ -5742,15 +5814,15 @@ function handleTravelOrientation(event) {
   // 右上角小羅盤：平常永遠即時更新、不受錨定影響；朝向鎖定開啟時例外——固定指向正上方代表「已鎖定」，
   // 跳過這次更新，直到解除鎖定（見 toggleTravelHeadingLock）
   if (!travelHeadingLocked) renderTravelMiniCompass(heading);
-  // 2026.08移除：原本這裡還會即時把彩色扇形羅盤（travel-compass-disc）跟著手機朝向轉動
+  // 移除：原本這裡還會即時把彩色扇形羅盤（travel-compass-disc）跟著手機朝向轉動
   // （renderTravelCompass(heading)）。但底圖（Leaflet）本身完全不會跟著手機轉，畫面上永遠北朝上，
   // 彩色扇形羅盤代表的是固定地理方位、疊在底圖上，理應跟著底圖一樣固定北朝上，不該再額外即時旋轉——
-  // 不然手機一轉，扇形羅盤角度跟著跑，底圖卻沒動，兩者對不上（Eric指出，見對話記錄）。拿掉這段後，
+  // 不然手機一轉，扇形羅盤角度跟著跑，底圖卻沒動，兩者對不上。拿掉這段後，
   // 扇形羅盤維持CSS預設角度（不設transform＝固定北朝上），永遠對齊底圖。
 }
 
 // 小羅盤指針點擊切換「朝向鎖定」：只影響小羅盤指針本身要不要固定指向正上方（代表北）。
-// 2026.08修正：彩色扇形羅盤已經不會再跟著手機朝向轉動了（見 handleTravelOrientation 註解），
+// 彩色扇形羅盤已經不會再跟著手機朝向轉動了（見 handleTravelOrientation 註解），
 // 這個開關現在單純只管小羅盤指針本身，不用再提「跟扇形羅盤無關」這種對照說明
 function toggleTravelHeadingLock() {
   travelHeadingLocked = !travelHeadingLocked;
@@ -5791,6 +5863,30 @@ function requestTravelCompass() {
   }
 }
 
+// Screen Wake Lock：路徑記錄期間（出發→停止）防止螢幕休眠，不是整個出行訣全螢幕期間都要恆亮。
+// 不支援的瀏覽器（如iOS<16.4）靜默跳過，不影響其他功能。系統本身在App切背景/螢幕鎖定/切分頁時
+// 會自動釋放lock（規範行為，非bug），故監聽visibilitychange，頁面重新可見且仍在記錄中時，
+// 自動重新請求一次。
+async function requestTravelWakeLock() {
+  if (!('wakeLock' in navigator)) return;
+  try {
+    travelWakeLock = await navigator.wakeLock.request('screen');
+  } catch (err) {
+    travelWakeLock = null; // 請求失敗（如低電量），不影響其他功能，靜默處理
+  }
+}
+function releaseTravelWakeLock() {
+  if (travelWakeLock) {
+    travelWakeLock.release();
+    travelWakeLock = null;
+  }
+}
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'visible' && travelTrackRecording) {
+    requestTravelWakeLock();
+  }
+});
+
 function openTravelMode() {
   const overlay = document.getElementById('travel-overlay');
   const boardLayer = document.getElementById('travel-board-layer');
@@ -5815,8 +5911,8 @@ function openTravelMode() {
   });
   setTimeout(function() {
     if (travelMap) travelMap.invalidateSize();
-    locateTravelPosition(true, true); // 2026.08：第二個true＝autoAnchor，剛進出行訣時GPS一到就自動錨定起點，不用使用者多按一次
-    startTravelPositionWatch(); // 2026.08新增：接著啟動持續追蹤，讓GPS箭頭之後能跟著實際移動即時更新位置
+    locateTravelPosition(true, true); // 第二個true＝autoAnchor，剛進出行訣時GPS一到就自動錨定起點，不用使用者多按一次
+    startTravelPositionWatch(); // 接著啟動持續追蹤，讓GPS箭頭之後能跟著實際移動即時更新位置
   }, 300);
   requestTravelCompass();
 }
@@ -5827,7 +5923,14 @@ function closeTravelMode() {
   if (!overlay || !overlay.classList.contains('is-open')) return;
   overlay.classList.remove('is-open', 'board-visible');
   hideTravelOrientationPrompt();
-  stopTravelPositionWatch(); // 2026.08新增：離開出行訣立刻clearWatch，不背景常駐持續耗電定位
+  stopTravelPositionWatch(); // 離開出行訣立刻clearWatch，不背景常駐持續耗電定位
+  // 一併移除指北感應器監聽——這個監聽只在requestTravelCompass()裡加上過，離開全螢幕
+  // 卻從來沒移除，導致背景持續以高頻率（部分裝置每秒30-60次）觸發handleTravelOrientation，
+  // 徒勞更新兩個已經看不到的DOM元素（GPS箭頭／小羅盤），是不必要的CPU/電量負擔，長時間下來
+  // 可能是回報「今天用到閃退一次」的其中一個成因。移除後，下次requestTravelCompass()
+  // 重新加回即可，addEventListener對同一個函式參考本來就會自動去重，不會漏接。
+  window.removeEventListener('deviceorientationabsolute', handleTravelOrientation, true);
+  window.removeEventListener('deviceorientation', handleTravelOrientation, true);
   resetTravelRoute(); // 路線導航狀態一併重置（含起點，已跟錨定合一，見 resetTravelRoute），下次重新進入是乾淨狀態
   setTimeout(function() {
     if (board && travelBoardPlaceholder) {
@@ -5848,7 +5951,7 @@ function closeTravelMode() {
   }, 300);
 }
 
-// ── 彩色羅盤方圓距離（2026.08改版：取代原本的螢幕相對%）──
+// ── 彩色羅盤方圓距離（取代原本的螢幕相對%）──
 // 圓盤在畫面上的像素直徑，不是固定值，而是「目前這個距離，在當下地圖縮放層級換算出來的像素數」，
 // 隨地圖zoom/move即時重算（見 travelMap.on('move zoom', ...) 內的呼叫），這樣不管怎麼縮放地圖，
 // 圓盤看起來的範圍永遠對應同一個真實距離。
@@ -5894,7 +5997,7 @@ document.getElementById('travel-size-range').addEventListener('input', function(
   document.getElementById('travel-size-value').textContent = formatTravelCompassRadiusLabel(travelCompassRadiusMeters);
 });
 
-// 2026.08：羅盤大小面板改收合式，點旁邊的小圓鈕（.travel-size-trigger）才彈出/收起，
+// 羅盤大小面板改收合式，點旁邊的小圓鈕（.travel-size-trigger）才彈出/收起，
 // 手感比照交通工具/點位的.expand-control（見toggleExpandControl），這裡獨立一個開關函式，
 // 不共用toggleExpandControl是因為那個函式還處理了「未設起點鎖住其他鈕」等額外邏輯，這裡用不到
 function toggleTravelSizePopover() {
@@ -5927,7 +6030,7 @@ const GATE_SUPPRESS_TABLE = {
 };
 
 // ── 門迫／門制：抽成獨立 pure predicate，不組HTML、不判斷「現在是哪個系統」 ──
-// 2026.08重構：原本判斷內嵌在 renderGateHTML 裡。是否要「套用」門制（陽盤系列才標，
+// 重構：原本判斷內嵌在 renderGateHTML 裡。是否要「套用」門制（陽盤系列才標，
 // 陰盤不標，見排盤規則.md四、（三）備註）屬於顯示/使用情境的決定，不屬於這兩個
 // predicate本身；predicate只回答「這個門在這個宮位是否構成迫／制」這個純幾何問題，
 // 由呼叫端（renderGateHTML畫面顯示、或奇門曆批次篩選）自行決定要不要套用。
@@ -6097,7 +6200,7 @@ function clearHighlight() {
     c.style.borderTopColor = c.style.borderBottomColor =
     c.style.borderLeftColor = c.style.borderRightColor = '';
   });
-  // 2026.08新增：連帶清掉中宮地支的加粗（見applyHouseHighlight），十二長生階段文字（.dz9-label）不受影響
+  // 連帶清掉中宮地支的加粗（見applyHouseHighlight），十二長生階段文字（.dz9-label）不受影響
   document.querySelectorAll('.dz9-branch.dz-branch-highlighted').forEach(el => {
     el.classList.remove('dz-branch-highlighted');
   });
@@ -6123,13 +6226,13 @@ function applyHouseHighlight(cellEl) {
   // 上側相鄰格下邊改橘
   const tk = HOUSE_TOP[nth];
   if (tk) cells[tk-1].style.borderBottomColor = HIGHLIGHT_COLOR;
-  // 2026.08移除：原本這裡還會把中宮對應地支格（#g5r*c*）的邊框一併改橘，呼應「格線都還在」時代的
+  // 移除：原本這裡還會把中宮對應地支格（#g5r*c*）的邊框一併改橘，呼應「格線都還在」時代的
   // 整體高亮設計。但.gc（每宮內部小格）的線已經拿掉了，其餘宮位之間不再有可上色的內格線，只剩中宮
   // 外框這一小段還留著顏色可以改，兩邊不對稱，變成畫面上一小段孤立的殘留高亮，看起來像沒清乾淨的
-  // bug，故拿掉這段、不再讓高亮延伸進中宮框線（Eric回報，見對話記錄）。中宮外框本身（#g5r*c*的
+  // bug，故拿掉這段、不再讓高亮延伸進中宮框線。中宮外框本身（#g5r*c*的
   // 1px實線）維持不動，只是不再參與高亮上色。
-  // 2026.08新增：改用「對應地支加粗」取代邊框上色，維持同步高亮的效果——只加粗地支字元本身
-  // （.dz9-branch），十二長生階段文字（.dz9-label）不加粗（Eric要求）
+  // 改用「對應地支加粗」取代邊框上色，維持同步高亮的效果——只加粗地支字元本身
+  // （.dz9-branch），十二長生階段文字（.dz9-label）不加粗
   const gong = parseInt(cellEl.dataset.gong);
   const branches = HOUSE_DZ[gong]; // 沿用既有的宮位→地支對照表（見下方HOUSE_DZ定義），不再另外重寫一份
   if (branches) {
@@ -6142,7 +6245,7 @@ function applyHouseHighlight(cellEl) {
 
 
 // 出行訣地圖模式中：宮位點擊改成切換吉凶用途，十二長生的宮位點擊高亮功能在此期間先禁用，
-// 避免兩種點擊意圖互相干擾（2026.08簡化：travelMarkingActive已移除，只留travel-map-mode這條判斷）
+// 避免兩種點擊意圖互相干擾（簡化：travelMarkingActive已移除，只留travel-map-mode這條判斷）
 function changshengClickDisabled() {
   const outer = document.getElementById('outer-board');
   return !!(outer && outer.classList.contains('travel-map-mode'));
@@ -6339,13 +6442,11 @@ function getYangChartNumber(y, m, d) {
   };
 }
 
-// ⚠️ 已淘汰：月盤原本是工具開發過程中類推套用9.2節氣表＋強制陰遁的假設（舊函式getYangChartNumberForcedYin，
-// 非老師教學內容——老師只教過陽盤第三步以後的流程骨架共用，未具體教授局數怎麼算），
-// 2026.08經8筆實測資料證實這套自訂假設方向錯誤，已改用下方getMonthWuXingJu（跟年盤同一套三元甲子邏輯，5年一區塊）。
+// 月盤局數不套用9.2節氣表，改用下方getMonthWuXingJu（跟年盤同一套三元甲子邏輯，5年一區塊；
+// 詳見排盤規則.md第9.4節）。
 
-// 年盤專用：三元甲子局數表（2026.08 實測驗證，取代工具開發過程中原本套用9.2節氣表的自訂假設）
-// 依據：6筆比對資料（china95.net、tzchimen.com）橫跨1957-2026年，證實年家局數
-// 不是按9.2表逐日/逐節氣變動，而是套用玄空飛星「三元甲子」的60年區塊，每180年循環：
+// 年盤專用：三元甲子局數表（依據：6筆比對資料，china95.net、tzchimen.com，橫跨1957-2026年）
+// 年家局數不是按9.2表逐日/逐節氣變動，而是套用玄空飛星「三元甲子」的60年區塊，每180年循環：
 //   上元：1864起 → 陰1局；中元：1924起 → 陰4局；下元：1984起 → 陰7局
 // 換元邊界已實測確認為1984年立春（1984/2/4癸亥年中元陰4局 → 1984/2/5甲子年下元陰7局），
 // 與排盤規則.md「年支須用節氣換年」原則一致，故效力年份（effectiveYear）採用八字年柱
@@ -6364,7 +6465,7 @@ function getEffectiveYearFromGanZhi(y, yearGZ) {
   }
   return y; // 理論上不會走到這裡，僅防呆
 }
-// 已驗證範圍：1800年起（2026.08用china95.net五組資料往回驗證確認，涵蓋1804年立春換元邊界）。
+// 已驗證範圍：1800年起（用china95.net五組資料往回驗證確認，涵蓋1804年立春換元邊界）。
 // 1800年以前公式仍會照常計算（純mod 180運算，跟時盤那種鏈式模擬不同，沒有方向性限制），
 // 但缺乏比對資料，故標示為「未驗證外推」而非直接擋下。
 const SAN_YUAN_VERIFIED_FROM_YEAR = 1800;
@@ -6380,15 +6481,12 @@ function getYearSanYuanJu(y, m, d, yearGZ) {
     isVerified: effectiveYear >= SAN_YUAN_VERIFIED_FROM_YEAR
   };
 }
-// 月盤專用：跟年盤同一套「三元甲子」邏輯，只是週期縮小為5年一區塊、15年一循環（2026.08 實測驗證）
-// 依據：8筆比對資料（china95.net）橫跨1975-2029年，涵蓋上中下三元，逐項核對局數與china95顯示的
-// 「上/中/下元XX年」區塊起始年標籤，全數一致。這推翻的是工具開發過程中自訂的類推假設（「月盤跟時盤
-// 共用置閏邏輯」），不是老師教學內容——老師只教過陽盤第三步以後的流程骨架共用，未具體教過局數公式。
-// 月盤實際運作更接近年盤的縮小版：60個月＝5年（跟年干支60甲子循環一樣是精確離散系統，不套用會浮動
+// 月盤專用：跟年盤同一套「三元甲子」邏輯，只是週期縮小為5年一區塊、15年一循環
+// 依據：8筆比對資料（china95.net）橫跨1975-2029年，涵蓋上中下三元
+// 月盤實際運作是年盤的縮小版：60個月＝5年（跟年干支60甲子循環一樣是精確離散系統，不套用會浮動
 // 的節氣連續量），故不需要時盤那套超神接氣、大雪/芒種置閏機制。effectiveYear沿用同一套立春校正反推
 // （見getEffectiveYearFromGanZhi），局數對照表也跟年盤共用同一張[1,4,7]，已驗證範圍同年盤沿用
 // SAN_YUAN_VERIFIED_FROM_YEAR（1800年起）。
-// 此函式取代原本的getYangChartNumberForcedYin(套9.2節氣表)作為月盤的正式邏輯。
 function getMonthWuXingJu(y, m, d, yearGZ) {
   const effectiveYear = getEffectiveYearFromGanZhi(y, yearGZ);
   const offset = ((effectiveYear - SAN_YUAN_ANCHOR_YEAR) % 15 + 15) % 15;
@@ -6401,21 +6499,8 @@ function getMonthWuXingJu(y, m, d, yearGZ) {
     isVerified: effectiveYear >= SAN_YUAN_VERIFIED_FROM_YEAR
   };
 }
-// ⚠️ 陰陽遁判定精度更新（2026.08，獨立資料佐證）：Eric用china95.net「日家奇門」交叉驗證，
-// 同一天內（2026/12/22庚午日）冬至交節時刻（04:51）前後一小時開盤，4:24仍顯示「阴庚午日」、
-// 5:24已顯示「阳庚午日」——證實奇門陰陽遁切換不是只精確到日。
-// 原本借用的getYangChartNumber()雖然內部有抓到精確節氣時刻，但_yangDateOnly()會把時分秒砍掉、
-// 只留年月日比較，是日級精度，跟這次實測發現的精度不符，故另立本函式，不動原本的日級版本
-// （getYangChartNumber沿用給時盤自己的鏈式模擬用，不受影響）。
-// 2026.08再更新：本函式已改為陰盤的正式判定（取代getSolsticeType()，見該函式上方棄用說明），
-// 用china95.net「陰盤奇門」實測資料（4:24阴遁八局／5:24阳遁九局）二度驗證，證實不只日家奇門、
-// 標準陰盤奇門本身跨節氣時局數也會確實跳動，不是單純日級精度的誤差。
-// ⚠️ 尚待確認：這裡寫的是「分鐘級」精度（直接比對交節秒數），但東方命理系統本身的時間顆粒度是
-// 時辰（2小時一個單位），冬至/夏至交節時刻理論上可能只需要精確到「落在哪個時辰」，不必真的精確到
-// 分鐘——現有這批交叉驗證資料（4:24 vs 5:24）剛好同時跨了時辰（寅→卯）與節氣兩條線，無法排除
-// 其實只是時辰級精度在起作用。真正決定性的測試是「同一時辰內、卡在交節時刻前後」的兩筆資料（如
-// 2026/12/22 04:30 vs 04:55，同為寅時），若兩者結果相同，代表系統只到時辰級精度，屆時本函式的
-// 分鐘級比對邏輯需要改成「取交節時刻所在時辰的邊界」再比對，而非直接比對秒數本身。
+// 陰陽遁判定為分鐘級精度，緊跟真實交節時刻（見排盤規則.md第9.6節）。取代原本
+// 只比對到年月日的getSolsticeType()（見該函式棄用說明）。
 function getSolsticeTypePrecise(y, m, d, h, min) {
   if (y < 1899) return null; // 沿用時盤已驗證範圍下限，維持保守（節氣表理論上可算更早，但無交叉驗證）
   const target = new Date(Date.UTC(y, m - 1, d, h, min || 0));
@@ -6462,14 +6547,14 @@ function getRealJieqiName(y, m, d, h, min) {
   return lastName;
 }
 
-// 陰陽遁方向（2026.08確認並完整驗證）：老師明確表示日盤跟時盤、陰盤一樣有分陰陽遁（不同於年盤/月盤固定陰遁），
+// 陰陽遁方向（確認並完整驗證）：老師明確表示日盤跟時盤、陰盤一樣有分陰陽遁（不同於年盤/月盤固定陰遁），
 // 局數公式本身逐字稿未直接教授，是工具開發階段從實測資料反推、並已完整驗證的結果（見排盤規則.md「八、日盤」）：
 //   陰陽遁判定：借用節氣冬至/夏至半年判定，判定本身為分鐘級精度（見上方getSolsticeTypePrecise）
 //   陽遁方向翻轉：陰遁公式鏡像成陽遁公式（9-(n mod9) → 1+(n mod9)），同一錨點、同一diffDays線性計數，
 //     只是陽遁時改用遞增映射。邊界為平滑翻轉、非歸零重置（已用12/21與12/22相鄰n值資料交叉驗證）。
 const DAY_JU_ANCHOR = new Date(Date.UTC(2026, 7, 3)); // 2026-08-03，日柱己酉，n mod 9 = 0（陰9局）
 function getDayJu(y, m, d, h, min) {
-  const solsticeType = getSolsticeTypePrecise(y, m, d, h, min); // 分鐘級精度判定（2026.08驗證，見上方註解）
+  const solsticeType = getSolsticeTypePrecise(y, m, d, h, min); // 分鐘級精度判定（驗證，見上方註解）
   if (!solsticeType) return null; // 早於已驗證範圍(1899年)，陰陽遁無法判定，比照時盤擋下
   const target = new Date(Date.UTC(y, m - 1, d));
   const diffDays = Math.round((target - DAY_JU_ANCHOR) / 86400000);
@@ -6478,15 +6563,15 @@ function getDayJu(y, m, d, h, min) {
   return {
     solsticeType,
     chartNum: isYang ? (1 + nMod9) : (9 - nMod9), // 陽遁：鏡像遞增；陰遁：遞減（兩者皆已驗證）
-    _verified: true, // 陰遁分支8組實測資料驗證、陽遁分支5組跨冬至邊界實測資料驗證，皆通過（2026.08，見排盤規則.md）
-    _note: '局數公式已驗證（2026.08，陰遁8組＋陽遁5組跨邊界實測資料）；陰陽遁判定已為分鐘級精度（2026.08驗證）'
+    _verified: true, // 陰遁分支8組實測資料驗證、陽遁分支5組跨冬至邊界實測資料驗證，皆通過（見排盤規則.md）
+    _note: '局數公式已驗證（陰遁8組＋陽遁5組跨邊界實測資料）；陰陽遁判定已為分鐘級精度'
   };
 }
 // ==================== 陽盤引擎結束 ====================
 
 // 地支序數
 const EARTH_BRANCH_LIST = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
-// 2026.08新增：宮位方位對照（排盤規則.md「九宮方位」表），出行訣地圖模式下引干位置改顯示此內容
+// 宮位方位對照（排盤規則.md「九宮方位」表），出行訣地圖模式下引干位置改顯示此內容
 const HOUSE_DIRECTION_MAP = {1:'北',2:'西南',3:'東',4:'東南',6:'西北',7:'西',8:'東北',9:'南'};
 
 // 數字根（各位數相加到一位數，0視為9）
@@ -6502,37 +6587,6 @@ function hourToBranch(h) {
   // 子=23-1, 丑=1-3, ..., 亥=21-23
   const idx = Math.floor((h + 1) / 2) % 12;
   return EARTH_BRANCH_LIST[idx];
-}
-
-// ⚠️ 2026.08已棄用：此為原版陰盤陰陽遁判定，只比對到年月日（sDate把時分砍掉），是日級精度。
-// 2026.08用china95.net「陰盤奇門」實測資料證實：同一天內（2026/12/22庚午日）冬至交節時刻
-// （04:51）前後，4:24仍「阴遁八局」、5:24已「阳遁九局」，確認需要至少分鐘級（待驗證是否要收斂為
-// 時辰級，見getSolsticeTypePrecise上方註解）精度，此函式的日級精度不夠用，已改用下方
-// getSolsticeTypePrecise()取代（見castChart()呼叫處）。保留本函式僅供回溯對照，不再被呼叫。
-// 判斷陰陽遁：找開盤時間前最近的冬至或夏至
-function getSolsticeType(y, m, d, h) {
-  const openDate = new Date(y, m-1, d, h);
-
-  // 搜尋前兩年到當年的節氣，找最近一個冬至或夏至的名稱
-  let lastSolstice = null;
-
-  for (let yr = y - 1; yr <= y; yr++) {
-    const lunarYr = LunarYear.fromYear(yr);
-    const jieQiDays = lunarYr.getJieQiJulianDays();
-
-    // lunar-javascript 節氣順序固定，冬至是第0個，夏至是第12個（從冬至開始算）
-    // 用 Solar.fromJulianDay 取得日期，再用 getLunar().getJieQi() 確認名稱
-    for (let i = 0; i < jieQiDays.length; i++) {
-      const s = Solar.fromJulianDay(jieQiDays[i]);
-      const name = s.getLunar().getJieQi();
-      if (name === '冬至' || name === '夏至') {
-        const sDate = new Date(s.getYear(), s.getMonth()-1, s.getDay());
-        if (sDate <= openDate) lastSolstice = name;
-      }
-    }
-  }
-
-  return lastSolstice === '冬至' ? '陽' : '陰';
 }
 
 // 計算局數
@@ -6592,7 +6646,7 @@ const BRANCH_TO_HOUSE = {
 
 // 宮位→地支對應表（由 BRANCH_TO_HOUSE 反推）。兩處用途：(1) 本節下方的空亡/馬星判斷；
 // (2) applyHouseHighlight()（見上方，宮位高亮時同步加粗中宮對應地支）——後者原本另外重寫了一份
-// 內容一樣的HOUSE_TO_BRANCHES，2026.08盤點冗餘時發現重複，已改回共用這份
+// 內容一樣的HOUSE_TO_BRANCHES，盤點冗餘時發現重複，已改回共用這份
 const HOUSE_DZ = (() => {
   const map = {};
   Object.entries(BRANCH_TO_HOUSE).forEach(([dz, gong]) => {
@@ -6837,7 +6891,7 @@ function validateDateInputs(y, m, d, h, min) {
 }
 
 // 子時跨日調整：23:00–23:59 屬於隔日子時，農曆換算需 +1 天、時辰改為 0。
-// 2026.08盤點冗餘時發現castChart()和computeFourPillars()原本各自寫了一份一模一樣的判斷邏輯
+// 盤點冗餘時發現castChart()和computeFourPillars()原本各自寫了一份一模一樣的判斷邏輯
 // （即使computeFourPillars自己的註解就寫著「套用與castChart相同的規則」），抽成這支共用函式，
 // 避免以後這條規則要改（例如分鐘級精度之類的調整）時，兩邊沒有同步改到而悄悄產生分歧。
 function applyZiShiAdjustment(y, m, d, h) {
@@ -6847,7 +6901,7 @@ function applyZiShiAdjustment(y, m, d, h) {
 }
 
 // ══════════════════════════════════
-// Pure 排盤引擎（2026.08重構抽出）
+// Pure 排盤引擎（重構抽出）
 // ══════════════════════════════════
 // 輸入「局數＋陰陽遁＋干支」（即排盤規則.md第三步以後代入的那組干支：時柱／日柱／
 // 月柱／年柱皆可，四盤共用同一套排盤流程，見9.1節），回傳完整盤面資料物件，
@@ -6920,7 +6974,7 @@ function computeChart(solsticeType, chartNum, stemBranch) {
   const hidingStemMap = guidingResult.guidingMap;
 
   // 四害：逐宮算出布林值（供顯示端組HTML、也供奇門曆篩選端直接查詢，不重複判斷邏輯）
-  // 2026.08：entombed[g].earth／.heaven 從布林值改成「入墓的天干字元陣列」（可能為空陣列），
+  // entombed[g].earth／.heaven 從布林值改成「入墓的天干字元陣列」（可能為空陣列），
   // 供奇門曆結果清單標記「天盤／地盤＿入墓」用（見matchGates），需要知道具體是哪個字入墓，
   // 不能只知道有沒有入墓。
   const entombed = {}, penalized = {}, gateConstraint = {}, gateSuppress = {};
@@ -7024,14 +7078,14 @@ function castChart() {
   // 陰陽遁 + 局數
   let solsticeType, chartNum, yangInfo = null;
   if (PLATE_MODE === 'yang') {
-    // 年盤／月盤：改用三元甲子公式（2026.08實測驗證，見 getYearSanYuanJu／getMonthWuXingJu 註解）；
+    // 年盤／月盤：改用三元甲子公式（實測驗證，見 getYearSanYuanJu／getMonthWuXingJu 註解）；
     // 時盤：維持沿用9.2節氣表＋9.3置閏引擎
     if (PLATE_SUBMODE === 'year') {
       yangInfo = getYearSanYuanJu(y, m, d, yGZ); // 純mod 180公式，無方向性限制，任何年份皆可算
     } else if (PLATE_SUBMODE === 'month') {
       yangInfo = getMonthWuXingJu(y, m, d, yGZ); // 純mod 15公式，同上
     } else if (PLATE_SUBMODE === 'day') {
-      yangInfo = getDayJu(lunarY, lunarM, lunarD, lunarH, min); // 純日柱線性公式（2026.08驗證）；用子時跨日調整後的日期（與dGZ同基準，23:00起算次日），陰陽遁判定已為分鐘級精度（2026.08驗證，見getSolsticeTypePrecise）
+      yangInfo = getDayJu(lunarY, lunarM, lunarD, lunarH, min); // 純日柱線性公式（驗證）；用子時跨日調整後的日期（與dGZ同基準，23:00起算次日），陰陽遁判定已為分鐘級精度（驗證，見getSolsticeTypePrecise）
     } else {
       yangInfo = getYangChartNumber(y, m, d); // 時盤：鏈式模擬，僅能從1899-12-22正授錨點往後算
     }
@@ -7048,7 +7102,7 @@ function castChart() {
     solsticeType = yangInfo.solsticeType;
     chartNum = yangInfo.chartNum;
   } else {
-    solsticeType = getSolsticeTypePrecise(y, m, d, h, min); // 2026.08修正：改用分鐘級精度判定，取代原本的日級精度getSolsticeType()（見下方⚠️保留原函式供對照）
+    solsticeType = getSolsticeTypePrecise(y, m, d, h, min); // 改用分鐘級精度判定，取代原本的日級精度getSolsticeType()（見下方⚠️保留原函式供對照）
     if (solsticeType === null) {
       const msgEl = document.getElementById('input-error-msg');
       if (msgEl) {
@@ -7080,10 +7134,10 @@ function castChart() {
     renderDaXian(solsticeType, chartNum, MING_PAN_GENDER);
   }
 
-  // ── 2026.08重構：以下改為呼叫 pure computeChart() 拿完整盤面資料，再逐一寫入DOM ──
+  // ── 重構：以下改為呼叫 pure computeChart() 拿完整盤面資料，再逐一寫入DOM ──
   // 排盤邏輯本身（第三～八步＋四害判斷）已搬進 computeChart，此處不重複計算，只負責顯示。
   const chart = computeChart(solsticeType, chartNum, effGZ);
-  _currentCastChart = chart; // 2026.08新增：同步快取，供出行訣「自動判斷」呼叫matchGates()重用
+  _currentCastChart = chart; // 同步快取，供出行訣「自動判斷」呼叫matchGates()重用
 
   if (chart) {
     document.getElementById('hb-xun').textContent = chart.xun.replace('旬', '');
@@ -7182,10 +7236,10 @@ function castChart() {
 
   clearHighlight();
 
-  // 2026.08新增：任何會呼叫castChart()重新排盤的路徑（含前日/上時/下時/次日等快捷鍵），
+  // 任何會呼叫castChart()重新排盤的路徑（含前日/上時/下時/次日等快捷鍵），
   // 若當下正處於出行訣「自動標記吉門」狀態（travelInlineLuckyActive），舊的吉門標記是對應
   // 換盤前那張盤算出來的，換了新盤後就對不上了——這裡統一重新呼叫autoMarkTravelLucky()
-  // 依新盤面重算一次，讓標記永遠對應當下實際顯示的盤（Eric要求，見對話記錄）。
+  // 依新盤面重算一次，讓標記永遠對應當下實際顯示的盤。
   // reCastTravelNow()裡仍保留自己的顯式呼叫（該按鈕不論先前是否已開啟標記，都要強制重標一次，
   // 見該函式註解），跟這裡在travelInlineLuckyActive已是true時重複呼叫一次，屬無害的多算一次。
   if (typeof travelInlineLuckyActive !== 'undefined' && travelInlineLuckyActive) {
@@ -7298,7 +7352,7 @@ function buildTimePillarsGrid(chartTime) {
   return `<div class="tg-wrap"><div class="tg-side"></div><div class="tg-grid">${topRow}${bottomRow}</div><div class="tg-side"></div></div>`;
 }
 
-// 2026.08新增：使用說明面板開關。內容本身是靜態HTML，但改成依「目前畫面在哪個模式」只顯示對應
+// 使用說明面板開關。內容本身是靜態HTML，但改成依「目前畫面在哪個模式」只顯示對應
 // 區塊，而不是五段全部丟出來——判斷依據：
 //   - #outer-board 有 travel-map-mode class → 出行訣地圖模式中
 //   - currentMode === 'almanac' → 奇門曆模式中
@@ -7307,7 +7361,7 @@ function buildTimePillarsGrid(chartTime) {
 function openHelpPanel() {
   const outerEl = document.getElementById('outer-board');
   const inTravelMode = !!(outerEl && outerEl.classList.contains('travel-map-mode'));
-  // 2026.08細分：出行訣說明拆成「九宮框地圖」／「全螢幕地圖」兩塊（Eric要求，見對話記錄），
+  // 出行訣說明拆成「九宮框地圖」／「全螢幕地圖」兩塊，
   // 用travel-overlay的is-open判斷目前是全螢幕還是九宮框內嵌地圖，只顯示對應那一塊，
   // 不再兩塊一起顯示——兩者按鈕配置不同（例如「← 返回盤面」實際行為就不一樣），混在一起說明容易誤導。
   const travelOverlay = document.getElementById('travel-overlay');
@@ -7316,7 +7370,7 @@ function openHelpPanel() {
   if (inTravelMode) activeSection = inTravelFullscreen ? 'travel-fullscreen' : 'travel-inline';
   else if (typeof currentMode !== 'undefined' && currentMode === 'almanac') activeSection = 'almanac';
   else activeSection = 'plate';
-  // 2026.08新增：面板標題也跟著模式換，呼應標題列（title-row-line2）的三段文字，見updateTitleRowText
+  // 面板標題也跟著模式換，呼應標題列（title-row-line2）的三段文字，見updateTitleRowText
   const helpTitleEl = document.getElementById('help-panel-title');
   if (helpTitleEl) {
     const helpTitleByMode = { plate: '九宮排盤使用說明', almanac: '奇門曆使用說明', 'travel-inline': '出行訣使用說明', 'travel-fullscreen': '出行訣使用說明' };
@@ -7324,7 +7378,7 @@ function openHelpPanel() {
   }
   document.querySelectorAll('#help-overlay .help-section').forEach(function(el) {
     const key = el.getAttribute('data-help-section');
-    // 2026.08修正：原本「records」不分模式永遠顯示，但紀錄鈕本身只在一般排盤畫面（plate）才看得到、
+    // 原本「records」不分模式永遠顯示，但紀錄鈕本身只在一般排盤畫面（plate）才看得到、
     // 奇門曆／出行訣模式下都被隱藏（見toggleAlmanacMode／出行訣全螢幕疊層），說明面板卻還是照樣
     // 顯示紀錄那段，變成在講一個當下用不到的功能——改成只有activeSection==='plate'時才一併顯示
     el.style.display = (key === activeSection || (key === 'records' && activeSection === 'plate')) ? '' : 'none';
@@ -7419,8 +7473,8 @@ function saveRecord() {
     method,
     predictorGender: profile.gender,
     createdAt: new Date().toISOString(),
-    // 2026.08新增：存快照，不存參照（同慣例）。舊紀錄沒有這幾欄，loadRecord() 遇到時
-    // 直接視為陰盤（Eric確認：舊紀錄數量少，不需要額外提醒）。
+    // 存快照，不存參照（同慣例）。舊紀錄沒有這幾欄，loadRecord() 遇到時
+    // 直接視為陰盤（舊紀錄數量少，不需要額外提醒）。
     plateMode: PLATE_MODE,                                    // 'yin' | 'yang'
     plateSubMode: PLATE_MODE === 'yang' ? PLATE_SUBMODE : null, // 'year'|'month'|'day'|'time'，僅陽盤時有意義
     mingPanMode: MING_PAN_MODE,                               // 命盤是獨立於陰陽盤的另一個開關，需另外記
@@ -7438,11 +7492,7 @@ function saveRecord() {
   renderRecordList();
 }
 
-// 匯出紀錄：面板內預覽純文字（可複製／下載），非原生對話框
-// 2026.08修正：匯出改成點下去直接輸出JSON備份，不再有預覽/文字版步驟（原本還有buildExportText／
-// toggleExportPreview／downloadExportText三個函式做純文字版預覽，已移除——文字版本來就只是給人看，
-// 不是給機器讀回去用的，拿掉不影響匯入功能）。2026.08新增：若有勾選卡片，只匯出所選的那幾筆；
-// 沒有勾選（selectedRecordIds為空）則沿用原本行為，匯出全部紀錄
+// 匯出直接輸出JSON備份（不透過原生對話框）。若有勾選卡片，只匯出所選；沒有勾選則匯出全部紀錄
 function exportRecordsAsJSON() {
   const all = getRecords();
   const list = selectedRecordIds.size ? all.filter(r => selectedRecordIds.has(r.id)) : all;
@@ -7495,7 +7545,7 @@ function handleImportRecordsFile(event) {
         method: item.method,
         predictorGender: item.predictorGender,
         createdAt: item.createdAt || new Date().toISOString(),
-        // 2026.08新增：盤別快照欄位，匯入的紀錄若原本就有這幾欄就一併帶過來；
+        // 盤別快照欄位，匯入的紀錄若原本就有這幾欄就一併帶過來；
         // 舊格式匯入檔沒有這幾欄，個別項目會是undefined，plateLabelForRecord/
         // restorePlateModeForRecord都已處理過這種情況（視為陰盤），不需要在這裡補預設值
         plateMode: item.plateMode,
@@ -7519,7 +7569,7 @@ function handleImportRecordsFile(event) {
   reader.readAsText(file);
 }
 
-// 2026.08新增：紀錄卡片多選——記錄目前勾選的id集合，開/關「紀錄」面板或匯入/刪除後都會重置
+// 紀錄卡片多選——記錄目前勾選的id集合，開/關「紀錄」面板或匯入/刪除後都會重置
 // （避免殘留選取跟畫面上實際存在的紀錄對不起來）
 let selectedRecordIds = new Set();
 
@@ -7572,9 +7622,9 @@ function updateRecordSelectionUI() {
   const n = selectedRecordIds.size;
   if (countEl) countEl.textContent = n ? `已選 ${n} 筆` : '';
   if (delBtn) delBtn.style.display = n ? '' : 'none';
-  // 2026.08新增：有勾選時「匯入」用不到（匯入是附加新資料，跟「操作已選的這幾筆」是兩件事），先藏起來
+  // 有勾選時「匯入」用不到（匯入是附加新資料，跟「操作已選的這幾筆」是兩件事），先藏起來
   if (importBtn) importBtn.style.display = n ? 'none' : '';
-  // 2026.08新增：有勾選時，各卡片自己的「載入盤面」「刪除」先藏起來，避免跟頂部的批次操作混在一起、
+  // 有勾選時，各卡片自己的「載入盤面」「刪除」先藏起來，避免跟頂部的批次操作混在一起、
   // 誤觸單筆操作；用容器class統一控制（見CSS #rec-list.has-selection .rec-item-actions），
   // 不用逐張卡片個別toggle
   if (listEl) listEl.classList.toggle('has-selection', n > 0);
@@ -7641,7 +7691,7 @@ function loadRecord(id) {
   document.getElementById('day').value = m[3];
   document.getElementById('hour').value = m[4];
   document.getElementById('minute').value = m[5];
-  restorePlateModeForRecord(r); // 2026.08新增：修正原本「用目前畫面盤別重新起局」的bug，改用存檔當下的盤別
+  restorePlateModeForRecord(r); // 修正原本「用目前畫面盤別重新起局」的bug，改用存檔當下的盤別
   closeRecordsPanel();
   clearHighlight();
   castChart();
