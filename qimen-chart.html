@@ -1131,8 +1131,12 @@
   /* 2026.08新增：錄製中即時顯示已經走了多久，疊在出發/停止鈕正上方；只在travelTrackRecording為true
      時顯示（見startTravelTrackRecording／stopTravelTrackRecording），每秒用setInterval更新一次，
      累加邏輯跟stopTravelTrackRecording算「花費時間」共用同一組travelTrackElapsedMs／
-     travelTrackSegmentStartTime，見updateTravelTrackTimerDisplay */
-  .travel-track-timer { display: none; position: absolute; z-index: 4; right: 14px; bottom: calc(max(14px, env(safe-area-inset-bottom)) + 284px); background: rgba(231,76,60,.92); color: #fff; border-radius: 12px; padding: 4px 10px; font: 12px "M PLUS Rounded 1c", sans-serif; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,.18); pointer-events: none; white-space: nowrap; }
+     travelTrackSegmentStartTime，見updateTravelTrackTimerDisplay。
+     2026.08調整：中線對齊下方按鈕群（.travel-track-btn等，right:14px＋width:44px，中線落在
+     「距右邊界36px」處）——用right:36px＋transform:translateX(50%)，不管這顆徽章本身多寬
+     （00:27 vs 之後可能出現的1:23:45），中點永遠精準對在36px那條線上，不用因內容變動手動調位置。
+     順便縮小字級/padding，降低內容變寬時右側超出畫面的風險（Eric要求，見對話記錄）。 */
+  .travel-track-timer { display: none; position: absolute; z-index: 4; right: 36px; transform: translateX(50%); bottom: calc(max(14px, env(safe-area-inset-bottom)) + 284px); background: rgba(231,76,60,.92); color: #fff; border-radius: 11px; padding: 3px 8px; font: 11px "M PLUS Rounded 1c", sans-serif; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,.18); pointer-events: none; white-space: nowrap; }
   .travel-track-timer.is-visible { display: block; }
   /* 清除路徑鈕：只在有記錄過、且非錄製中才顯示（見 updateTravelTrackButtons），疊在出發鈕左側 */
   .travel-track-clear-btn { position: absolute; z-index: 4; right: 64px; bottom: calc(max(14px, env(safe-area-inset-bottom)) + 232px); width: 36px; height: 36px; border-radius: 50%; border: none; font-size: 15px; background: rgba(255,255,255,.94); color: #999; display: none; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,.18); pointer-events: auto; }
