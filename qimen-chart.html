@@ -1200,19 +1200,6 @@
   /* 整套按鈕群間距統一14px，三顆鈕(定位58/點位116/交通工具174)兩兩間隔都是14
      （58+44+14=116，116+44+14=174）；定位鈕跟下方泡泡貼齊、無額外間距，見.travel-status附近註解 */
   #transport-control { bottom: calc(max(14px, env(safe-area-inset-bottom)) + 174px); }
-  /* 服務不可靠警示徽章——OSRM demo server對walking/cycling profile有已知問題（表面接受請求、
-     實際仍用driving路網計算，見calculateTravelRoute內checkTravelRouteProfileReliability），
-     非本工具程式邏輯問題。掛在「個別圖示」右上角的紅底驚嘆號，每個交通工具各自獨立判定/記憶
-     （見travelRouteProfileReliability），比疊在收合鈕上更能一眼看出哪個模式有問題。
-     位置縮在按鈕範圍內（top:0;right:0，非負位移凸出邊界），因為.expand-options有
-     overflow-x:hidden，凸出邊界的徽章會被水平裁掉一角，縮進內部就不受影響。 */
-  .transport-warning-badge {
-    position: absolute; top: 0; right: 0; width: 14px; height: 14px; border-radius: 50%;
-    background: #e74c3c; color: #fff; font-size: 9px; font-weight: 700; line-height: 14px;
-    text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,.35); z-index: 3;
-    display: none; pointer-events: none;
-  }
-  .transport-warning-badge.is-visible { display: block; }
   #pin-control { bottom: calc(max(14px, env(safe-area-inset-bottom)) + 116px); }
   /* 搜尋鈕收進pin-options水滴選單裡（終點紅水滴左邊，見#opt-search）。彈出的搜尋泡泡是獨立
      浮動面板，水平置中疊在水滴選單正上方（116+44+12≈172px），輸入框靠近按鈕、結果清單往上長
@@ -2551,17 +2538,16 @@
   <div class="expand-control" id="transport-control">
     <button type="button" class="expand-trigger" id="transport-trigger" onclick="toggleExpandControl('transport-control')">
       <span id="transport-trigger-icon">🚶</span>
-      <span class="transport-warning-badge" id="transport-trigger-badge">!</span>
     </button>
     <div class="expand-options" id="transport-options">
       <button type="button" data-mode="walking" onclick="selectTravelTransportMode('walking')">
-        <span>🚶</span><span class="transport-warning-badge" id="transport-badge-walking">!</span>
+        <span>🚶</span>
       </button>
       <button type="button" data-mode="cycling" onclick="selectTravelTransportMode('cycling')">
-        <span>🚲</span><span class="transport-warning-badge" id="transport-badge-cycling">!</span>
+        <span>🚲</span>
       </button>
       <button type="button" data-mode="driving" onclick="selectTravelTransportMode('driving')">
-        <span>🚗</span><span class="transport-warning-badge" id="transport-badge-driving">!</span>
+        <span>🚗</span>
       </button>
     </div>
   </div>
@@ -5278,18 +5264,11 @@ function renderTravelMiniCompass(heading) {
 // ══════════════════════════════════
 let travelRouteMode = null;       // 目前選取的點位模式：'start' | 'via' | 'end' | null（未選取）
 let travelRoutePoints = [];       // [{type, latlng, marker}]，依實際點擊順序記錄
-let travelRouteProfile = 'walking'; // OSRM profile：driving | walking | cycling，預設步行
+let travelRouteProfile = 'walking'; // Mapbox routing profile：driving | walking | cycling，預設步行
 let travelRouteLine = null;       // 算出來的路線圖層（L.geoJSON）
 let travelRoutePendingRemoveIndex = null; // 目前跳出「移除？」小泡泡、等待確認的點位索引
-// 各交通工具各自獨立記憶「上次實測是否可靠」，見checkTravelRouteProfileReliability。
-// null＝尚未實測過（不顯示驚嘆號，避免誤報）；true＝已證實不可靠（demo server用driving路網頂替）；
-// false＝已證實可靠。三個模式各自累積、互不影響，只要曾經測出不可靠就先掛著提醒，直到下次同模式重新
-// 算出可靠結果才會消掉（不會因為切換到別的模式或清空點位而重置，因為這是服務本身的狀態、不是這條路線的狀態）。
-let travelRouteProfileReliability = { walking: null, cycling: null, driving: null };
 
 const TRAVEL_TRANSPORT_ICONS = { walking: '🚶', cycling: '🚲', driving: '🚗' };
-// 狀態列文字用的中文名稱，對應checkTravelRouteProfileReliability回傳的profile字串
-const TRAVEL_TRANSPORT_LABELS = { walking: '行走', cycling: '騎車', driving: '駕駛' };
 const TRAVEL_ROUTE_MARKER_COLORS = { start: '#2ecc71', via: '#e67e22', end: '#e74c3c' };
 const PIN_TRIGGER_COLORS = { start: '#2ecc71', via: '#e67e22', end: '#e74c3c' };
 const TRAVEL_ROUTE_PIN_SVG = '<svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg>';
@@ -5312,13 +5291,10 @@ function toggleExpandControl(id) {
 
 function selectTravelTransportMode(mode) {
   travelRouteProfile = mode;
-  // 改寫 #transport-trigger-icon（圖示專用的內層span），不能再直接寫
-  // #transport-trigger 本身的 textContent——那樣會把徽章span一併清掉（見HTML結構調整）
   const iconEl = document.getElementById('transport-trigger-icon');
   if (iconEl) iconEl.textContent = TRAVEL_TRANSPORT_ICONS[mode];
   const controlEl = document.getElementById('transport-control');
   if (controlEl) controlEl.classList.remove('is-open');
-  renderTravelProfileBadges(); // 切換模式時，收合鈕徽章要立刻反映該模式已知的判定結果（即使還沒重新算路線）
   calculateTravelRoute(); // 已有路線時，切換交通工具要重新算一次
 }
 
@@ -5408,7 +5384,15 @@ function placeTravelStartAtCurrentLocation() {
 
 // 放置點位的共用邏輯：地圖點擊放置（中途點／終點）與按鈕直接定位（起點）都走這裡，
 // 避免兩套流程各自維護一份幾乎相同但容易漏改的程式碼
+const TRAVEL_ROUTE_MAX_VIA_POINTS = 10; // Mapbox Optimization API總路點上限12個（含起點終點），扣掉起訖點＝中途點最多10個
 function placeTravelRoutePoint(latlng, type) {
+  if (type === 'via') {
+    const viaCount = travelRoutePoints.filter(function(p) { return p.type === 'via'; }).length;
+    if (viaCount >= TRAVEL_ROUTE_MAX_VIA_POINTS) {
+      setTravelStatus('中途點已達上限（最多' + TRAVEL_ROUTE_MAX_VIA_POINTS + '個），請先刪除部分中途點再新增');
+      return;
+    }
+  }
   const marker = createTravelRouteMarker(latlng, type);
   travelRoutePoints.push({ type: type, latlng: latlng, marker: marker });
   updateTravelRouteArmedButtons();
@@ -5659,39 +5643,28 @@ function calculateTravelRoute() {
   if (points.length < 2) return; // 沒點位可算路線，但徽章代表的是「服務本身是否可靠」，跟目前有沒有路線無關，不用跟著清
   const hasEnd = points[points.length - 1].type === 'end';
   const coordStr = points.map(function(p) { return p.latlng.lng + ',' + p.latlng.lat; }).join(';');
-  // 只有真的有中途點（3個以上點）需要排序最佳化時，才用/trip/（TSP旅行商問題）端點；
-  // 只有起點+終點（或起點+單一中途點）這種2點情境，根本沒有排序問題可解，改用更單純的/route/端點。
-  // 實測發現：只有2點時硬套/trip/端點，即使driving/walking都切換過仍回傳「找不到路線」
-  // （data.trips為空，但不是網路/伺服器錯誤，代表demo伺服器有正常回應、只是算不出trip結果）；
-  // /route/是更基礎、更常被使用的服務，穩定性理論上優於/trip/，兩點情境下功能等價（順序不重要時本來就一樣）
+  // 只有真的有中途點（3個以上點）需要排序最佳化時，才用Optimization API（TSP旅行商問題）；
+  // 只有起點+終點（或起點+單一中途點）這種2點情境，根本沒有排序問題可解，改用更單純的Directions API。
+  // Mapbox Optimization API總路點上限12個（含起點終點），已在placeTravelRoutePoint把中途點數量
+  // 鎖在10個以內（見TRAVEL_ROUTE_MAX_VIA_POINTS），此處不需再檢查一次。
   const useTrip = points.length > 2;
-  // 加上steps=true，讓回應內每個路段附帶mode欄位（見checkTravelRouteProfileReliability），
-  // 用來偵測OSRM demo server對walking/cycling profile的已知問題（表面接受請求，實際仍以driving路網
-  // 計算（官方問題見 github.com/Project-OSRM/osrm-backend/issues/4868）。
   const url = useTrip
-    ? 'https://router.project-osrm.org/trip/v1/' + travelRouteProfile + '/' + coordStr +
-      '?source=first&destination=' + (hasEnd ? 'last' : 'any') + '&roundtrip=false&overview=full&geometries=geojson&steps=true'
-    : 'https://router.project-osrm.org/route/v1/' + travelRouteProfile + '/' + coordStr +
-      '?overview=full&geometries=geojson&steps=true';
+    ? 'https://api.mapbox.com/optimized-trips/v1/mapbox/' + travelRouteProfile + '/' + coordStr +
+      '?source=first&destination=' + (hasEnd ? 'last' : 'any') + '&roundtrip=false&overview=full&geometries=geojson&steps=true&access_token=' + MAPBOX_ACCESS_TOKEN
+    : 'https://api.mapbox.com/directions/v5/mapbox/' + travelRouteProfile + '/' + coordStr +
+      '?overview=full&geometries=geojson&steps=true&access_token=' + MAPBOX_ACCESS_TOKEN;
   setTravelStatus('計算路線中…');
   fetch(url).then(function(r) { return r.json(); }).then(function(data) {
     const route = useTrip ? (data.trips && data.trips[0]) : (data.routes && data.routes[0]);
-    // 暫時性除錯：找不到路線時，把OSRM實際回傳的code/message顯示出來，而不是只顯示
-    // 「找不到路線」四個字——方便判斷是OSRM本身回報NoRoute，還是我們解析邏輯有問題（若route
-    // 真的存在但抓不到，data.code應該是"Ok"；若OSRM本身找不到，data.code會是"NoRoute"等其他值）
+    // 找不到路線時，把Mapbox實際回傳的code/message顯示出來，而不是只顯示「找不到路線」四個字——
+    // 方便判斷是Mapbox本身回報NoRoute，還是我們解析邏輯有問題（若route真的存在但抓不到，
+    // data.code應該是"Ok"；若Mapbox本身找不到，data.code會是"NoRoute"等其他值）
     if (!route) { setTravelStatus('找不到路線 [' + (data.code || '無code') + '] ' + (data.message || '')); return; }
     travelRouteLine = L.geoJSON(route.geometry, { style: { color: '#2471a3', weight: 5, opacity: .85 } }).addTo(travelMap);
     travelMap.fitBounds(travelRouteLine.getBounds(), { padding: [40, 40] });
     const km = (route.distance / 1000).toFixed(1);
     const min = Math.round(route.duration / 60);
-    const result = checkTravelRouteProfileReliability(route); // {unreliable, actualMode}
-    if (result.unreliable !== null) {
-      travelRouteProfileReliability[travelRouteProfile] = result.unreliable;
-      renderTravelProfileBadges();
-    }
-    setTravelStatus('約 ' + km + ' 公里・' + min + ' 分鐘' + (useTrip ? '（中途點已自動排序）' : '') +
-      (result.unreliable ? '　⚠️' + TRAVEL_TRANSPORT_LABELS[travelRouteProfile] + '服務不可用，目前顯示為' +
-        (TRAVEL_TRANSPORT_LABELS[result.actualMode] || result.actualMode) + '路線' : ''));
+    setTravelStatus('約 ' + km + ' 公里・' + min + ' 分鐘' + (useTrip ? '（中途點已自動排序）' : ''));
   }).catch(function(err) {
     // 暫時性除錯：把fetch本身失敗的錯誤訊息也顯示出來（例如CORS阻擋時，錯誤訊息通常會是
     // "Failed to fetch"或"Load failed"這類字眼），比單純「請確認網路連線」更能定位問題
@@ -5699,50 +5672,10 @@ function calculateTravelRoute() {
   });
 }
 
-// 判斷OSRM這次回傳的路線是否「掛羊頭賣狗肉」——demo server對walking/cycling profile
-// 有已知問題，表面上照樣回傳code:"Ok"的成功結果，但骨子裡其實是用driving路網算的（實測：對同一組
-// 座標分別打walking/driving，回傳JSON裡legs[].steps[].mode兩者都是"driving"）。三種模式一視同仁
-// 都檢查（不特別放行driving），只要有任何一個step的mode跟目前選定的travelRouteProfile不同就算不可靠
-// ——driving本身照理說mode本來就該是"driving"、正常情況下不會觸發，但沒理由假設它一定沒事，
-// 服務本身若真的出狀況，driving也該被抓出來。
-// 回傳 {unreliable, actualMode}：
-//   unreliable：true＝證實不可靠、false＝證實可靠、null＝這次回應沒有可比對的mode資料
-//   （理論上不會發生，因為url已加steps=true），呼叫端遇到null時保留上一次的已知狀態，不要覆蓋成「看似正常」
-//   actualMode：偵測到的實際mode字串（不可靠時＝服務實際拿去算路線的交通方式，用於狀態列顯示；
-//   可靠或無法判斷時為null，用不到）
-function checkTravelRouteProfileReliability(route) {
-  const legs = route.legs || [];
-  let sawAnyMode = false;
-  for (let i = 0; i < legs.length; i++) {
-    const steps = legs[i].steps || [];
-    for (let j = 0; j < steps.length; j++) {
-      if (!steps[j].mode) continue;
-      sawAnyMode = true;
-      if (steps[j].mode !== travelRouteProfile) return { unreliable: true, actualMode: steps[j].mode };
-    }
-  }
-  return { unreliable: sawAnyMode ? false : null, actualMode: null };
-}
-
-// 把 travelRouteProfileReliability 目前記錄的各模式狀態，同步畫到畫面上的驚嘆號徽章——
-// 展開選單裡三顆圖示（#transport-badge-walking/cycling/driving）各自獨立顯示；收合鈕
-// （#transport-trigger-badge）額外顯示「目前選定模式」的狀態，方便收合時也能一眼看到。
-// null（尚未實測過）一律視為不顯示，避免尚未測試就顯示警示、造成誤報。
-function renderTravelProfileBadges() {
-  ['walking', 'cycling', 'driving'].forEach(function(mode) {
-    const el = document.getElementById('transport-badge-' + mode);
-    if (el) el.classList.toggle('is-visible', travelRouteProfileReliability[mode] === true);
-  });
-  const triggerBadge = document.getElementById('transport-trigger-badge');
-  if (triggerBadge) triggerBadge.classList.toggle('is-visible', travelRouteProfileReliability[travelRouteProfile] === true);
-}
-
 function clearAllTravelRoutePoints() {
   travelRoutePoints.forEach(function(p) { if (travelMap) travelMap.removeLayer(p.marker); });
   travelRoutePoints = [];
   if (travelRouteLine && travelMap) { travelMap.removeLayer(travelRouteLine); travelRouteLine = null; }
-  // 徽章代表「服務本身是否可靠」的既有測試結果，跟目前畫面上有沒有路線點位無關，
-  // 清空點位時不重置，維持已知狀態（不像過去的單一警示邏輯需要每次歸零）
 }
 
 // 離開全螢幕出行訣時，路線導航狀態一併重置（比照圓心錨定的重置邏輯），下次重新進入是乾淨狀態
