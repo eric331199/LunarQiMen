@@ -3427,8 +3427,11 @@ function lookupChartTime(startDT, endDT, gates, directions) {
   blocks.forEach(blk => {
     const rep = new Date(blk.start.getTime() + 30 * 60 * 1000); // 區塊內30分鐘處，避開邊界本身、且23:00區塊仍保持hour=23觸發子時跨日調整
     const gz = getGanZhiAt(rep);
-    const y = blk.start.getUTCFullYear(), m = blk.start.getUTCMonth() + 1, d = blk.start.getUTCDate();
-    const yangInfo = getYangChartNumber(y, m, d);
+    const rawY = blk.start.getUTCFullYear(), rawM = blk.start.getUTCMonth() + 1, rawD = blk.start.getUTCDate(), rawH = blk.start.getUTCHours();
+    // 局數／元界判斷須用子時調整後的日期（見castChart()同一處理與getYangChartNumber()註解），
+    // 23:00區塊若直接用原始日期，會誤用「前一天」去算元界，2026.08已修正此bug（與castChart同批修正）
+    const zs = applyZiShiAdjustment(rawY, rawM, rawD, rawH);
+    const yangInfo = getYangChartNumber(zs.y, zs.m, zs.d);
     if (!yangInfo) return;
 
     const stemBranch = gz.hGZ.split('');
@@ -6347,7 +6350,13 @@ function _yangFindRowIndexForDate(targetDate){
   }
   return idx;
 }
-// 陽盤局數（僅看日期，跟時分無關；子時跨日等細節不適用，因局數以15天為粒度）
+// 陽盤局數（不含分鐘級陰陽遁判定，那是9.6節的事；但子時跨日仍然適用——
+// 本函式吃的y/m/d必須是「子時調整後」的日期，因為元界判斷＝日柱距符頭日差幾天，
+// 日柱本身23:00就換了，元界判斷要用同一個換日基準才不會錯位。呼叫端負責傳入調整後的日期，
+// 見castChart()與lookupChartTime()。2026.08曾誤以為「局數以15天為粒度＝子時跨日不適用」，
+// 已用實測證偽：同一節氣週期內，子時前後元界仍可能翻轉（老師TZCHIMEN vs 本工具，
+// 2026/8/22 23:51處暑上元→中元邊界案例），此函式本身跟時分無關的假設沒錯，
+// 但呼叫端沒做子時調整就是bug，已修正）
 // 回傳 { solsticeType:'陽'|'陰', chartNum:1-9, jieqi, zhiRun, isZhiRunRepeat, row } 供 castChart() 使用
 function getYangChartNumber(y, m, d) {
   const target = new Date(Date.UTC(y, m - 1, d));
@@ -7020,7 +7029,7 @@ function castChart() {
     } else if (PLATE_SUBMODE === 'day') {
       yangInfo = getDayJu(lunarY, lunarM, lunarD, lunarH, min); // 純日柱線性公式（驗證）；用子時跨日調整後的日期（與dGZ同基準，23:00起算次日），陰陽遁判定已為分鐘級精度（驗證，見getSolsticeTypePrecise）
     } else {
-      yangInfo = getYangChartNumber(y, m, d); // 時盤：鏈式模擬，僅能從1899-12-22正授錨點往後算
+      yangInfo = getYangChartNumber(lunarY, lunarM, lunarD); // 時盤：鏈式模擬，僅能從1899-12-22正授錨點往後算；用子時跨日調整後的日期（與dGZ同基準，23:00起算次日）——元界（上/中/下元）算的是「日柱距符頭日差幾天」，日柱本身23:00就換了，元界判斷必須沿用同一個換日基準，否則23:00-23:59這段會誤用「前一天」的日期去算元界，2026.08實測（老師TZCHIMEN工具 vs 本工具，2026/8/22 23:51處暑邊界）證實此為真實bug，已修正
     }
     if (!yangInfo) {
       const msgEl = document.getElementById('input-error-msg');
