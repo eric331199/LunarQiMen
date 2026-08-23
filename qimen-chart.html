@@ -3,8 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <script src="https://cdn.jsdelivr.net/npm/lunar-javascript/lunar.js"></script>
+<!-- 2026.08新增：Capacitor核心＋Geolocation plugin的瀏覽器端UMD檔案（無打包工具的單檔HTML
+     架構，Capacitor不會自動把plugin的JS橋接注入頁面，需手動用script標籤引入，window.Capacitor.
+     Plugins.Geolocation才會真的被建立）。純網頁部署（qimen.therootshollow.com）沒有vendor/
+     這個資料夾，這三個標籤會404，但完全無害——原本邏輯本來就是window.Capacitor不存在時
+     fallback用navigator.geolocation（見geoHasSupport等函式），行為不受影響。
+     載入順序有依賴關係：core先建立window.Capacitor/capacitorExports，synapse.js建立
+     window.outsystemsSynapse後，用一行別名指令對應成plugin.js預期讀取的全域變數名稱synapse，
+     最後才能載入geolocation plugin完成註冊。 -->
+<script src="vendor/capacitor-core.js"></script>
+<script src="vendor/capacitor-synapse.js"></script>
+<script>window.synapse = window.outsystemsSynapse;</script>
+<script src="vendor/capacitor-geolocation.js"></script>
 <link rel="apple-touch-icon" href="icon.PNG">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>奇門遁甲九宮排盤</title>
 <!-- 讓「加入主畫面」後開啟走iOS獨立全螢幕模式（無網址列/Safari工具列），原本缺這三個meta
      標籤才會被當成一般Safari分頁。status-bar-style用預設淺色（跟米白背景較搭）；title是主畫面
@@ -42,7 +54,7 @@
     width: 100%;
     max-width: 440px;
     margin: 0 auto;
-    padding: 10px 12px 32px;
+    padding: calc(max(10px, env(safe-area-inset-top))) 12px 32px;
     display: flex;
     flex-direction: column;
     position: relative;
@@ -141,7 +153,7 @@
     position: relative;
     width: calc(100% - 44px);
     aspect-ratio: 1 / 1;
-    margin: 32px auto 20px;
+    margin: 32px auto 32px;
   }
 
   /* 引干：8個方位 */
@@ -631,6 +643,19 @@
     cursor: pointer;
     flex: 1;
     letter-spacing: .05em;
+  }
+  /* ── footer-stack（2026.08新增）：儲存截圖／快捷按鈕／咖啡贊助／版權，統一用gap控間距，
+     見HTML註解。#btn-quick-wrap與版權區塊需要explicit width:100%，否則align-items:center
+     預設縮到剛好符合內容寬度，會讓子元素的width:calc(100%-44px)百分比計算基準跟著跑掉 ── */
+  .footer-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+  }
+  .footer-stack > #btn-quick-wrap,
+  .footer-stack > div:last-child {
+    width: 100%;
   }
   .btn-quick-row {
     display: flex;
@@ -1157,12 +1182,15 @@
   .track-dir-unlucky .track-dir-gate { color: #333; }
   .track-dir-excluded .track-dir-gate { color: #999; }
   .track-dir-excluded .track-dir-gate small { color: #e74c3c; margin-left: 2px; }
-  /* 跳外部地圖導航鈕，疊在路徑記錄鈕再上一階（290px），維持58px一階的堆疊間距慣例。
-     試驗性功能（試驗性質，不合理可再拿掉）——先加、不動既有OSRM站內算路線邏輯，
-     兩套並存讓之後比較。只有已設終點時才顯示（沒有終點，跳出去也不知道要導去哪） */
-  .travel-external-nav-btn { position: absolute; z-index: 4; right: 14px; bottom: calc(max(14px, env(safe-area-inset-bottom)) + 290px); width: 44px; height: 44px; border-radius: 50%; border: none; font-size: 20px; background: rgba(255,255,255,.94); color: #2471a3; display: none; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,.18); pointer-events: auto; }
+  /* 跳外部地圖導航鈕：原本疊在路徑記錄鈕上方會擋到計時器（.travel-track-timer），
+     2026.08改移到右上角，疊在羅盤指針（.travel-mini-compass，top+95px、高44px）正下方，
+     間距14px沿用一貫的堆疊間距慣例（95+44+14=153）。試驗性功能（試驗性質，不合理可再拿掉）——
+     先加、不動既有Mapbox站內算路線邏輯，兩套並存讓之後比較。只有已設終點時才顯示（沒有終點，
+     跳出去也不知道要導去哪） */
+  .travel-external-nav-btn { position: absolute; z-index: 4; right: 14px; top: calc(max(14px, env(safe-area-inset-top)) + 153px); width: 44px; height: 44px; border-radius: 50%; border: none; font-size: 20px; background: rgba(255,255,255,.94); color: #2471a3; display: none; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,.18); pointer-events: auto; }
   .travel-external-nav-btn:active { background: #eee; }
-  .travel-external-nav-popup { display: none; position: absolute; z-index: 6; right: 14px; bottom: calc(max(14px, env(safe-area-inset-bottom)) + 334px); background: rgba(255,255,255,.98); border-radius: 12px; padding: 12px 14px; box-shadow: 0 4px 14px rgba(0,0,0,.22); text-align: center; font: 12px "M PLUS Rounded 1c", sans-serif; color: #333; pointer-events: auto; width: 200px; }
+  /* 泡泡改往下開（原本按鈕在下方時泡泡往上開；按鈕移到上方後，下方空間較開闊，改往下展開） */
+  .travel-external-nav-popup { display: none; position: absolute; z-index: 6; right: 14px; top: calc(max(14px, env(safe-area-inset-top)) + 205px); background: rgba(255,255,255,.98); border-radius: 12px; padding: 12px 14px; box-shadow: 0 4px 14px rgba(0,0,0,.22); text-align: center; font: 12px "M PLUS Rounded 1c", sans-serif; color: #333; pointer-events: auto; width: 200px; }
   .travel-external-nav-popup.is-visible { display: block; }
   .travel-external-nav-popup .hint { color: #999; font-size: 11px; line-height: 1.5; margin-top: 6px; }
   .travel-external-nav-popup .btn-col { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
@@ -1285,6 +1313,13 @@
   .travel-inline-board-toggle.active .eye-closed { display: none; }
   .travel-inline-board-toggle.active .eye-open { display: block; }
   .travel-inline-locate { position: absolute; z-index: 2; bottom: 8px; right: 8px; color: #2471a3; }
+  /* 簡化版版權標示（見HTML註解）：放左下角，避開右下角的定位鈕；z-index:2跟定位鈕同層級，
+     pointer-events:none避免擋到地圖拖曳/點擊操作 */
+  .travel-inline-attribution {
+    position: absolute; z-index: 2; bottom: 4px; left: 6px;
+    font-size: 8px; color: rgba(0,0,0,.55); font-weight: 500;
+    pointer-events: none; user-select: none;
+  }
   /* 階段三：全螢幕展開鈕，方框右上角，只在地圖模式（.travel-map-mode）常駐顯示，跟旋轉/盤面狀態無關 */
   .travel-inline-fullscreen { display: none; position: absolute; z-index: 5; top: -8px; right: -8px; font-size: 13px; }
   .outer.travel-map-mode .travel-inline-fullscreen { display: flex; }
@@ -1515,7 +1550,7 @@
   /* ── 奇門曆查詢結果清單（新增）── */
   #almanac-results {
     width: calc(100% - 44px);
-    margin: 0 auto 16px;
+    margin: 0 auto 22px;
   }
   .ar-empty {
     text-align: center;
@@ -1663,9 +1698,26 @@
      機制，per-card展開按鈕（almanacToggleCardExcluded）能自動連動，不用額外改JS。 */
   .ar-entomb-note { font-size: 11px; color: #a8a29a; display: none; }
   .ar-segment.expanded .ar-entomb-note { display: inline; }
+
+  /* ══════════════════════════════════
+     狀態列遮罩（2026.08新增）：Capacitor全螢幕App殼下，系統狀態列（時間/WiFi/電量）
+     半透明疊在畫面最上層，往下捲動時內容會從狀態列「後面」滑過去（原生App常見行為，
+     如Instagram、Apple地圖），並非bug。但沒有任何襯底時，捲動文字直接跟系統文字重疊，
+     不易辨識。加一層跟畫面底色同色系的毛玻璃遮罩，捲動內容經過時會被模糊柔化，
+     不會硬生生疊字。高度=env(safe-area-inset-top)，一般瀏覽器該值為0，遮罩自動消失、
+     不影響網頁版顯示。z-index刻意設得比現有最高值（5100，彈窗遮罩）更高，確保任何情況
+     下都蓋在最上層。 */
+  .status-bar-mask {
+    position: fixed; top: 0; left: 0; right: 0;
+    height: env(safe-area-inset-top);
+    background: rgba(245, 240, 232, .82);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    z-index: 9999; pointer-events: none;
+  }
 </style>
 </head>
 <body>
+<div class="status-bar-mask"></div>
 <div class="page">
 <!-- 標題 -->
 <div class="title-row">
@@ -2119,6 +2171,10 @@
   <div class="travel-inline-map-wrap" id="travel-inline-map-wrap" style="display:none;">
     <div class="travel-inline-map" id="travel-inline-map"></div>
     <button type="button" class="travel-inline-locate" id="travel-inline-locate" aria-label="拉回目前位置"><svg viewBox="0 0 24 24" width="16" height="16"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg></button>
+    <!-- 簡化版版權標示：不用Leaflet預設attributionControl（九宮框空間小，完整版橫幅太擠），
+         自訂一行極簡文字取代；刻意放在travel-inline-map-wrap而非travel-inline-map內部，
+         這樣不會跟著地圖容器一起旋轉（見travel-inline-map的180度/0度旋轉切換），維持隨時可讀 -->
+    <span class="travel-inline-attribution">© Mapbox</span>
   </div>
 
   <div class="grid">
@@ -2515,10 +2571,13 @@
        內容為JS動態產生（見該函式），這裡只放容器。 -->
   <div class="travel-track-result-popup" id="travel-track-result-popup"></div>
 
-  <!-- 試驗性功能：跳外部地圖App導航，跟站內OSRM算路線並存、互不影響，先兩套都留著比較好不好用。
+  <!-- 試驗性功能：跳外部地圖App導航，跟站內Mapbox算路線並存、互不影響，先兩套都留著比較好不好用。
        只有設了終點才顯示；點下去先跳確認泡泡選Google Maps／Apple Maps，不是按一下就直接跳出去——
-       離開分頁去外部App，站內路徑記錄會因分頁被背景化而停止，泡泡裡順便提醒這件事。 -->
-  <button type="button" class="travel-external-nav-btn" id="travel-external-nav-btn" aria-label="外部地圖導航" onclick="showTravelExternalNavPopup()">🧭</button>
+       離開分頁去外部App，站內路徑記錄會因分頁被背景化而停止，泡泡裡順便提醒這件事。
+       圖示：Google Material Symbols官方「share」圖示（三節點分享符號），Apache 2.0授權免費商用，
+       路徑數據直接取自官方repo（github.com/marella/material-symbols），非手繪臨摹，viewBox沿用
+       官方原生座標系（0 -960 960 960），不影響渲染 -->
+  <button type="button" class="travel-external-nav-btn" id="travel-external-nav-btn" aria-label="外部地圖導航" onclick="showTravelExternalNavPopup()"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 -960 960 960" fill="currentColor"><path d="M686-80q-47.5 0-80.75-33.25T572-194q0-8 5-34L278-403q-16.28 17.34-37.64 27.17Q219-366 194-366q-47.5 0-80.75-33T80-480q0-48 33.25-81T194-594q24 0 45 9.3 21 9.29 37 25.7l301-173q-2-8-3.5-16.5T572-766q0-47.5 33.25-80.75T686-880q47.5 0 80.75 33.25T800-766q0 47.5-33.25 80.75T686-652q-23.27 0-43.64-9Q622-670 606-685L302-516q3 8 4.5 17.5t1.5 18q0 8.5-1 16t-3 15.5l303 173q16-15 36.09-23.5 20.1-8.5 43.07-8.5Q734-308 767-274.75T800-194q0 47.5-33.25 80.75T686-80Zm.04-60q22.96 0 38.46-15.54 15.5-15.53 15.5-38.5 0-22.96-15.54-38.46-15.53-15.5-38.5-15.5-22.96 0-38.46 15.54-15.5 15.53-15.5 38.5 0 22.96 15.54 38.46 15.53 15.5 38.5 15.5Zm-492-286q22.96 0 38.46-15.54 15.5-15.53 15.5-38.5 0-22.96-15.54-38.46-15.53-15.5-38.5-15.5-22.96 0-38.46 15.54-15.5 15.53-15.5 38.5 0 22.96 15.54 38.46 15.53 15.5 38.5 15.5ZM724.5-727.54q15.5-15.53 15.5-38.5 0-22.96-15.54-38.46-15.53-15.5-38.5-15.5-22.96 0-38.46 15.54-15.5 15.53-15.5 38.5 0 22.96 15.54 38.46 15.53 15.5 38.5 15.5 22.96 0 38.46-15.54ZM686-194ZM194-480Zm492-286Z"/></svg></button>
   <div class="travel-external-nav-popup" id="travel-external-nav-popup">
     選擇導航App
     <div class="btn-col">
@@ -2658,11 +2717,26 @@ function toggleAlmanacMode(){
   document.getElementById('row-minute').classList.toggle('dim', currentMode==='almanac');
   document.getElementById('outer-board').style.display = (currentMode==='chart') ? '' : 'none';
   document.getElementById('btn-quick-wrap').style.display = (currentMode==='chart') ? '' : 'none'; // 前日/上時/下時/次日只對單次排盤有意義，奇門曆模式下移除
+  // 2026.08修正：儲存截圖鈕原本只在castChart()成功後被動觸發display='block'（見該處），
+  // 沒有納入這裡的模式切換清單，導致「排盤後按過儲存截圖→切到奇門曆」時，這顆鈕會維持
+  // 顯示狀態、留在奇門曆畫面上（截圖對象是單次排盤結果，奇門曆模式下沒有意義）。切到奇門曆
+  // 一律隱藏；切回排盤模式則沿用castChart()同一份裝置判斷（isCaptureButtonEligibleDevice，
+  // 僅桌面／iPad顯示，手機有系統截圖不需要），不可無條件顯示，否則手機切到排盤模式時
+  // 會被錯誤強制顯示。
+  document.getElementById('btn-capture-wrap').style.display =
+    (currentMode === 'chart' && isCaptureButtonEligibleDevice()) ? 'block' : 'none';
   // 奇門曆輸出的是一整串時段列表，不是單一盤面，「儲存目前盤面」的邏輯（讀單一組
   // 年/月/日/時欄位）在這個模式下對不上畫面內容、會誤導，故此模式下紀錄鈕直接隱藏——
   // 奇門曆模式不開放紀錄功能，是刻意的設計決定，非程式邏輯限制
   document.getElementById('btn-records').style.display = (currentMode==='chart') ? '' : 'none';
-  document.getElementById('almanac-results').style.display = 'none'; // 換模式時先收起舊結果，稍後若有上次查詢結果會重新顯示
+  // 2026.08修正：原本無條件先display:none收起、有結果才重新顯示，導致「奇門曆有結果」與
+  // 「奇門曆無結果」兩種畫面下，#almanac-results的margin-bottom時有時無，造成footer間距
+  // 不一致（有結果時margin生效、無結果時整個元素不存在、margin也跟著消失，兩種畫面間距
+  // 各自使用不同來源，對不齊）。改為顯示與否只綁定currentMode，跟「有沒有結果」脫鉤——
+  // 只要在奇門曆模式，不論有無查詢結果，都保持display:block，margin-bottom穩定生效；
+  // 排盤模式則一律隱藏。內容是否清空是另一件事，由resetAlmanacInputs／renderAlmanacResults
+  // 各自處理innerHTML，不再碰display。
+  document.getElementById('almanac-results').style.display = (currentMode === 'almanac') ? 'block' : 'none';
   if (currentMode === 'almanac'){
     // 切回奇門曆模式時，若有上一次查詢結果（不論是正常來回切換，還是從
     // almanacUseSegment 卡片跳轉排盤回來），直接恢復顯示，不用重新查一次。
@@ -2698,6 +2772,14 @@ function handleAreaNow(){
 function resetAlmanacInputs(){
   almanacPendingStartIso = null;
   applyAlmanacPreset('today');
+  // 2026.08：重置＝清空結果的概念——原本只重置查詢條件（日期區間/門/方位篩選），
+  // 結果列表不會跟著清空，會殘留在畫面上造成「按了重置、結果卻還在」的不一致感。
+  // 按鈕文字維持「重置」不變，但行為上一併清空查詢結果，回到真正的空白起始狀態。
+  // 只清空內容，不再碰display（可見性已改為純綁定currentMode，見toggleMode內邏輯與其
+  // 上方註解——奇門曆模式下不論有無結果都保持顯示，margin-bottom才能穩定產生間距）。
+  almanacLastResults = null;
+  const resultsBox = document.getElementById('almanac-results');
+  if (resultsBox) resultsBox.innerHTML = '';
 }
 function setAlmanacNow(){
   const now = new Date();
@@ -3401,7 +3483,12 @@ function lookupChartDateBased(plateType, startDT, endDT, gates, directions) {
       yangInfo = getMonthWuXingJu(y, m, d, gz.yGZ);
     } else if (plateType === 'day') {
       stemBranch = gz.dGZ.split('');
-      yangInfo = getDayJu(y, m, d, rep.getUTCHours(), rep.getUTCMinutes());
+      // 局數／陰陽遁offset計算須用子時調整後的日期（同castChart()的getDayJu呼叫方式），
+      // 否則23:00-23:59這段會誤用「前一天」的日期去算日柱offset，日盤局數逐日變動（mod 9），
+      // 幾乎每次子時查詢都會算錯，比時家(置閏)的bug影響更頻繁。2026.08與時家(置閏)那次一併修正。
+      const repH = rep.getUTCHours(), repMin = rep.getUTCMinutes();
+      const dayZs = applyZiShiAdjustment(y, m, d, repH);
+      yangInfo = getDayJu(dayZs.y, dayZs.m, dayZs.d, dayZs.h, repMin);
     }
     if (!yangInfo) return; // 早於已驗證錨點範圍，跳過（比照主程式擋下行為）
 
@@ -4131,7 +4218,7 @@ function setTravelInlineLuckyActive(active) {
 }
 
 function autoMarkTravelLucky() {
-  if (!_currentCastChart) return;
+  if (!_currentCastChart) return 0;
   const LUCKY_GATES = ['開門', '休門', '生門', '景門'];
   const hits = matchGates(_currentCastChart, LUCKY_GATES, null, {});
   const usableHouses = new Set(hits.filter(h => !h.excluded).map(h => h.house));
@@ -4145,6 +4232,9 @@ function autoMarkTravelLucky() {
   // 每次自動判斷都重新計算/覆蓋這個顯示狀態，不需要另外清理殘留（見toggleTravelInlineLucky關閉分支的hideTravelNoLuckyBanner）
   const noLuckyBanner = document.getElementById('travel-no-lucky-banner');
   if (noLuckyBanner) noLuckyBanner.classList.toggle('is-open', usableHouses.size === 0);
+  return usableHouses.size; // 2026.08新增：回傳實際標記數量，讓呼叫方（如enterTravelMarkingMode）
+  // 判斷要不要顯示「吉門已自動標記」提示——沒標到任何宮位時，「此刻無吉門可用」已經在上面
+  // 開啟了，不該再疊加「已自動標記」的訊息，兩者語意互相矛盾（見enterTravelMarkingMode）
 }
 
 function hideTravelNoLuckyBanner() {
@@ -4202,10 +4292,15 @@ function enterTravelMarkingMode() {
   const yongshenEl = document.getElementById('hb-yongshen');
   if (yongshenEl) yongshenEl.textContent = '—';
   showTravelMarkHouses(true);
-  autoMarkTravelLucky(); // 進入標記模式時先自動預選一次，使用者可再手動調整
+  const usableCount = autoMarkTravelLucky(); // 進入標記模式時先自動預選一次，使用者可再手動調整
   // 泡泡改回置中版型，只留綠色✓當確認提醒鈕（見HTML），
   // 點✓純粹關閉提示本身，不用點確認/取消才能繼續操作宮位；關閉靠 dismissTravelMarkingHint()
-  document.getElementById('travel-marking-banner').classList.add('is-open');
+  // 2026.08修正：只在真的有標到吉門時才顯示「已自動標記」——沒有可用吉門時，
+  // autoMarkTravelLucky()內部已經自己開啟「此刻無吉門可用」提示，兩個泡泡同時跳出來
+  // 語意互相矛盾（一個說已標記、一個說沒東西可標），故用usableCount判斷二選一
+  if (usableCount > 0) {
+    document.getElementById('travel-marking-banner').classList.add('is-open');
+  }
 }
 
 // 關閉標記提示（✓鈕），純UI動作，不影響已標記的資料
@@ -4254,10 +4349,89 @@ function initializeInlineTravelMap() {
   L.tileLayer(MAPBOX_TILE_URL, MAPBOX_TILE_OPTIONS).addTo(inlineTravelMap);
 }
 
+// ══════════════════════════════════
+// 跨平台 Geolocation 封裝（2026.08新增，方案A：只做前景追蹤，背景追蹤留待未來功能）
+// ══════════════════════════════════
+// 同一份index.html同時服務純網頁版（qimen.therootshollow.com，沒有Capacitor runtime）跟
+// App版（Capacitor包殼，window.Capacitor由原生層自動注入）。網頁版沒有window.Capacitor，
+// 天然fallback用瀏覽器原生navigator.geolocation；App版偵測到window.Capacitor.isNativePlatform()
+// 為true，改呼叫@capacitor/geolocation plugin（原生層GPS，為未來做背景追蹤鋪路——現階段plugin
+// 本身只用前景，效果跟navigator.geolocation相同，但换成plugin之後，之後若要開背景追蹤只需要
+// 加Background Modes capability + Info.plist權限字串，不用再改這裡的呼叫方式）。
+// 兩邊getCurrentPosition/watchPosition成功時回傳的position物件結構相容（coords.latitude/
+// longitude/accuracy等一致，呼叫方原有的position.coords.latitude等寫法不用改）。
+// watchPosition的id型別不同（瀏覽器原生是number，Capacitor plugin是Promise<string>且非同步
+// 取得），故用geoWatchRegistry統一包成同步可拿到的pendingId，呼叫方不需要判斷來源、
+// clearWatch時兩種情況都正確處理（含plugin id還沒非同步回來、clearWatch就先被呼叫的情況，
+// 用cancelled旗標處理，id回來時發現已取消就直接clearWatch掉，不會洩漏watcher）。
+function isNativeApp() {
+  return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+}
+
+function geoHasSupport() {
+  return isNativeApp() ? !!(window.Capacitor.Plugins && window.Capacitor.Plugins.Geolocation) : !!navigator.geolocation;
+}
+
+function geoGetCurrentPosition(onSuccess, onError, options) {
+  if (isNativeApp() && window.Capacitor.Plugins.Geolocation) {
+    window.Capacitor.Plugins.Geolocation.getCurrentPosition(options || {})
+      .then(onSuccess)
+      .catch(function(err) { if (onError) onError(err); });
+  } else if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(onSuccess, onError, options);
+  } else if (onError) {
+    onError({ message: '此裝置不支援定位' });
+  }
+}
+
+let geoWatchIdCounter = 0;
+const geoWatchRegistry = {};
+
+function geoWatchPosition(onSuccess, onError, options) {
+  const pendingId = 'geo-watch-' + (++geoWatchIdCounter);
+  const nativeMode = isNativeApp() && window.Capacitor.Plugins.Geolocation;
+  geoWatchRegistry[pendingId] = { cancelled: false, nativeId: null, nativeMode };
+  if (nativeMode) {
+    window.Capacitor.Plugins.Geolocation.watchPosition(options || {}, function(position, err) {
+      const entry = geoWatchRegistry[pendingId];
+      if (!entry || entry.cancelled) return;
+      if (err) { if (onError) onError(err); return; }
+      onSuccess(position);
+    }).then(function(nativeId) {
+      const entry = geoWatchRegistry[pendingId];
+      if (!entry) return;
+      if (entry.cancelled) {
+        window.Capacitor.Plugins.Geolocation.clearWatch({ id: nativeId });
+      } else {
+        entry.nativeId = nativeId;
+      }
+    });
+  } else if (navigator.geolocation) {
+    geoWatchRegistry[pendingId].nativeId = navigator.geolocation.watchPosition(onSuccess, onError, options);
+  } else if (onError) {
+    onError({ message: '此裝置不支援定位' });
+  }
+  return pendingId;
+}
+
+function geoClearWatch(pendingId) {
+  const entry = geoWatchRegistry[pendingId];
+  if (!entry) return;
+  entry.cancelled = true;
+  if (entry.nativeId !== null) {
+    if (entry.nativeMode && window.Capacitor && window.Capacitor.Plugins.Geolocation) {
+      window.Capacitor.Plugins.Geolocation.clearWatch({ id: entry.nativeId });
+    } else if (!entry.nativeMode && navigator.geolocation) {
+      navigator.geolocation.clearWatch(entry.nativeId);
+    }
+  }
+  delete geoWatchRegistry[pendingId];
+}
+
 function locateInlineTravelPosition(forceZoom) {
   if (forceZoom === undefined) forceZoom = true;
-  if (!inlineTravelMap || !navigator.geolocation) return;
-  navigator.geolocation.getCurrentPosition(function(position) {
+  if (!inlineTravelMap || !geoHasSupport()) return;
+  geoGetCurrentPosition(function(position) {
     const latLng = [position.coords.latitude, position.coords.longitude];
     if (inlineTravelPositionMarker) inlineTravelMap.removeLayer(inlineTravelPositionMarker);
     inlineTravelPositionMarker = L.circleMarker(latLng, { radius: 4, color: '#2471a3', fillColor: '#2471a3', fillOpacity: 1, weight: 1.5 }).addTo(inlineTravelMap);
@@ -4483,7 +4657,7 @@ document.getElementById('travel-inline-fullscreen').addEventListener('click', op
 // ══════════════════════════════════
 let travelMap = null;
 let travelPositionMarker = null;
-let travelWatchId = null; // navigator.geolocation.watchPosition() 的id，出行訣模式開啟時持續追蹤，關閉時clearWatch，不背景常駐
+let travelWatchId = null; // geoWatchPosition() 的pendingId（跨平台封裝，見上方geoWatchPosition），出行訣模式開啟時持續追蹤，關閉時clearWatch，不背景常駐
 let travelCompassEnabled = false;
 let travelHeadingLocked = true; // 小羅盤指針點擊切換的「朝向鎖定」開關，跟起點錨定各自獨立（見 toggleTravelHeadingLock）
 // 預設鎖定北上：進全螢幕時彩色羅盤/權限請求維持原樣自動啟動，但小指針本身預設不
@@ -4626,8 +4800,8 @@ function updateTravelGpsArrowRotation(heading) {
 // 持續追蹤移動：出行訣模式開啟時啟動，closeTravelMode()負責clearWatch，不背景常駐（見該函式）。
 // enableHighAccuracy維持跟初次定位一致（true），避免持續追蹤時精度忽然變差、箭頭跳動。
 function startTravelPositionWatch() {
-  if (!navigator.geolocation || travelWatchId !== null) return;
-  travelWatchId = navigator.geolocation.watchPosition(function(position) {
+  if (!geoHasSupport() || travelWatchId !== null) return;
+  travelWatchId = geoWatchPosition(function(position) {
     const latLng = [position.coords.latitude, position.coords.longitude];
     updateTravelPositionMarker(latLng);
   }, function() {
@@ -4638,7 +4812,7 @@ function startTravelPositionWatch() {
 
 function stopTravelPositionWatch() {
   if (travelWatchId !== null) {
-    navigator.geolocation.clearWatch(travelWatchId);
+    geoClearWatch(travelWatchId);
     travelWatchId = null;
   }
 }
@@ -4682,7 +4856,7 @@ function toggleTravelTrackRecording() {
 }
 
 function startTravelTrackRecording() {
-  if (!navigator.geolocation) { setTravelStatus('此裝置不支援定位'); return; }
+  if (!geoHasSupport()) { setTravelStatus('此裝置不支援定位'); return; }
   if (travelTrackWatchId !== null) return; // 已經在記錄中
   hideTravelTrackResultPopup(); // 重新出發前，先收起上一趟留著的結果泡泡
   if (travelTrackPoints.length === 0) {
@@ -4696,7 +4870,7 @@ function startTravelTrackRecording() {
   updateTravelTrackButtons();
   startTravelTrackTimerDisplay(); // 出發當下開始每秒更新即時計時器
   requestTravelWakeLock();
-  travelTrackWatchId = navigator.geolocation.watchPosition(function(position) {
+  travelTrackWatchId = geoWatchPosition(function(position) {
     const latLng = L.latLng(position.coords.latitude, position.coords.longitude);
     appendTravelTrackPoint(latLng);
   }, function() {
@@ -4714,7 +4888,7 @@ function stopTravelTrackRecording() {
   updateTravelTrackButtons();
   stopTravelTrackTimerDisplay(); // 停止時同步收起即時計時器
   if (travelTrackWatchId !== null) {
-    navigator.geolocation.clearWatch(travelTrackWatchId);
+    geoClearWatch(travelTrackWatchId);
     travelTrackWatchId = null;
   }
   showTravelTrackResultPopup(); // 停止當下跳結果泡泡＋存一筆簡易歷史
@@ -5203,12 +5377,12 @@ function openTravelExternalNav(provider) {
 
 function locateTravelPosition(forceZoom, autoAnchor) {
   if (forceZoom === undefined) forceZoom = true; // 預設行為（初次開啟出行模式時）維持原本鎖定16縮放
-  if (!navigator.geolocation) {
+  if (!geoHasSupport()) {
     setTravelStatus('此裝置不支援定位');
     return;
   }
   setTravelStatus('定位中…');
-  navigator.geolocation.getCurrentPosition(function(position) {
+  geoGetCurrentPosition(function(position) {
     // 改用 L.latLng()（含 .lat/.lng 屬性）而非純陣列 [lat,lng]。
     // 純陣列在 L.marker() 建立時 Leaflet 內部能自動轉換，畫面上看起來正常；
     // 但這個值後續會被 placeTravelRoutePoint() 原封不動存進 travelRoutePoints，
@@ -6017,6 +6191,11 @@ function resetChart() {
       if (el) el.innerHTML = '';
     });
   });
+  // 2026.08新增：重置後盤面資料已清空，沒有內容可截圖，儲存截圖鈕應一併收起（跟其他被
+  // 清空的欄位/盤面內容一致），不受isCaptureButtonEligibleDevice裝置判斷影響——不論
+  // 桌面/iPad/手機，重置後一律隱藏，等下次castChart()成功才會依裝置判斷重新顯示
+  const captureWrap = document.getElementById('btn-capture-wrap');
+  if (captureWrap) captureWrap.style.display = 'none';
 }
 
 function getInputDate() {
@@ -6950,6 +7129,14 @@ function computeChart(solsticeType, chartNum, stemBranch) {
   };
 }
 
+// 儲存截圖鈕的裝置判斷（桌面／iPad才顯示，手機有系統截圖不需要）：castChart()與模式切換
+// 邏輯（toggleMode內）共用同一份判斷，避免各自維護一份容易日後改一邊漏改另一邊
+function isCaptureButtonEligibleDevice() {
+  const isIPad = /iPad/.test(navigator.userAgent) ||
+                 (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  return navigator.maxTouchPoints === 0 || isIPad;
+}
+
 function castChart() {
   const y   = parseInt(document.getElementById('year').value);
   const m   = parseInt(document.getElementById('month').value);
@@ -7168,13 +7355,15 @@ function castChart() {
 
   document.getElementById('paipan-result').style.display = 'block';
   // 截圖按鈕只在桌面或 iPad 顯示（手機用系統截圖即可）
-  const isIPad = /iPad/.test(navigator.userAgent) ||
-                 (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  const isDesktop = navigator.maxTouchPoints === 0 || isIPad;
-  if (isDesktop) {
+  if (isCaptureButtonEligibleDevice()) {
     document.getElementById('btn-capture-wrap').style.display = 'block';
   }
-  document.getElementById('paipan-result').scrollIntoView({ behavior: 'smooth' });
+  // 2026.08修正：原本用scrollIntoView()把paipan-result頂部對齊viewport頂部，
+  // 但這只看目標元素本身、不管頁面實際多長——內容不夠長時會把上方分頁列往上推出視窗，
+  // 底部反而留白，跟「捲到底」的預期相反。改成直接捲到頁面實際底部（footer-stack是
+  // 全頁最後一塊内容），瀏覽器會自動夾在最大可捲動範圍內，天然「捲到底就停」，
+  // 不會再有頂部過衝的問題。
+  document.querySelector('.footer-stack').scrollIntoView({ behavior: 'smooth', block: 'end' });
 
   clearHighlight();
 
@@ -7660,27 +7849,42 @@ function deleteRecord(id) {
 
 </div><!-- end paipan-result -->
 
-<div id="btn-capture-wrap" style="display:none; text-align:center; padding:10px 0 0;">
-  <button onclick="captureChart()" style="display:inline-block;padding:9px 22px;border:1px solid #ddd;border-radius:20px;font-size:13px;color:#666;background:#fff;letter-spacing:.05em;cursor:pointer;">📷 儲存截圖</button>
-</div>
-
-<div id="btn-quick-wrap" style="text-align:center; padding:10px 0 0;">
-  <div id="btn-quick-row" class="btn-quick-row" style="width:calc(100% - 44px); margin-left:auto; margin-right:auto;">
-    <button class="btn-quick" onclick="shiftDate(-1)">前日</button>
-    <button class="btn-quick" onclick="shiftHour(-2)">上時</button>
-    <button class="btn-quick" onclick="shiftHour(+2)">下時</button>
-    <button class="btn-quick" onclick="shiftDate(+1)">次日</button>
+<!-- 2026.08重構：儲存截圖／快捷按鈕／咖啡贊助／版權footer 四塊改用flex+gap統一控制間距，
+     不再各自疊加margin/padding（先前各元素分頭加padding-top，疊加後在不同畫面組合下
+     間距會不一致且難以預期，flex gap由瀏覽器保證絕對均等，不受任何子元素display:none/block
+     切換影響——隱藏的元素完全不佔位、也不產生gap，顯示中的元素之間gap永遠一致）。
+     文字置中靠align-items:center，不用text-align，效果相同但跟flex語意更一致。 -->
+<div class="footer-stack">
+  <!-- margin-bottom:6px疊加在flex gap之上，讓「儲存截圖→快捷按鈕」這組間距對齊到24px
+       （18px gap + 6px = 24px）。刻意加在capture-wrap自己身上而非quick-wrap，因為
+       capture-wrap在手機上預設隱藏（display:none），隱藏元素的margin不會產生任何作用，
+       這樣手機上「九宮→快捷按鈕」＝32px（已確認）不會被誤加這段margin；只有桌面/iPad
+       這顆鈕真的顯示出來時，這段margin才會生效，發揮作用的正是「capture→quick」這一組 -->
+  <div id="btn-capture-wrap" style="display:none;margin-bottom:6px">
+    <button onclick="captureChart()" style="display:inline-block;padding:9px 22px;border:1px solid #ddd;border-radius:20px;font-size:13px;color:#666;background:#fff;letter-spacing:.05em;cursor:pointer;">📷 儲存截圖</button>
   </div>
-</div>
 
+  <div id="btn-quick-wrap">
+    <div id="btn-quick-row" class="btn-quick-row" style="width:calc(100% - 44px); margin: 0 auto;">
+      <button class="btn-quick" onclick="shiftDate(-1)">前日</button>
+      <button class="btn-quick" onclick="shiftHour(-2)">上時</button>
+      <button class="btn-quick" onclick="shiftHour(+2)">下時</button>
+      <button class="btn-quick" onclick="shiftDate(+1)">次日</button>
+    </div>
   </div>
-  <div style="text-align:center;padding:12px 20px 16px;font-family:'M PLUS Rounded 1c',sans-serif">
+
+  <!-- margin-top:6px疊加在flex gap之上，讓「快捷按鈕→咖啡按鈕」這組間距對齊到32px
+       （18px gap + 8px咖啡按鈕自己的padding-top + 6px = 32px），跟九宮上下間距統一 -->
+  <div style="font-family:'M PLUS Rounded 1c',sans-serif;margin-top:6px">
     <a href="https://buy.stripe.com/7sY8wQe1NdhXbkV98G8Vi01" target="_blank" style="display:inline-block;padding:4px 14px;border:1px solid #ddd;border-radius:14px;font-size:12px;color:#888;text-decoration:none;letter-spacing:.08em;transition:all .15s" onmouseover="this.style.borderColor='#bbb';this.style.color='#555'" onmouseout="this.style.borderColor='#ddd';this.style.color='#888'">☕ 請我喝杯咖啡</a>
   </div>
-  <div style="text-align:center;padding:16px 20px 24px;font-family:'M PLUS Rounded 1c',sans-serif;font-size:11px;color:#bbb;letter-spacing:.05em">
+  <!-- margin-top:6px同理，讓「咖啡按鈕→版權文字」這組間距也對齊到32px
+       （18px gap + 8px咖啡按鈕自己的padding-bottom + 6px = 32px） -->
+  <div style="text-align:center;padding:0 20px 24px;font-family:'M PLUS Rounded 1c',sans-serif;font-size:11px;color:#bbb;letter-spacing:.05em;margin-top:6px">
     <span style="display:inline-flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:0">© 2026 Eric CH / <a id="footerStudio" href="https://www.therootshollow.com" target="_blank" style="color:inherit;text-decoration:none;">樹根樹洞</a>・<a href="https://instagram.com/eric.hypnotist" target="_blank" style="color:#bbb;text-decoration:none;display:inline-flex;align-items:center;gap:4px"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg> @eric.hypnotist</a></span><br>
     <a href="https://www.therootshollow.com" target="_blank" style="color:#bbb;text-decoration:none">www.therootshollow.com</a>
   </div>
+</div><!-- end footer-stack -->
 </div><!-- end page -->
 </body>
 </html>
