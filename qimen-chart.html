@@ -15,6 +15,11 @@
 <script src="vendor/capacitor-synapse.js"></script>
 <script>window.synapse = window.outsystemsSynapse;</script>
 <script src="vendor/capacitor-geolocation.js"></script>
+<!-- 2026.08新增：IAP訂閱用的@capgo/native-purchases plugin瀏覽器端橋接檔案，同geolocation
+     plugin的引入模式（見上方註解）。此檔案由Eric在Capacitor原生專案跑`npm install
+     @capgo/native-purchases`＋`npx cap sync`後產生，非本次對話環境可直接生成，
+     需Eric手動複製進www/vendor/後才會生效；純網頁部署一樣是404無害、fallback行為不受影響。 -->
+<script src="vendor/capacitor-native-purchases.js"></script>
 <link rel="apple-touch-icon" href="icon.PNG">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>奇門遁甲九宮排盤</title>
@@ -1108,6 +1113,10 @@
      比例參考其他浮動圓鈕內的圖示大小（約落在44px圓底裡的一半左右），縮小後維持原本的長寬比例 */
   .mini-compass-ring .compass-needle { top: 22%; bottom: 22%; width: 18%; }
   .travel-locate-btn:active { background: #eee; }
+  /* 中心實心點的顯示/隱藏，見上方HTML註解與setTravelCenteredState()：置中後顯示，
+     GPS位置實際位移超過門檻才隱藏，用opacity+transition做淡入淡出，不用display:none瞬間切換 */
+  .travel-locate-btn .locate-center-dot { transition: opacity .2s ease; }
+  .travel-locate-btn.is-centered .locate-center-dot { opacity: 1; }
   /* 路徑記錄「出發/停止」鈕，跟定位鈕同一列往上堆疊；錄製中改紅底提示狀態 */
   /* 原本110px跟pin-control（116px）幾乎完全疊在一起（發現時一併修正），
      改移到transport-control（174px）上方，維持既有58px一階的堆疊間距慣例 */
@@ -1160,6 +1169,29 @@
   .track-history-clear-confirm .btn-confirm { background: #e74c3c; color: #fff; }
   /* 路徑記錄結果泡泡，按「停止」時跳出（距離＋完成提示，靈感來自跑步App）。位置貼齊置頂的
      「以現時重起時盤」鈕正下方、置中，避免跟右側按鈕群互相干擾。詳細方位分佈預設收合 */
+  /* 付費畫面（Paywall），2026.08新增。沿用track-history-panel的bottom-sheet樣式
+     （fixed遮罩＋底部滑入卡片，圓角只在上方），視覺語言跟既有面板一致，避免另起爐灶。
+     選這個樣式而非records-panel那種240px窄側欄，是因為付費頁需要放得下完整的功能列表、
+     試用/價格說明、CTA按鈕，窄側欄放不下、也不適合這種「銷售頁」的資訊密度。 */
+  .paywall-panel { display: none; position: fixed; inset: 0; z-index: 70; background: rgba(0,0,0,.45); align-items: flex-end; justify-content: center; }
+  .paywall-panel.is-visible { display: flex; }
+  .paywall-sheet { width: 100%; max-width: 420px; max-height: 84vh; background: #fff; border-radius: 18px 18px 0 0; padding: 20px 20px calc(20px + env(safe-area-inset-bottom)); overflow-y: auto; box-shadow: 0 -4px 20px rgba(0,0,0,.3); box-sizing: border-box; font-family: "M PLUS Rounded 1c", sans-serif; }
+  .paywall-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .paywall-header .title { font-size: 17px; font-weight: bold; color: #333; }
+  .paywall-header .close-btn { border: none; background: none; font-size: 20px; color: #999; padding: 4px 8px; line-height: 1; }
+  .paywall-subtitle { font-size: 13px; color: #999; margin-bottom: 16px; }
+  .paywall-feature-list { list-style: none; padding: 0; margin: 0 0 18px; }
+  .paywall-feature-list li { font-size: 14px; color: #333; padding: 6px 0 6px 22px; position: relative; }
+  .paywall-feature-list li::before { content: "✓"; position: absolute; left: 0; color: #27ae60; font-weight: bold; }
+  .paywall-trial-badge { display: inline-block; background: #fff3e0; color: #b8720a; font-size: 12px; font-weight: bold; padding: 4px 10px; border-radius: 20px; margin-bottom: 10px; }
+  .paywall-price-line { font-size: 14px; color: #666; margin-bottom: 16px; }
+  .paywall-price-line strong { color: #333; font-size: 16px; }
+  .paywall-cta { display: block; width: 100%; border: none; border-radius: 12px; padding: 14px; background: #2471a3; color: #fff; font-size: 15px; font-weight: bold; font-family: inherit; margin-bottom: 10px; }
+  .paywall-cta:disabled { background: #b0c4d0; }
+  .paywall-restore { display: block; width: 100%; border: none; background: none; color: #2471a3; font-size: 13px; font-family: inherit; padding: 6px; }
+  .paywall-status { text-align: center; font-size: 12px; color: #999; min-height: 16px; margin-top: 6px; }
+  .paywall-status.error { color: #e74c3c; }
+
   .travel-track-result-popup { display: none; position: absolute; z-index: 6; left: 14px; right: 14px; top: calc(max(14px, env(safe-area-inset-top)) + 50px); max-width: 300px; margin: 0 auto; background: rgba(255,255,255,.98); border-radius: 14px; padding: 14px 16px; box-shadow: 0 4px 16px rgba(0,0,0,.24); font: 13px "M PLUS Rounded 1c", sans-serif; color: #333; pointer-events: auto; }
   .travel-track-result-popup.is-visible { display: block; }
   .track-result-close { position: absolute; top: 6px; right: 8px; border: none; background: none; color: #999; font-size: 15px; padding: 6px; line-height: 1; }
@@ -1197,8 +1229,10 @@
   .travel-external-nav-popup .btn-col button { border: none; border-radius: 10px; padding: 9px 0; font-size: 13px; font-family: inherit; background: #2471a3; color: #fff; }
   .travel-external-nav-popup .btn-cancel-row { margin-top: 8px; text-align: center; }
   .travel-external-nav-popup .btn-cancel-row button { border: none; background: none; color: #999; font-size: 12px; font-family: inherit; padding: 4px 10px; }
-  /* 縮放控制搬到右邊，跟定位鈕同一側靠邊 */
-  .travel-overlay .leaflet-top.leaflet-right { top: 14px; }
+  /* 縮放控制搬到右邊，跟定位鈕同一側靠邊。2026.08修正：原本寫死top:14px，沒跟這個檔案
+     其他浮動按鈕一樣套用safe-area-inset-top，導致瀏海機型縮放鈕被狀態列/瀏海遮住
+     （實測回報：「＋/－被遮住」）。改成跟.travel-toolbar等同一套max()寫法。 */
+  .travel-overlay .leaflet-top.leaflet-right { top: max(14px, env(safe-area-inset-top)); }
 
   /* ══════════════════════════════════
      出行訣：路線導航＋圓心錨定，收合式控制鈕，只在全螢幕扇形羅盤模式提供
@@ -1713,7 +1747,13 @@
     background: rgba(245, 240, 232, .82);
     backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
     z-index: 9999; pointer-events: none;
+    transition: opacity .15s ease;
   }
+  /* 2026.08新增：出行訣全螢幕地圖模式時隱藏這層遮罩。遮罩配色是照頁面米色底設計的，
+     全螢幕背景是地圖，米色遮罩疊上去顏色不搭；且地圖模式下每顆浮動按鈕本來就各自套用
+     safe-area-inset-top正確避開瀏海（見.travel-overlay .leaflet-top.leaflet-right等規則），
+     不需要靠這層遮罩額外處理。由openTravelMode()/closeTravelMode()切換body這個class。 */
+  body.travel-fullscreen-active .status-bar-mask { opacity: 0; }
 </style>
 </head>
 <body>
@@ -2540,8 +2580,19 @@
       <input id="travel-size-range" type="range" min="300" max="30000" step="100" value="500" aria-label="調整羅盤方圓距離">
     </div>
   </div>
-  <button type="button" class="travel-locate-btn" aria-label="回到目前位置" onclick="recenterTravelPosition()">
-    <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 2 L19 21 L12 17 L5 21 Z"/></svg>
+  <!-- 2026.08改用靶心圖示取代原本箭頭（設計提案D：圓圈＋外圍刻度）。中心點.locate-center-dot
+       預設透明，靠.travel-locate-btn.is-centered切換顯示——語意見setTravelCenteredState()：
+       置中後維持實心，直到GPS偵測到實際位置位移超過門檻才變回空心，跟地圖有沒有被手動拖曳無關
+       （地圖本來就不會自動跟隨移動，見開發討論）。 -->
+  <button type="button" class="travel-locate-btn" id="travel-locate-btn" aria-label="回到目前位置" onclick="recenterTravelPosition()">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <circle cx="12" cy="12" r="7"/>
+      <line x1="12" y1="3" x2="12" y2="6"/>
+      <line x1="12" y1="18" x2="12" y2="21"/>
+      <line x1="3" y1="12" x2="6" y2="12"/>
+      <line x1="18" y1="12" x2="21" y2="12"/>
+      <circle class="locate-center-dot" cx="12" cy="12" r="2.6" fill="currentColor" stroke="none" opacity="0"/>
+    </svg>
   </button>
   <!-- 路徑記錄，像跑步app那樣把走過的路畫成線，跟起點→終點的OSRM規劃路線（travelRouteLine）
        是兩條獨立的線/資料，用不同顏色區分。「出發」開始記錄／「停止」暫停（線還在，再按出發會
@@ -2560,6 +2611,30 @@
       <div id="track-history-list"></div>
     </div>
   </div>
+  <!-- 付費畫面（Paywall），2026.08新增。由requireEntitlement()在使用者觸碰到未解鎖功能時開啟
+       （目前排盤／奇門曆／出行訣三個功能鍵全部指向同一張訂閱，見PRODUCT_ID_FULL_ACCESS）。
+       價格文字預設為靜態fallback，openPaywallPanel()實際開啟時會嘗試用StoreKit回傳的
+       product.priceString覆蓋——Apple規定必須顯示動態商品價格，不可寫死（見開發討論）。 -->
+  <div class="paywall-panel" id="paywall-panel">
+    <div class="paywall-sheet">
+      <div class="paywall-header">
+        <span class="title">解鎖完整功能</span>
+        <button type="button" class="close-btn" aria-label="關閉" onclick="closePaywallPanel()">✕</button>
+      </div>
+      <div class="paywall-subtitle">排盤・奇門曆・出行訣，一次全部解鎖</div>
+      <ul class="paywall-feature-list">
+        <li>完整排盤（陰盤／陽盤／命盤）</li>
+        <li>奇門曆連續查詢</li>
+        <li>出行訣即時方位判斷</li>
+      </ul>
+      <div class="paywall-trial-badge">7天免費試用</div>
+      <div class="paywall-price-line" id="paywall-price-line">試用期滿後訂閱費用將於購買前顯示，可隨時取消</div>
+      <button type="button" class="paywall-cta" id="paywall-cta-btn" onclick="handlePaywallPurchase()">開始7天免費試用</button>
+      <button type="button" class="paywall-restore" onclick="handlePaywallRestore()">恢復購買</button>
+      <div class="paywall-status" id="paywall-status"></div>
+    </div>
+  </div>
+
   <div class="travel-track-clear-popup" id="travel-track-clear-popup">
     清除已記錄的路徑？
     <div class="btn-row">
@@ -2762,8 +2837,10 @@ function handleAreaReset(){
   else { resetAlmanacInputs(); }
 }
 function handleAreaSubmit(){
-  if (currentMode === 'chart') { clearHighlight(); castChart(); }
-  else { runAlmanacQuery(); }
+  // 2026.08新增付費gate：排盤／奇門曆查詢都是付費功能，未解鎖時requireEntitlement()
+  // 會開付費畫面、把castChart/runAlmanacQuery存成購買成功後的待執行動作，不在這裡直接判斷跳過
+  if (currentMode === 'chart') { requireEntitlement('paipan', function() { clearHighlight(); castChart(); }); }
+  else { requireEntitlement('qimenli', runAlmanacQuery); }
 }
 function handleAreaNow(){
   if (currentMode === 'chart') { setNow(); }
@@ -4009,6 +4086,13 @@ function requestCompassPermission(startFn, onReady) {
 // 命盤／陰盤會先切回陽盤，皆為一次性的自動情境切換（這裡本來就是「我要用出行訣」
 // 的明確意圖，不需要額外確認，直接切過去即可）。
 function jumpToTravelFullscreen() {
+  // 2026.08新增付費gate：出行訣未解鎖時，開付費畫面並把「重新呼叫這個函式本身」存成
+  // 購買成功後的待執行動作，直接return，不執行下面任何模式切換——避免使用者在還沒解鎖時
+  // 就先被切換到陽盤/時家，付費畫面關掉後畫面狀態卻已經跑掉的不一致情況
+  if (!hasEntitlement('chuxingjue')) {
+    openPaywallPanel('chuxingjue', jumpToTravelFullscreen);
+    return;
+  }
   // 奇門曆模式：先切回排盤模式（chart），toggleAlmanacMode()內部會處理好所有需要連動的顯示狀態
   if (typeof currentMode !== 'undefined' && currentMode === 'almanac') {
     toggleAlmanacMode();
@@ -4063,10 +4147,18 @@ function jumpToTravelFullscreen() {
 
 // ══════════════════════════════════
 // 地圖圖資來源：Mapbox（2026.08取代未授權的Google Maps圖磚）
-// token已在Mapbox後台設定URL restriction（僅限qimen.therootshollow.com、qimen.trh.nyc、
-// qimen4all.vercel.app、localhost可呼叫），外流也無法被盜用額度
+// 2026.08發現：Mapbox官方文件明確指出「幫token加URL restriction會讓它在行動App裡完全無法使用，
+// 行動App必須用另一組獨立token」——因為WKWebView等原生環境的圖磚請求常常不帶Referer標頭，
+// Mapbox收到沒有Referer的請求一律視為不符合白名單、直接403，不管白名單清單加了什麼網域都沒用
+// （實測：iosScheme改http、localhost也加進白名單後，App版仍是403 Forbidden，證實此限制）。
+// 故改成依平台判斷：網頁版（qimen.therootshollow.com等）繼續用原本有URL restriction的token；
+// App版改用另一組沒有網域限制、只給styles:read+fonts:read最小必要權限的token（isNativeApp()
+// 定義見下方geoHasSupport同一段跨平台封裝，因JS function宣告會整體hoisting，這裡雖然文字位置
+// 在isNativeApp()定義之前，執行時仍抓得到，不會出錯）。
 // ══════════════════════════════════
-const MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoiZXJpYzEyMzU2IiwiYSI6ImNtdDNsdWNrYzA1YnIzM3BrNm0xeDZpMGUifQ.sHlCc4OGENNpgNzW2sLfSw';
+const MAPBOX_ACCESS_TOKEN_WEB = 'pk.eyJ1IjoiZXJpYzEyMzU2IiwiYSI6ImNtdDNsdWNrYzA1YnIzM3BrNm0xeDZpMGUifQ.sHlCc4OGENNpgNzW2sLfSw';
+const MAPBOX_ACCESS_TOKEN_APP = 'pk.eyJ1IjoiZXJpYzEyMzU2IiwiYSI6ImNtdDdkaWN4bDFhbjMzN29pc2l6NzY1MnAifQ.x3b5tIhbF-tL0WV9nJEJYA'; // 無網域限制，僅styles:read+fonts:read
+const MAPBOX_ACCESS_TOKEN = isNativeApp() ? MAPBOX_ACCESS_TOKEN_APP : MAPBOX_ACCESS_TOKEN_WEB;
 const MAPBOX_STYLE_ID = 'streets-v12'; // 可選：streets-v12（一般街道）／outdoors-v12（含等高線）／light-v11（極簡淺色）
 const MAPBOX_TILE_URL = 'https://api.mapbox.com/styles/v1/mapbox/' + MAPBOX_STYLE_ID + '/tiles/{z}/{x}/{y}@2x?access_token=' + MAPBOX_ACCESS_TOKEN;
 const MAPBOX_TILE_OPTIONS = { maxZoom: 20, tileSize: 512, zoomOffset: -1, attribution: '© <a href="https://www.mapbox.com/about/maps/">Mapbox</a> © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' };
@@ -4428,6 +4520,183 @@ function geoClearWatch(pendingId) {
   delete geoWatchRegistry[pendingId];
 }
 
+// ══════════════════════════════════
+// IAP／訂閱 entitlement 封裝層（2026.08新增）
+// ══════════════════════════════════
+// 用@capgo/native-purchases（免費、無第三方後端依賴，直接包StoreKit2／Google Play Billing），
+// 跟RevenueCat比較過後選定，理由見開發討論：單人開發、無自架後端，裝置端StoreKit2判斷已足夠，
+// 不需要RevenueCat那層雲端entitlement同步。
+//
+// 核心設計：entitlement用「功能鍵」而非單純布林值，方便未來拆模組分開定價時，
+// 只需改下方ENTITLEMENT_PRODUCT_MAP的對應關係，呼叫方hasEntitlement('paipan')等寫法完全不用改。
+// 目前三個功能鍵全部指向同一個訂閱（PRODUCT_ID_FULL_ACCESS）。
+//
+// 網頁版（qimen.therootshollow.com，無window.Capacitor）不支援IAP——StoreKit／Google Play
+// Billing都是原生層功能，網頁版沒有對應通路可以收費，故iapHasSupport()在網頁版固定回傳false，
+// hasEntitlement()在網頁版固定回傳true（網頁版維持全功能開放，不做付費限制；付費機制僅存在於
+// App版）。⚠️此為暫定假設，待與Eric確認網頁版是否也要有訪客限制。
+
+const PRODUCT_ID_FULL_ACCESS = 'com.therootshollow.qimen.fullaccess.monthly';
+
+// 目前三個模組全部指向同一張訂閱；未來拆模組分開定價時，只改這裡的對應值即可
+const ENTITLEMENT_PRODUCT_MAP = {
+  paipan: PRODUCT_ID_FULL_ACCESS,
+  qimenli: PRODUCT_ID_FULL_ACCESS,
+  chuxingjue: PRODUCT_ID_FULL_ACCESS
+};
+
+// 快取目前有效的訂閱product id集合，由refreshEntitlementState()在App啟動時／購買完成後更新。
+// hasEntitlement()只讀這份快取，本身是同步函式，方便UI gate判斷時直接呼叫不用處理Promise。
+let iapActiveProductIds = new Set();
+let iapEntitlementReady = false; // App啟動時尚未跟StoreKit確認前，避免UI誤判為未訂閱
+
+function iapHasSupport() {
+  return isNativeApp() && !!(window.Capacitor.Plugins && window.Capacitor.Plugins.NativePurchases);
+}
+
+function getNativePurchasesPlugin() {
+  return iapHasSupport() ? window.Capacitor.Plugins.NativePurchases : null;
+}
+
+// App啟動時呼叫一次，之後每次購買/還原完成後重新呼叫刷新快取
+async function refreshEntitlementState() {
+  if (!iapHasSupport()) { iapEntitlementReady = true; return; }
+  const plugin = getNativePurchasesPlugin();
+  try {
+    const result = await plugin.getPurchases({ productType: 'subs' });
+    const activeIds = new Set();
+    (result.purchases || []).forEach(function(purchase) {
+      // isActive僅iOS訂閱可靠；Android訂閱理論上需server端查Google Play API才能確認到期日，
+      // 但本專案目前無自架後端（見上方說明），故Android端退化為「purchaseState已完成即視為有效」，
+      // 已知限制：無法偵測Android訂閱是否已到期未續訂，待未來若加後端驗證再補強
+      if (purchase.isActive === true) {
+        activeIds.add(purchase.productIdentifier);
+      } else if (purchase.isActive === undefined && purchase.purchaseState === 'PURCHASED') {
+        activeIds.add(purchase.productIdentifier);
+      }
+    });
+    iapActiveProductIds = activeIds;
+  } catch (err) {
+    console.error('refreshEntitlementState失敗:', err);
+  } finally {
+    iapEntitlementReady = true;
+  }
+}
+
+function hasEntitlement(featureKey) {
+  if (!iapHasSupport()) return true; // 網頁版暫定全開放，見上方說明
+  const requiredProductId = ENTITLEMENT_PRODUCT_MAP[featureKey];
+  if (!requiredProductId) return false; // featureKey打錯字或未設定對應，保守擋下不放行
+  return iapActiveProductIds.has(requiredProductId);
+}
+
+async function purchaseFullAccess() {
+  const plugin = getNativePurchasesPlugin();
+  if (!plugin) throw new Error('此裝置不支援App內購買');
+  const transaction = await plugin.purchaseProduct({
+    productIdentifier: PRODUCT_ID_FULL_ACCESS,
+    productType: 'subs'
+  });
+  await refreshEntitlementState();
+  return transaction;
+}
+
+// 對應「恢復購買」按鈕；iOS呼叫時會跳系統帳號驗證，只能在使用者主動點擊的情境下呼叫
+async function restorePurchases() {
+  const plugin = getNativePurchasesPlugin();
+  if (!plugin) throw new Error('此裝置不支援App內購買');
+  await plugin.restorePurchases();
+  await refreshEntitlementState();
+}
+
+// ══════════════════════════════════
+// 付費畫面（Paywall）— inline面板，2026.08新增
+// ══════════════════════════════════
+// 禁用原生alert/confirm，一律用面板內展開的確認UI，見開發準則「JavaScript環境限制」節。
+// requireEntitlement()是唯一對外的gate入口：featureKey已解鎖就直接執行onGranted，
+// 否則開付費畫面，購買/恢復成功後才補執行onGranted（讓使用者原本想做的動作接著完成，
+// 不用購買完再自己點一次）。
+
+let paywallGateFeatureKey = null; // 記錄這次開付費畫面是哪個功能鍵觸發的（目前三鍵同一張訂閱，未來拆模組時才會真的用到差異）
+let paywallGateOnGranted = null;  // 購買/恢復成功後要接著執行的原始動作
+
+function requireEntitlement(featureKey, onGranted) {
+  if (hasEntitlement(featureKey)) { onGranted(); return; }
+  openPaywallPanel(featureKey, onGranted);
+}
+
+async function openPaywallPanel(featureKey, onGranted) {
+  paywallGateFeatureKey = featureKey;
+  paywallGateOnGranted = onGranted || null;
+  setPaywallStatus('', '');
+  document.getElementById('paywall-cta-btn').disabled = false;
+  document.getElementById('paywall-price-line').textContent = '試用期滿後訂閱費用將於購買前顯示，可隨時取消';
+  document.getElementById('paywall-panel').classList.add('is-visible');
+
+  // Apple規定商品價格須用StoreKit動態回傳值顯示，不可寫死文字（見@capgo/native-purchases
+  // 文件iOS段落警告）。網頁版／預覽環境沒有plugin可查，維持上面的靜態fallback文案即可，
+  // 不強求一定要有動態價格才能開面板。
+  const plugin = getNativePurchasesPlugin();
+  if (!plugin) return;
+  try {
+    const result = await plugin.getProduct({ productIdentifier: PRODUCT_ID_FULL_ACCESS, productType: 'subs' });
+    const product = result && result.product;
+    if (product && product.priceString) {
+      document.getElementById('paywall-price-line').innerHTML =
+        '試用期滿後 <strong>' + product.priceString + '／月</strong>，可隨時取消';
+    }
+  } catch (err) {
+    console.error('讀取訂閱商品資訊失敗:', err);
+  }
+}
+
+function closePaywallPanel() {
+  document.getElementById('paywall-panel').classList.remove('is-visible');
+  paywallGateFeatureKey = null;
+  paywallGateOnGranted = null;
+}
+
+function setPaywallStatus(text, type) {
+  const el = document.getElementById('paywall-status');
+  el.textContent = text;
+  el.className = 'paywall-status' + (type ? ' ' + type : '');
+}
+
+async function handlePaywallPurchase() {
+  const ctaBtn = document.getElementById('paywall-cta-btn');
+  ctaBtn.disabled = true;
+  setPaywallStatus('處理中…', '');
+  try {
+    await purchaseFullAccess();
+    const onGranted = paywallGateOnGranted;
+    closePaywallPanel();
+    if (onGranted) onGranted();
+  } catch (err) {
+    console.error('購買失敗:', err);
+    ctaBtn.disabled = false;
+    setPaywallStatus('購買未完成，請再試一次', 'error');
+  }
+}
+
+// iOS呼叫restorePurchases()內部會跳系統帳號驗證對話框，只能在使用者主動點擊的情境下呼叫
+// （見entitlement封裝層restorePurchases()說明），這裡的按鈕點擊正是唯一合法的呼叫時機
+async function handlePaywallRestore() {
+  setPaywallStatus('還原中…', '');
+  try {
+    await restorePurchases();
+    if (hasEntitlement(paywallGateFeatureKey)) {
+      const onGranted = paywallGateOnGranted;
+      closePaywallPanel();
+      if (onGranted) onGranted();
+    } else {
+      setPaywallStatus('沒有找到可還原的購買紀錄', '');
+    }
+  } catch (err) {
+    console.error('還原購買失敗:', err);
+    setPaywallStatus('還原失敗，請再試一次', 'error');
+  }
+}
+
 function locateInlineTravelPosition(forceZoom) {
   if (forceZoom === undefined) forceZoom = true;
   if (!inlineTravelMap || !geoHasSupport()) return;
@@ -4764,6 +5033,28 @@ function initializeTravelMap() {
 // 只在使用者真的點開出行訣時才執行，那時候Leaflet早已就緒，不會有這個問題；本函式沿用同一個
 // 原則，第一次呼叫（updateTravelPositionMarker內）才建立，之後直接回傳快取的實例。
 let travelGpsIcon = null;
+// 回到定位鈕的「置中」狀態，2026.08新增。語意：GPS實際位置有沒有偏離上次按下「回到定位」
+// 當下記錄的座標，跟地圖有沒有被手動拖曳無關——地圖本身不會自動跟隨移動（見開發討論），
+// 所以用「地圖是否置中」來判斷沒有意義，改用「人有沒有實際移動過」。
+let travelIsCentered = false;
+let travelCenteredLatLng = null; // 上次置中當下的座標快照，供後續位置更新比對位移距離
+const TRAVEL_CENTER_DRIFT_METERS = 8; // 超過這個距離視為「已位移」，數字略高於路徑記錄的雜訊過濾門檻(5m)，避免GPS抖動誤判
+
+function setTravelCenteredState(isCentered) {
+  travelIsCentered = isCentered;
+  const btn = document.getElementById('travel-locate-btn');
+  if (btn) btn.classList.toggle('is-centered', isCentered);
+}
+
+// 每次GPS回報新位置都呼叫（不論是初次定位/回到定位鈕，或持續追蹤的watch），檢查是否已經
+// 偏離上次置中快照超過門檻，超過就切回空心。只有真的置中過（travelCenteredLatLng有值）才需要比對
+function checkTravelCenterDrift(latLng) {
+  if (!travelIsCentered || !travelCenteredLatLng) return;
+  if (travelCenteredLatLng.distanceTo(latLng) > TRAVEL_CENTER_DRIFT_METERS) {
+    setTravelCenteredState(false);
+  }
+}
+
 function getTravelGpsIcon() {
   if (!travelGpsIcon) {
     travelGpsIcon = L.divIcon({
@@ -4788,6 +5079,7 @@ function updateTravelPositionMarker(latLng) {
     travelPositionMarker = L.marker(latLng, { icon: getTravelGpsIcon(), interactive: false, pane: 'markerPane' }).addTo(travelMap);
     updateTravelGpsArrowRotation(travelLastHeading); // 剛建立時，用當下已知的最近一次朝向立刻套用，不用等下一個感應器事件才有角度
   }
+  checkTravelCenterDrift(latLng); // 每次位置更新都檢查是否已偏離上次「回到定位」的座標快照，見該函式說明
 }
 
 // 只改.travel-gps-arrow內層div的transform，不動marker本身位置——跟位置更新（setLatLng）
@@ -5393,10 +5685,20 @@ function locateTravelPosition(forceZoom, autoAnchor) {
     // 診斷後定位到此處，非CORS問題、非OSRM服務問題）。
     const latLng = L.latLng(position.coords.latitude, position.coords.longitude);
     if (!travelMap) initializeTravelMap();
+    // 2026.08新增：不論forceZoom與否，先invalidateSize()讓Leaflet重新量測容器實際像素尺寸，
+    // 才呼叫setView/panTo——避免容器尺寸在背景/前景切換後跟Leaflet內部快取值不一致，
+    // 導致算出來的「置中座標」其實是根據舊尺寸換算、視覺上沒有真的置中（見visibilitychange
+    // 監聽器同一組修正的說明）。這裡直接在定位成功當下處理，不依賴猜中所有可能觸發情境。
+    travelMap.invalidateSize();
     // 改呼叫updateTravelPositionMarker()重用同一個marker（setLatLng移動），
     // 不再每次removeLayer+重新create——理由見該函式註解（避免箭頭轉向角度被重建重置）。
     // pane/圖示（L.marker+divIcon）也一併改掉，見travelGpsIcon定義。
     updateTravelPositionMarker(latLng);
+    // 這次呼叫代表「回到定位」動作本身，不管是初次進出行訣還是使用者手動按鈕，都視為
+    // 重新置中——快照這次座標，切回實心；上面updateTravelPositionMarker()裡的位移檢查
+    // 若比對到舊快照觸發了false，這裡會立刻覆蓋回true，兩者同步執行不會有畫面閃爍
+    travelCenteredLatLng = latLng;
+    setTravelCenteredState(true);
     if (forceZoom) {
       travelMap.setView(latLng, 16);
     } else {
@@ -5995,6 +6297,16 @@ document.addEventListener('visibilitychange', function() {
   if (document.visibilityState === 'visible' && travelTrackRecording) {
     requestTravelWakeLock();
   }
+  // 2026.08新增：App從背景切回前景（或切換模式再切回來）時，travelMap容器的實際像素尺寸
+  // 有機會跟Leaflet內部快取的舊尺寸對不上（例如iOS狀態列/安全區域在背景切換時有微幅調整），
+  // 若不重新invalidateSize()，之後panTo()/setView()算出來的「置中座標」會是根據舊尺寸換算，
+  // 視覺上就會看起來「按了回到定位、但箭頭沒有真的置中」。只在出行訣全螢幕仍開著時才需要處理。
+  if (document.visibilityState === 'visible') {
+    const overlay = document.getElementById('travel-overlay');
+    if (overlay && overlay.classList.contains('is-open') && travelMap) {
+      travelMap.invalidateSize();
+    }
+  }
 });
 
 function openTravelMode() {
@@ -6002,6 +6314,7 @@ function openTravelMode() {
   const boardLayer = document.getElementById('travel-board-layer');
   const board = document.querySelector('#paipan-result .outer');
   if (!overlay || !boardLayer || !board || overlay.classList.contains('is-open')) return;
+  document.body.classList.add('travel-fullscreen-active'); // 隱藏頂部米色遮罩，見該CSS規則說明
   // 階段三：若是從方框地圖模式展開，先暫時隱藏方框內嵌地圖（travel-inline-map-wrap），
   // 避免跟全螢幕背景地圖疊在一起顯示；記住原本的 display 值，關閉全螢幕時還原
   const inlineWrap = document.getElementById('travel-inline-map-wrap');
@@ -6032,6 +6345,7 @@ function closeTravelMode() {
   const board = document.querySelector('#travel-board-layer .outer');
   if (!overlay || !overlay.classList.contains('is-open')) return;
   overlay.classList.remove('is-open', 'board-visible');
+  document.body.classList.remove('travel-fullscreen-active'); // 恢復頂部米色遮罩
   hideTravelOrientationPrompt();
   stopTravelPositionWatch(); // 離開出行訣立刻clearWatch，不背景常駐持續耗電定位
   // 一併移除指北感應器監聽——這個監聽只在requestTravelCompass()裡加上過，離開全螢幕
@@ -6041,6 +6355,16 @@ function closeTravelMode() {
   // 重新加回即可，addEventListener對同一個函式參考本來就會自動去重，不會漏接。
   window.removeEventListener('deviceorientationabsolute', handleTravelOrientation, true);
   window.removeEventListener('deviceorientation', handleTravelOrientation, true);
+  // 2026.08修正：原本這裡漏了重置travelCompassEnabled，導致下次重新進出行訣時
+  // requestTravelCompass()開頭的「已啟用過就不再問一次」guard誤判為仍然啟用，
+  // 監聽器因此永遠不會重新掛回去——箭頭/小羅盤位置仍會動（GPS watch有正常重啟，
+  // 是獨立機制），但朝向角度從此卡在離開前最後一次收到的值不再更新。
+  // 實測回報現象：「離開視窗或切換模式再回來，箭頭指向卡住」，根因在此。
+  travelCompassEnabled = false;
+  // 靶心置中狀態一併重置，避免下次重新進出行訣時，畫面初始瞬間沿用上次離開前的實心/空心狀態
+  // （新進場還沒定位成功前，先回到「未置中」的中性狀態，等locateTravelPosition()跑完再設回實心）
+  setTravelCenteredState(false);
+  travelCenteredLatLng = null;
   resetTravelRoute(); // 路線導航狀態一併重置（含起點，已跟錨定合一，見 resetTravelRoute），下次重新進入是乾淨狀態
   setTimeout(function() {
     if (board && travelBoardPlaceholder) {
@@ -6282,7 +6606,7 @@ function setNow() {
 }
 
 // 頁面載入時自動填入當前時間
-window.addEventListener('DOMContentLoaded', () => { setNow(); updateQuickNav(); });
+window.addEventListener('DOMContentLoaded', () => { setNow(); updateQuickNav(); refreshEntitlementState(); });
 
 const pad = n => String(n).padStart(2, '0');
 
@@ -6829,8 +7153,14 @@ function getGateMap(dutyGateHouse, solsticeType, timeStem) {
 
 // 排引干：值使門落宮起，時天干為頭，沿地盤實際順時針序列切入，永遠順時針放入
 // 星伏／門伏：純位置標記（八星/八門是否全部回到固定本宮），畫面顯示用，跟特例三觸發邏輯分開
-// 特例三/四觸發前提：① 星伏（isStarFrozen）② 引干閉環（isGuidingClosed，值使門落宮地盤干含effectiveStem）
-// 兩個觸發條件都成立才飛布；星伏/門伏的「位置」標記本身不直接決定要不要飛布
+// 特例三/四觸發前提：① 星伏（isStarFrozen）② 門伏（isGateFrozen，值使門落宮＝符頭所在地盤宮位）
+// 兩個觸發條件都成立才飛布
+// 2026.08簡化：isTripleSame原本用「引干閉環」(isGuidingClosed，查地盤干字串是否含effectiveStem)
+// 判斷，現直接改用isGateFrozen——isStarFrozen成立時，effectiveStem在地盤上的唯一位置就是
+// dutyStemHouse（除寄干共存於坤宮外，每個天干在地盤只會出現一處），此時isGateFrozen(落宮＝
+// dutyStemHouse)與isGuidingClosed(落宮地盤干含effectiveStem)數學上完全等價（見排盤規則.md
+// 特例三「星伏＋門伏是引干閉環的充要條件」），故只需比較宮位數字（已算好的isGateFrozen），
+// 不需要再另外查一次地盤干字串內容，兩者永遠同步不會有例外
 // earthStemSeq：實際順時針讀出的地盤天干序列（8個位置，由呼叫端算好傳入，避免與getHeavenStemMap重複計算）
 function getHidingStemMap(dutyGateLandHouse, earthStemMap, earthStemSeq, timeStem, dutyStem, solsticeType, timeStemHouse, dutyStemHouse) {
   dutyGateLandHouse = parseInt(dutyGateLandHouse);
@@ -6844,12 +7174,7 @@ function getHidingStemMap(dutyGateLandHouse, earthStemMap, earthStemSeq, timeSte
   // 門伏（純位置）：值使門落宮 是否＝值使門固定本宮（＝符頭所在地盤宮位）。八門同一起點同一offset，單點檢查即代表全部八門
   const isGateFrozen = String(dutyGateLandHouse) === String(dutyStemHouse);
 
-  // 引干閉環（觸發特例三用，內容檢查，跟門伏的位置檢查是不同條件）：
-  // 值使門落宮的地盤干 是否包含 effectiveStem
-  const diStemAtLand = earthStemMap[dutyGateLandHouse] || '';
-  const isGuidingClosed = diStemAtLand.includes(effectiveStem);
-
-  const isTripleSame = isStarFrozen && isGuidingClosed;
+  const isTripleSame = isStarFrozen && isGateFrozen;
 
   let guidingMap;
   if (isTripleSame) {
