@@ -15,11 +15,6 @@
 <script src="vendor/capacitor-synapse.js"></script>
 <script>window.synapse = window.outsystemsSynapse;</script>
 <script src="vendor/capacitor-geolocation.js"></script>
-<!-- 2026.08新增：IAP訂閱用的@capgo/native-purchases plugin瀏覽器端橋接檔案，同geolocation
-     plugin的引入模式（見上方註解）。此檔案由Eric在Capacitor原生專案跑`npm install
-     @capgo/native-purchases`＋`npx cap sync`後產生，非本次對話環境可直接生成，
-     需Eric手動複製進www/vendor/後才會生效；純網頁部署一樣是404無害、fallback行為不受影響。 -->
-<script src="vendor/capacitor-native-purchases.js"></script>
 <link rel="apple-touch-icon" href="icon.PNG">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>奇門遁甲九宮排盤</title>
@@ -1113,10 +1108,6 @@
      比例參考其他浮動圓鈕內的圖示大小（約落在44px圓底裡的一半左右），縮小後維持原本的長寬比例 */
   .mini-compass-ring .compass-needle { top: 22%; bottom: 22%; width: 18%; }
   .travel-locate-btn:active { background: #eee; }
-  /* 中心實心點的顯示/隱藏，見上方HTML註解與setTravelCenteredState()：置中後顯示，
-     GPS位置實際位移超過門檻才隱藏，用opacity+transition做淡入淡出，不用display:none瞬間切換 */
-  .travel-locate-btn .locate-center-dot { transition: opacity .2s ease; }
-  .travel-locate-btn.is-centered .locate-center-dot { opacity: 1; }
   /* 路徑記錄「出發/停止」鈕，跟定位鈕同一列往上堆疊；錄製中改紅底提示狀態 */
   /* 原本110px跟pin-control（116px）幾乎完全疊在一起（發現時一併修正），
      改移到transport-control（174px）上方，維持既有58px一階的堆疊間距慣例 */
@@ -1169,29 +1160,6 @@
   .track-history-clear-confirm .btn-confirm { background: #e74c3c; color: #fff; }
   /* 路徑記錄結果泡泡，按「停止」時跳出（距離＋完成提示，靈感來自跑步App）。位置貼齊置頂的
      「以現時重起時盤」鈕正下方、置中，避免跟右側按鈕群互相干擾。詳細方位分佈預設收合 */
-  /* 付費畫面（Paywall），2026.08新增。沿用track-history-panel的bottom-sheet樣式
-     （fixed遮罩＋底部滑入卡片，圓角只在上方），視覺語言跟既有面板一致，避免另起爐灶。
-     選這個樣式而非records-panel那種240px窄側欄，是因為付費頁需要放得下完整的功能列表、
-     試用/價格說明、CTA按鈕，窄側欄放不下、也不適合這種「銷售頁」的資訊密度。 */
-  .paywall-panel { display: none; position: fixed; inset: 0; z-index: 70; background: rgba(0,0,0,.45); align-items: flex-end; justify-content: center; }
-  .paywall-panel.is-visible { display: flex; }
-  .paywall-sheet { width: 100%; max-width: 420px; max-height: 84vh; background: #fff; border-radius: 18px 18px 0 0; padding: 20px 20px calc(20px + env(safe-area-inset-bottom)); overflow-y: auto; box-shadow: 0 -4px 20px rgba(0,0,0,.3); box-sizing: border-box; font-family: "M PLUS Rounded 1c", sans-serif; }
-  .paywall-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
-  .paywall-header .title { font-size: 17px; font-weight: bold; color: #333; }
-  .paywall-header .close-btn { border: none; background: none; font-size: 20px; color: #999; padding: 4px 8px; line-height: 1; }
-  .paywall-subtitle { font-size: 13px; color: #999; margin-bottom: 16px; }
-  .paywall-feature-list { list-style: none; padding: 0; margin: 0 0 18px; }
-  .paywall-feature-list li { font-size: 14px; color: #333; padding: 6px 0 6px 22px; position: relative; }
-  .paywall-feature-list li::before { content: "✓"; position: absolute; left: 0; color: #27ae60; font-weight: bold; }
-  .paywall-trial-badge { display: inline-block; background: #fff3e0; color: #b8720a; font-size: 12px; font-weight: bold; padding: 4px 10px; border-radius: 20px; margin-bottom: 10px; }
-  .paywall-price-line { font-size: 14px; color: #666; margin-bottom: 16px; }
-  .paywall-price-line strong { color: #333; font-size: 16px; }
-  .paywall-cta { display: block; width: 100%; border: none; border-radius: 12px; padding: 14px; background: #2471a3; color: #fff; font-size: 15px; font-weight: bold; font-family: inherit; margin-bottom: 10px; }
-  .paywall-cta:disabled { background: #b0c4d0; }
-  .paywall-restore { display: block; width: 100%; border: none; background: none; color: #2471a3; font-size: 13px; font-family: inherit; padding: 6px; }
-  .paywall-status { text-align: center; font-size: 12px; color: #999; min-height: 16px; margin-top: 6px; }
-  .paywall-status.error { color: #e74c3c; }
-
   .travel-track-result-popup { display: none; position: absolute; z-index: 6; left: 14px; right: 14px; top: calc(max(14px, env(safe-area-inset-top)) + 50px); max-width: 300px; margin: 0 auto; background: rgba(255,255,255,.98); border-radius: 14px; padding: 14px 16px; box-shadow: 0 4px 16px rgba(0,0,0,.24); font: 13px "M PLUS Rounded 1c", sans-serif; color: #333; pointer-events: auto; }
   .travel-track-result-popup.is-visible { display: block; }
   .track-result-close { position: absolute; top: 6px; right: 8px; border: none; background: none; color: #999; font-size: 15px; padding: 6px; line-height: 1; }
@@ -1229,10 +1197,8 @@
   .travel-external-nav-popup .btn-col button { border: none; border-radius: 10px; padding: 9px 0; font-size: 13px; font-family: inherit; background: #2471a3; color: #fff; }
   .travel-external-nav-popup .btn-cancel-row { margin-top: 8px; text-align: center; }
   .travel-external-nav-popup .btn-cancel-row button { border: none; background: none; color: #999; font-size: 12px; font-family: inherit; padding: 4px 10px; }
-  /* 縮放控制搬到右邊，跟定位鈕同一側靠邊。2026.08修正：原本寫死top:14px，沒跟這個檔案
-     其他浮動按鈕一樣套用safe-area-inset-top，導致瀏海機型縮放鈕被狀態列/瀏海遮住
-     （實測回報：「＋/－被遮住」）。改成跟.travel-toolbar等同一套max()寫法。 */
-  .travel-overlay .leaflet-top.leaflet-right { top: max(14px, env(safe-area-inset-top)); }
+  /* 縮放控制搬到右邊，跟定位鈕同一側靠邊 */
+  .travel-overlay .leaflet-top.leaflet-right { top: 14px; }
 
   /* ══════════════════════════════════
      出行訣：路線導航＋圓心錨定，收合式控制鈕，只在全螢幕扇形羅盤模式提供
@@ -1273,6 +1239,30 @@
   .travel-search-results button { text-align: left; border: none; border-radius: 10px; padding: 8px 12px; font: 12px "M PLUS Rounded 1c", sans-serif; background: rgba(255,255,255,.98); color: #333; box-shadow: 0 2px 8px rgba(0,0,0,.16); pointer-events: auto; }
   .travel-search-results button:active { background: #eee; }
   .travel-search-results .no-result { padding: 8px 12px; font: 12px "M PLUS Rounded 1c", sans-serif; color: #888; background: rgba(255,255,255,.92); border-radius: 10px; }
+
+  /* 常用地址泡泡（2026.08新增）：長按定位鈕觸發，跟travel-search-popup同一套視覺語言但獨立顯示，
+     疊在定位鈕正上方（定位鈕bottom偏移58px，這裡再往上留間距）。結構：已存清單在上、
+     新增區塊（存目前定位／搜尋地址）在下，DOM順序由上而下即畫面由上而下，不用column-reverse
+     （跟travel-search-popup不同，這裡沒有「邊打字邊往上長」的需求，正常順序即可） */
+  .travel-saved-address-popup { position: absolute; z-index: 6; right: 14px; bottom: calc(max(14px, env(safe-area-inset-bottom)) + 108px); display: none; flex-direction: column; gap: 6px; width: min(260px, calc(100vw - 28px)); }
+  .travel-saved-address-popup.is-open { display: flex; }
+  .travel-saved-address-list { display: flex; flex-direction: column; gap: 4px; max-height: 180px; overflow-y: auto; }
+  .travel-saved-address-list .no-result { padding: 8px 12px; font: 12px "M PLUS Rounded 1c", sans-serif; color: #888; background: rgba(255,255,255,.92); border-radius: 10px; }
+  .travel-saved-address-row { display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,.98); border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.16); padding: 2px; }
+  .travel-saved-address-row .name-btn { flex: 1; text-align: left; border: none; background: transparent; padding: 8px 10px; font: 12px "M PLUS Rounded 1c", sans-serif; color: #333; }
+  .travel-saved-address-row .name-btn:active { background: #eee; border-radius: 8px; }
+  .travel-saved-address-row .del-btn { flex: 0 0 auto; border: none; background: transparent; width: 28px; height: 28px; border-radius: 50%; font-size: 13px; color: #c0392b; }
+  .travel-saved-address-row .del-btn:active { background: #fce4e4; }
+  .travel-saved-address-add-row { display: flex; gap: 6px; }
+  .travel-saved-address-add-row button { flex: 1; border: none; border-radius: 10px; padding: 8px 6px; font: 12px "M PLUS Rounded 1c", sans-serif; background: rgba(255,255,255,.98); color: #2471a3; box-shadow: 0 2px 8px rgba(0,0,0,.16); }
+  .travel-saved-address-add-row button:active { background: #eee; }
+  /* 命名輸入小面板：存目前定位／存搜尋結果共用，跟remove-popup同一套簡潔問答式風格但改直式排列 */
+  .travel-address-naming-popup { display: none; position: absolute; z-index: 7; left: 50%; bottom: calc(max(14px, env(safe-area-inset-bottom)) + 108px); transform: translateX(-50%); background: rgba(255,255,255,.98); border-radius: 12px; padding: 10px 12px; box-shadow: 0 4px 14px rgba(0,0,0,.22); text-align: center; font: 12px "M PLUS Rounded 1c", sans-serif; color: #333; width: min(240px, calc(100vw - 28px)); box-sizing: border-box; }
+  .travel-address-naming-popup.is-open { display: block; }
+  .travel-address-naming-popup input { width: 100%; box-sizing: border-box; height: 34px; border: 1px solid #ddd; border-radius: 8px; padding: 0 10px; font: 16px "M PLUS Rounded 1c", sans-serif; margin-bottom: 8px; } /* 16px避免iOS自動zoom，同travel-search-popup input */
+  .travel-address-naming-popup .btn-row { display: flex; gap: 8px; justify-content: center; }
+  .travel-address-naming-popup button.btn-cancel { border: none; border-radius: 8px; width: 32px; height: 28px; font-size: 14px; background: #eee; color: #666; }
+  .travel-address-naming-popup button.btn-confirm { border: none; border-radius: 8px; width: 32px; height: 28px; font-size: 14px; background: #2ecc71; color: #fff; }
 
   /* 刪除確認小泡泡：點地圖上已放置的圖釘會跳出，取代原本面板裡的「刪除最後一點/清除全部」按鈕 */
   .remove-popup { display: none; position: absolute; z-index: 6; transform: translate(-50%, calc(-100% - 32px)); background: rgba(255,255,255,.98); border-radius: 12px; padding: 10px 12px; box-shadow: 0 4px 14px rgba(0,0,0,.22); text-align: center; font: 12px "M PLUS Rounded 1c", sans-serif; color: #333; pointer-events: auto; }
@@ -1747,13 +1737,7 @@
     background: rgba(245, 240, 232, .82);
     backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
     z-index: 9999; pointer-events: none;
-    transition: opacity .15s ease;
   }
-  /* 2026.08新增：出行訣全螢幕地圖模式時隱藏這層遮罩。遮罩配色是照頁面米色底設計的，
-     全螢幕背景是地圖，米色遮罩疊上去顏色不搭；且地圖模式下每顆浮動按鈕本來就各自套用
-     safe-area-inset-top正確避開瀏海（見.travel-overlay .leaflet-top.leaflet-right等規則），
-     不需要靠這層遮罩額外處理。由openTravelMode()/closeTravelMode()切換body這個class。 */
-  body.travel-fullscreen-active .status-bar-mask { opacity: 0; }
 </style>
 </head>
 <body>
@@ -2580,20 +2564,33 @@
       <input id="travel-size-range" type="range" min="300" max="30000" step="100" value="500" aria-label="調整羅盤方圓距離">
     </div>
   </div>
-  <!-- 2026.08改用靶心圖示取代原本箭頭（設計提案D：圓圈＋外圍刻度）。中心點.locate-center-dot
-       預設透明，靠.travel-locate-btn.is-centered切換顯示——語意見setTravelCenteredState()：
-       置中後維持實心，直到GPS偵測到實際位置位移超過門檻才變回空心，跟地圖有沒有被手動拖曳無關
-       （地圖本來就不會自動跟隨移動，見開發討論）。 -->
-  <button type="button" class="travel-locate-btn" id="travel-locate-btn" aria-label="回到目前位置" onclick="recenterTravelPosition()">
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-      <circle cx="12" cy="12" r="7"/>
-      <line x1="12" y1="3" x2="12" y2="6"/>
-      <line x1="12" y1="18" x2="12" y2="21"/>
-      <line x1="3" y1="12" x2="6" y2="12"/>
-      <line x1="18" y1="12" x2="21" y2="12"/>
-      <circle class="locate-center-dot" cx="12" cy="12" r="2.6" fill="currentColor" stroke="none" opacity="0"/>
-    </svg>
+  <button type="button" class="travel-locate-btn" aria-label="回到目前位置" onclick="recenterTravelPosition()"
+    onpointerdown="handleTravelLocateBtnPointerDown(event)" onpointerup="handleTravelLocateBtnPointerUp(event)"
+    onpointercancel="handleTravelLocateBtnPointerUp(event)" onpointermove="handleTravelLocateBtnPointerMove(event)">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 2 L19 21 L12 17 L5 21 Z"/></svg>
   </button>
+  <!-- 常用地址泡泡（2026.08新增）：長按上方定位鈕觸發，目的是快速修正出行訣起點——
+       出行訣有時候會閃退，或使用者切出去忘記切回來，久了狀態自動reset，回來時GPS抓到的
+       「目前位置」已經不是真正出發的地方（例如已經走了十幾分鐘，起點其實是家），需要能
+       手動回填一個記得住的固定地址當起點，不能只靠即時GPS。
+       兩種新增方式共用下方同一個travel-search-popup（見travelSearchPurpose分流），
+       這裡只放「已存清單」＋兩個新增入口按鈕。 -->
+  <div class="travel-saved-address-popup" id="travel-saved-address-popup">
+    <div class="travel-saved-address-list" id="travel-saved-address-list"></div>
+    <div class="travel-saved-address-add-row">
+      <button type="button" onclick="promptSaveCurrentLocationAsAddress()">📍 存目前定位</button>
+      <button type="button" onclick="openTravelAddressSearchForSave()">🔍 搜尋地址</button>
+    </div>
+  </div>
+  <!-- 命名輸入小面板：存目前定位／存搜尋結果共用，見promptSaveCurrentLocationAsAddress／
+       confirmTravelSearchResult(save模式分支) -->
+  <div class="travel-address-naming-popup" id="travel-address-naming-popup">
+    <input type="text" id="travel-address-naming-input" placeholder="取個名字，例如「家」" maxlength="20">
+    <div class="btn-row">
+      <button type="button" class="btn-cancel" onclick="cancelSaveTravelAddress()">✕</button>
+      <button type="button" class="btn-confirm" onclick="confirmSaveTravelAddress()">✓</button>
+    </div>
+  </div>
   <!-- 路徑記錄，像跑步app那樣把走過的路畫成線，跟起點→終點的OSRM規劃路線（travelRouteLine）
        是兩條獨立的線/資料，用不同顏色區分。「出發」開始記錄／「停止」暫停（線還在，再按出發會
        接續），要清空重來需另按「清除路徑」。記錄用獨立watchPosition（跟GPS箭頭那組分開），
@@ -2611,30 +2608,6 @@
       <div id="track-history-list"></div>
     </div>
   </div>
-  <!-- 付費畫面（Paywall），2026.08新增。由requireEntitlement()在使用者觸碰到未解鎖功能時開啟
-       （目前排盤／奇門曆／出行訣三個功能鍵全部指向同一張訂閱，見PRODUCT_ID_FULL_ACCESS）。
-       價格文字預設為靜態fallback，openPaywallPanel()實際開啟時會嘗試用StoreKit回傳的
-       product.priceString覆蓋——Apple規定必須顯示動態商品價格，不可寫死（見開發討論）。 -->
-  <div class="paywall-panel" id="paywall-panel">
-    <div class="paywall-sheet">
-      <div class="paywall-header">
-        <span class="title">解鎖完整功能</span>
-        <button type="button" class="close-btn" aria-label="關閉" onclick="closePaywallPanel()">✕</button>
-      </div>
-      <div class="paywall-subtitle">排盤・奇門曆・出行訣，一次全部解鎖</div>
-      <ul class="paywall-feature-list">
-        <li>完整排盤（陰盤／陽盤／命盤）</li>
-        <li>奇門曆連續查詢</li>
-        <li>出行訣即時方位判斷</li>
-      </ul>
-      <div class="paywall-trial-badge">7天免費試用</div>
-      <div class="paywall-price-line" id="paywall-price-line">試用期滿後訂閱費用將於購買前顯示，可隨時取消</div>
-      <button type="button" class="paywall-cta" id="paywall-cta-btn" onclick="handlePaywallPurchase()">開始7天免費試用</button>
-      <button type="button" class="paywall-restore" onclick="handlePaywallRestore()">恢復購買</button>
-      <div class="paywall-status" id="paywall-status"></div>
-    </div>
-  </div>
-
   <div class="travel-track-clear-popup" id="travel-track-clear-popup">
     清除已記錄的路徑？
     <div class="btn-row">
@@ -2837,10 +2810,8 @@ function handleAreaReset(){
   else { resetAlmanacInputs(); }
 }
 function handleAreaSubmit(){
-  // 2026.08新增付費gate：排盤／奇門曆查詢都是付費功能，未解鎖時requireEntitlement()
-  // 會開付費畫面、把castChart/runAlmanacQuery存成購買成功後的待執行動作，不在這裡直接判斷跳過
-  if (currentMode === 'chart') { requireEntitlement('paipan', function() { clearHighlight(); castChart(); }); }
-  else { requireEntitlement('qimenli', runAlmanacQuery); }
+  if (currentMode === 'chart') { clearHighlight(); castChart(); }
+  else { runAlmanacQuery(); }
 }
 function handleAreaNow(){
   if (currentMode === 'chart') { setNow(); }
@@ -4086,13 +4057,6 @@ function requestCompassPermission(startFn, onReady) {
 // 命盤／陰盤會先切回陽盤，皆為一次性的自動情境切換（這裡本來就是「我要用出行訣」
 // 的明確意圖，不需要額外確認，直接切過去即可）。
 function jumpToTravelFullscreen() {
-  // 2026.08新增付費gate：出行訣未解鎖時，開付費畫面並把「重新呼叫這個函式本身」存成
-  // 購買成功後的待執行動作，直接return，不執行下面任何模式切換——避免使用者在還沒解鎖時
-  // 就先被切換到陽盤/時家，付費畫面關掉後畫面狀態卻已經跑掉的不一致情況
-  if (!hasEntitlement('chuxingjue')) {
-    openPaywallPanel('chuxingjue', jumpToTravelFullscreen);
-    return;
-  }
   // 奇門曆模式：先切回排盤模式（chart），toggleAlmanacMode()內部會處理好所有需要連動的顯示狀態
   if (typeof currentMode !== 'undefined' && currentMode === 'almanac') {
     toggleAlmanacMode();
@@ -4520,183 +4484,6 @@ function geoClearWatch(pendingId) {
   delete geoWatchRegistry[pendingId];
 }
 
-// ══════════════════════════════════
-// IAP／訂閱 entitlement 封裝層（2026.08新增）
-// ══════════════════════════════════
-// 用@capgo/native-purchases（免費、無第三方後端依賴，直接包StoreKit2／Google Play Billing），
-// 跟RevenueCat比較過後選定，理由見開發討論：單人開發、無自架後端，裝置端StoreKit2判斷已足夠，
-// 不需要RevenueCat那層雲端entitlement同步。
-//
-// 核心設計：entitlement用「功能鍵」而非單純布林值，方便未來拆模組分開定價時，
-// 只需改下方ENTITLEMENT_PRODUCT_MAP的對應關係，呼叫方hasEntitlement('paipan')等寫法完全不用改。
-// 目前三個功能鍵全部指向同一個訂閱（PRODUCT_ID_FULL_ACCESS）。
-//
-// 網頁版（qimen.therootshollow.com，無window.Capacitor）不支援IAP——StoreKit／Google Play
-// Billing都是原生層功能，網頁版沒有對應通路可以收費，故iapHasSupport()在網頁版固定回傳false，
-// hasEntitlement()在網頁版固定回傳true（網頁版維持全功能開放，不做付費限制；付費機制僅存在於
-// App版）。⚠️此為暫定假設，待與Eric確認網頁版是否也要有訪客限制。
-
-const PRODUCT_ID_FULL_ACCESS = 'com.therootshollow.qimen.fullaccess.monthly';
-
-// 目前三個模組全部指向同一張訂閱；未來拆模組分開定價時，只改這裡的對應值即可
-const ENTITLEMENT_PRODUCT_MAP = {
-  paipan: PRODUCT_ID_FULL_ACCESS,
-  qimenli: PRODUCT_ID_FULL_ACCESS,
-  chuxingjue: PRODUCT_ID_FULL_ACCESS
-};
-
-// 快取目前有效的訂閱product id集合，由refreshEntitlementState()在App啟動時／購買完成後更新。
-// hasEntitlement()只讀這份快取，本身是同步函式，方便UI gate判斷時直接呼叫不用處理Promise。
-let iapActiveProductIds = new Set();
-let iapEntitlementReady = false; // App啟動時尚未跟StoreKit確認前，避免UI誤判為未訂閱
-
-function iapHasSupport() {
-  return isNativeApp() && !!(window.Capacitor.Plugins && window.Capacitor.Plugins.NativePurchases);
-}
-
-function getNativePurchasesPlugin() {
-  return iapHasSupport() ? window.Capacitor.Plugins.NativePurchases : null;
-}
-
-// App啟動時呼叫一次，之後每次購買/還原完成後重新呼叫刷新快取
-async function refreshEntitlementState() {
-  if (!iapHasSupport()) { iapEntitlementReady = true; return; }
-  const plugin = getNativePurchasesPlugin();
-  try {
-    const result = await plugin.getPurchases({ productType: 'subs' });
-    const activeIds = new Set();
-    (result.purchases || []).forEach(function(purchase) {
-      // isActive僅iOS訂閱可靠；Android訂閱理論上需server端查Google Play API才能確認到期日，
-      // 但本專案目前無自架後端（見上方說明），故Android端退化為「purchaseState已完成即視為有效」，
-      // 已知限制：無法偵測Android訂閱是否已到期未續訂，待未來若加後端驗證再補強
-      if (purchase.isActive === true) {
-        activeIds.add(purchase.productIdentifier);
-      } else if (purchase.isActive === undefined && purchase.purchaseState === 'PURCHASED') {
-        activeIds.add(purchase.productIdentifier);
-      }
-    });
-    iapActiveProductIds = activeIds;
-  } catch (err) {
-    console.error('refreshEntitlementState失敗:', err);
-  } finally {
-    iapEntitlementReady = true;
-  }
-}
-
-function hasEntitlement(featureKey) {
-  if (!iapHasSupport()) return true; // 網頁版暫定全開放，見上方說明
-  const requiredProductId = ENTITLEMENT_PRODUCT_MAP[featureKey];
-  if (!requiredProductId) return false; // featureKey打錯字或未設定對應，保守擋下不放行
-  return iapActiveProductIds.has(requiredProductId);
-}
-
-async function purchaseFullAccess() {
-  const plugin = getNativePurchasesPlugin();
-  if (!plugin) throw new Error('此裝置不支援App內購買');
-  const transaction = await plugin.purchaseProduct({
-    productIdentifier: PRODUCT_ID_FULL_ACCESS,
-    productType: 'subs'
-  });
-  await refreshEntitlementState();
-  return transaction;
-}
-
-// 對應「恢復購買」按鈕；iOS呼叫時會跳系統帳號驗證，只能在使用者主動點擊的情境下呼叫
-async function restorePurchases() {
-  const plugin = getNativePurchasesPlugin();
-  if (!plugin) throw new Error('此裝置不支援App內購買');
-  await plugin.restorePurchases();
-  await refreshEntitlementState();
-}
-
-// ══════════════════════════════════
-// 付費畫面（Paywall）— inline面板，2026.08新增
-// ══════════════════════════════════
-// 禁用原生alert/confirm，一律用面板內展開的確認UI，見開發準則「JavaScript環境限制」節。
-// requireEntitlement()是唯一對外的gate入口：featureKey已解鎖就直接執行onGranted，
-// 否則開付費畫面，購買/恢復成功後才補執行onGranted（讓使用者原本想做的動作接著完成，
-// 不用購買完再自己點一次）。
-
-let paywallGateFeatureKey = null; // 記錄這次開付費畫面是哪個功能鍵觸發的（目前三鍵同一張訂閱，未來拆模組時才會真的用到差異）
-let paywallGateOnGranted = null;  // 購買/恢復成功後要接著執行的原始動作
-
-function requireEntitlement(featureKey, onGranted) {
-  if (hasEntitlement(featureKey)) { onGranted(); return; }
-  openPaywallPanel(featureKey, onGranted);
-}
-
-async function openPaywallPanel(featureKey, onGranted) {
-  paywallGateFeatureKey = featureKey;
-  paywallGateOnGranted = onGranted || null;
-  setPaywallStatus('', '');
-  document.getElementById('paywall-cta-btn').disabled = false;
-  document.getElementById('paywall-price-line').textContent = '試用期滿後訂閱費用將於購買前顯示，可隨時取消';
-  document.getElementById('paywall-panel').classList.add('is-visible');
-
-  // Apple規定商品價格須用StoreKit動態回傳值顯示，不可寫死文字（見@capgo/native-purchases
-  // 文件iOS段落警告）。網頁版／預覽環境沒有plugin可查，維持上面的靜態fallback文案即可，
-  // 不強求一定要有動態價格才能開面板。
-  const plugin = getNativePurchasesPlugin();
-  if (!plugin) return;
-  try {
-    const result = await plugin.getProduct({ productIdentifier: PRODUCT_ID_FULL_ACCESS, productType: 'subs' });
-    const product = result && result.product;
-    if (product && product.priceString) {
-      document.getElementById('paywall-price-line').innerHTML =
-        '試用期滿後 <strong>' + product.priceString + '／月</strong>，可隨時取消';
-    }
-  } catch (err) {
-    console.error('讀取訂閱商品資訊失敗:', err);
-  }
-}
-
-function closePaywallPanel() {
-  document.getElementById('paywall-panel').classList.remove('is-visible');
-  paywallGateFeatureKey = null;
-  paywallGateOnGranted = null;
-}
-
-function setPaywallStatus(text, type) {
-  const el = document.getElementById('paywall-status');
-  el.textContent = text;
-  el.className = 'paywall-status' + (type ? ' ' + type : '');
-}
-
-async function handlePaywallPurchase() {
-  const ctaBtn = document.getElementById('paywall-cta-btn');
-  ctaBtn.disabled = true;
-  setPaywallStatus('處理中…', '');
-  try {
-    await purchaseFullAccess();
-    const onGranted = paywallGateOnGranted;
-    closePaywallPanel();
-    if (onGranted) onGranted();
-  } catch (err) {
-    console.error('購買失敗:', err);
-    ctaBtn.disabled = false;
-    setPaywallStatus('購買未完成，請再試一次', 'error');
-  }
-}
-
-// iOS呼叫restorePurchases()內部會跳系統帳號驗證對話框，只能在使用者主動點擊的情境下呼叫
-// （見entitlement封裝層restorePurchases()說明），這裡的按鈕點擊正是唯一合法的呼叫時機
-async function handlePaywallRestore() {
-  setPaywallStatus('還原中…', '');
-  try {
-    await restorePurchases();
-    if (hasEntitlement(paywallGateFeatureKey)) {
-      const onGranted = paywallGateOnGranted;
-      closePaywallPanel();
-      if (onGranted) onGranted();
-    } else {
-      setPaywallStatus('沒有找到可還原的購買紀錄', '');
-    }
-  } catch (err) {
-    console.error('還原購買失敗:', err);
-    setPaywallStatus('還原失敗，請再試一次', 'error');
-  }
-}
-
 function locateInlineTravelPosition(forceZoom) {
   if (forceZoom === undefined) forceZoom = true;
   if (!inlineTravelMap || !geoHasSupport()) return;
@@ -5033,28 +4820,6 @@ function initializeTravelMap() {
 // 只在使用者真的點開出行訣時才執行，那時候Leaflet早已就緒，不會有這個問題；本函式沿用同一個
 // 原則，第一次呼叫（updateTravelPositionMarker內）才建立，之後直接回傳快取的實例。
 let travelGpsIcon = null;
-// 回到定位鈕的「置中」狀態，2026.08新增。語意：GPS實際位置有沒有偏離上次按下「回到定位」
-// 當下記錄的座標，跟地圖有沒有被手動拖曳無關——地圖本身不會自動跟隨移動（見開發討論），
-// 所以用「地圖是否置中」來判斷沒有意義，改用「人有沒有實際移動過」。
-let travelIsCentered = false;
-let travelCenteredLatLng = null; // 上次置中當下的座標快照，供後續位置更新比對位移距離
-const TRAVEL_CENTER_DRIFT_METERS = 8; // 超過這個距離視為「已位移」，數字略高於路徑記錄的雜訊過濾門檻(5m)，避免GPS抖動誤判
-
-function setTravelCenteredState(isCentered) {
-  travelIsCentered = isCentered;
-  const btn = document.getElementById('travel-locate-btn');
-  if (btn) btn.classList.toggle('is-centered', isCentered);
-}
-
-// 每次GPS回報新位置都呼叫（不論是初次定位/回到定位鈕，或持續追蹤的watch），檢查是否已經
-// 偏離上次置中快照超過門檻，超過就切回空心。只有真的置中過（travelCenteredLatLng有值）才需要比對
-function checkTravelCenterDrift(latLng) {
-  if (!travelIsCentered || !travelCenteredLatLng) return;
-  if (travelCenteredLatLng.distanceTo(latLng) > TRAVEL_CENTER_DRIFT_METERS) {
-    setTravelCenteredState(false);
-  }
-}
-
 function getTravelGpsIcon() {
   if (!travelGpsIcon) {
     travelGpsIcon = L.divIcon({
@@ -5079,7 +4844,6 @@ function updateTravelPositionMarker(latLng) {
     travelPositionMarker = L.marker(latLng, { icon: getTravelGpsIcon(), interactive: false, pane: 'markerPane' }).addTo(travelMap);
     updateTravelGpsArrowRotation(travelLastHeading); // 剛建立時，用當下已知的最近一次朝向立刻套用，不用等下一個感應器事件才有角度
   }
-  checkTravelCenterDrift(latLng); // 每次位置更新都檢查是否已偏離上次「回到定位」的座標快照，見該函式說明
 }
 
 // 只改.travel-gps-arrow內層div的transform，不動marker本身位置——跟位置更新（setLatLng）
@@ -5334,6 +5098,24 @@ function getTrackHistory() {
 
 function saveTrackHistory(list) {
   localStorage.setItem(TRACK_HISTORY_KEY, JSON.stringify(list));
+}
+
+// ══════════════════════════════════
+// 出行訣：常用地址（2026.08新增）
+// 目的：出行訣有時候會閃退，或使用者切出去忘記切回來，久了狀態自動reset，回來時GPS抓到的
+// 「目前位置」已經不是真正出發的地方（例如已經走了十幾分鐘，起點其實是家）。長按定位鈕
+// 叫出常用地址清單，可以手動把起點修正回一個記得住的固定地址，不用只能依賴即時GPS。
+// 每筆存快照（name/lat/lng），不存參照，符合專案localStorage慣例（見getTrackHistory同類寫法）。
+// ══════════════════════════════════
+const TRAVEL_SAVED_ADDRESS_KEY = 'qimenTravelSavedAddresses';
+
+function getTravelSavedAddresses() {
+  try { return JSON.parse(localStorage.getItem(TRAVEL_SAVED_ADDRESS_KEY)) || []; }
+  catch { return []; }
+}
+
+function saveTravelSavedAddresses(list) {
+  localStorage.setItem(TRAVEL_SAVED_ADDRESS_KEY, JSON.stringify(list));
 }
 
 function formatTrackDuration(ms) {
@@ -5685,20 +5467,10 @@ function locateTravelPosition(forceZoom, autoAnchor) {
     // 診斷後定位到此處，非CORS問題、非OSRM服務問題）。
     const latLng = L.latLng(position.coords.latitude, position.coords.longitude);
     if (!travelMap) initializeTravelMap();
-    // 2026.08新增：不論forceZoom與否，先invalidateSize()讓Leaflet重新量測容器實際像素尺寸，
-    // 才呼叫setView/panTo——避免容器尺寸在背景/前景切換後跟Leaflet內部快取值不一致，
-    // 導致算出來的「置中座標」其實是根據舊尺寸換算、視覺上沒有真的置中（見visibilitychange
-    // 監聽器同一組修正的說明）。這裡直接在定位成功當下處理，不依賴猜中所有可能觸發情境。
-    travelMap.invalidateSize();
     // 改呼叫updateTravelPositionMarker()重用同一個marker（setLatLng移動），
     // 不再每次removeLayer+重新create——理由見該函式註解（避免箭頭轉向角度被重建重置）。
     // pane/圖示（L.marker+divIcon）也一併改掉，見travelGpsIcon定義。
     updateTravelPositionMarker(latLng);
-    // 這次呼叫代表「回到定位」動作本身，不管是初次進出行訣還是使用者手動按鈕，都視為
-    // 重新置中——快照這次座標，切回實心；上面updateTravelPositionMarker()裡的位移檢查
-    // 若比對到舊快照觸發了false，這裡會立刻覆蓋回true，兩者同步執行不會有畫面閃爍
-    travelCenteredLatLng = latLng;
-    setTravelCenteredState(true);
     if (forceZoom) {
       travelMap.setView(latLng, 16);
     } else {
@@ -5889,8 +5661,173 @@ function placeTravelRoutePoint(latlng, type) {
 }
 
 // ══════════════════════════════════
-// 出行訣：目的地搜尋（新增）
+// 出行訣：常用地址（2026.08新增）—— 長按定位鈕快速修正起點
+// 出行訣有時候會閃退，或使用者切出去忘記切回來，久了狀態自動reset，回來時GPS抓到的「目前
+// 位置」已經不是真正出發的地方（例如已經走了十幾分鐘，起點其實是家）。長按定位鈕叫出常用
+// 地址清單，選一個直接覆蓋（不管目前有沒有起點，都先移除舊的再放新的——這就是「快速修正」
+// 的意義，不該還要求使用者先手動找到地圖上的圖釘刪掉才能選）。
 // ══════════════════════════════════
+let travelSavedAddresses = getTravelSavedAddresses(); // 開場即讀取，跟其他localStorage資料一致的初始化時機
+let travelLocatePressTimer = null;
+let travelLocatePressStartXY = null;
+const TRAVEL_LOCATE_LONGPRESS_MS = 500;
+const TRAVEL_LOCATE_LONGPRESS_MOVE_TOLERANCE = 10; // px，超過視為滑動手勢而非長按，取消計時
+
+function handleTravelLocateBtnPointerDown(e) {
+  travelLocatePressStartXY = { x: e.clientX, y: e.clientY };
+  clearTimeout(travelLocatePressTimer);
+  travelLocatePressTimer = setTimeout(function() {
+    travelLocatePressTimer = null;
+    toggleTravelSavedAddressPopup(true); // 長按觸發：強制開啟，不是toggle（避免跟後續pointerup的click行為衝突判斷更複雜）
+  }, TRAVEL_LOCATE_LONGPRESS_MS);
+}
+
+function handleTravelLocateBtnPointerMove(e) {
+  if (!travelLocatePressStartXY || !travelLocatePressTimer) return;
+  const dx = e.clientX - travelLocatePressStartXY.x, dy = e.clientY - travelLocatePressStartXY.y;
+  if (Math.sqrt(dx * dx + dy * dy) > TRAVEL_LOCATE_LONGPRESS_MOVE_TOLERANCE) {
+    clearTimeout(travelLocatePressTimer);
+    travelLocatePressTimer = null;
+  }
+}
+
+function handleTravelLocateBtnPointerUp(e) {
+  // 計時器還在＝還沒達到長按門檻，代表這是一般點擊，讓原本的onclick=recenterTravelPosition()正常觸發；
+  // 計時器已清空＝長按已觸發過（或已被pointermove取消），這裡不用做任何事
+  clearTimeout(travelLocatePressTimer);
+  travelLocatePressTimer = null;
+}
+
+function toggleTravelSavedAddressPopup(forceOpen) {
+  const popup = document.getElementById('travel-saved-address-popup');
+  if (!popup) return;
+  const opening = forceOpen === true ? true : !popup.classList.contains('is-open');
+  popup.classList.toggle('is-open', opening);
+  if (opening) renderTravelSavedAddressList();
+}
+
+function hideTravelSavedAddressPopup() {
+  const popup = document.getElementById('travel-saved-address-popup');
+  if (popup) popup.classList.remove('is-open');
+}
+
+function renderTravelSavedAddressList() {
+  const listEl = document.getElementById('travel-saved-address-list');
+  if (!listEl) return;
+  if (travelSavedAddresses.length === 0) {
+    listEl.innerHTML = '<div class="no-result">尚無常用地址，可從下方新增</div>';
+    return;
+  }
+  listEl.innerHTML = '';
+  travelSavedAddresses.forEach(function(addr) {
+    const row = document.createElement('div');
+    row.className = 'travel-saved-address-row';
+    const nameBtn = document.createElement('button');
+    nameBtn.type = 'button';
+    nameBtn.className = 'name-btn';
+    nameBtn.textContent = addr.name;
+    nameBtn.onclick = function() { useTravelSavedAddressAsStart(addr.id); };
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.className = 'del-btn';
+    delBtn.textContent = '🗑';
+    delBtn.onclick = function(ev) { ev.stopPropagation(); deleteTravelSavedAddress(addr.id); };
+    row.appendChild(nameBtn);
+    row.appendChild(delBtn);
+    listEl.appendChild(row);
+  });
+}
+
+function deleteTravelSavedAddress(id) {
+  travelSavedAddresses = travelSavedAddresses.filter(function(a) { return a.id !== id; });
+  saveTravelSavedAddresses(travelSavedAddresses);
+  renderTravelSavedAddressList();
+}
+
+// 不透過confirmTravelRouteRemove()那套「點圖釘→跳確認泡泡→按確認」的UI流程（那是給使用者
+// 主動點地圖圖釘刪除用的），這裡是常用地址選用時的靜默覆蓋，直接執行同等的清除邏輯
+function removeTravelStartPointSilently() {
+  const idx = travelRoutePoints.findIndex(function(p) { return p.type === 'start'; });
+  if (idx === -1) return;
+  const p = travelRoutePoints[idx];
+  if (travelMap) travelMap.removeLayer(p.marker);
+  travelRoutePoints.splice(idx, 1);
+  travelCompassAnchored = false;
+  travelCompassAnchorLatLng = null;
+  applyTravelCompassPos();
+  updatePinTriggerColor();
+  updateTravelRoutePointAvailability();
+}
+
+function useTravelSavedAddressAsStart(id) {
+  const addr = travelSavedAddresses.find(function(a) { return a.id === id; });
+  if (!addr || !travelMap) return;
+  if (hasTravelStartPoint()) removeTravelStartPointSilently(); // 快速修正：不管原本有沒有起點，直接覆蓋
+  const latlng = L.latLng(addr.lat, addr.lng);
+  travelMap.panTo(latlng);
+  placeTravelRoutePoint(latlng, 'start');
+  hideTravelSavedAddressPopup();
+  setTravelStatus('起點已修正為「' + addr.name + '」');
+}
+
+// 命名輸入小面板：存目前定位／存搜尋結果共用，用travelAddressPendingSave暫存待存座標，
+// 按確認才真正寫入（避免打開輸入框卻取消時留下半套資料）
+let travelAddressPendingSave = null; // { lat, lng, defaultName }
+
+function promptSaveCurrentLocationAsAddress() {
+  if (!travelPositionMarker) { setTravelStatus('尚未取得目前定位，請稍候再試'); return; }
+  const latlng = travelPositionMarker.getLatLng();
+  travelAddressPendingSave = { lat: latlng.lat, lng: latlng.lng, defaultName: '' };
+  openTravelAddressNamingPopup('');
+}
+
+function openTravelAddressNamingPopup(defaultName) {
+  hideTravelSavedAddressPopup();
+  const popup = document.getElementById('travel-address-naming-popup');
+  const input = document.getElementById('travel-address-naming-input');
+  if (!popup || !input) return;
+  input.value = defaultName || '';
+  popup.classList.add('is-open');
+  setTimeout(function() { input.focus(); }, 50);
+}
+
+function cancelSaveTravelAddress() {
+  travelAddressPendingSave = null;
+  const popup = document.getElementById('travel-address-naming-popup');
+  if (popup) popup.classList.remove('is-open');
+}
+
+function confirmSaveTravelAddress() {
+  if (!travelAddressPendingSave) return;
+  const input = document.getElementById('travel-address-naming-input');
+  const name = (input ? input.value.trim() : '') || '未命名地址';
+  const entry = { id: 'addr-' + Date.now(), name: name, lat: travelAddressPendingSave.lat, lng: travelAddressPendingSave.lng };
+  travelSavedAddresses.push(entry);
+  saveTravelSavedAddresses(travelSavedAddresses);
+  travelAddressPendingSave = null;
+  const popup = document.getElementById('travel-address-naming-popup');
+  if (popup) popup.classList.remove('is-open');
+  setTravelStatus('已存為常用地址「' + name + '」');
+  toggleTravelSavedAddressPopup(true); // 存完直接回到常用地址清單，看得到剛存的那筆
+}
+
+// 搜尋地址存常用：沿用目的地搜尋同一組Nominatim呼叫＋節流邏輯（travel-search-popup／
+// runTravelSearch／renderTravelSearchResults），用travelSearchPurpose分流「設終點」跟
+// 「存常用地址」兩種用途的候選點擊行為，不重寫第二套請求節流，避免違反「全站每秒最多1次
+// 請求」的Nominatim政策（見runTravelSearch註解）
+let travelSearchPurpose = 'end'; // 'end'＝設終點（原本用途）｜'save'＝存常用地址（新增用途）
+
+function openTravelAddressSearchForSave() {
+  hideTravelSavedAddressPopup();
+  travelSearchPurpose = 'save';
+  const popup = document.getElementById('travel-search-popup');
+  if (!popup) return;
+  popup.classList.add('is-open');
+  const input = document.getElementById('travel-search-input');
+  if (input) setTimeout(function() { input.focus(); }, 50);
+}
+
+
 // 用途：方便使用者確認「要去的地方是否在吉方」，不用自己憑印象點地圖找位置。
 // 串接 Nominatim（OpenStreetMap 免費地址查詢服務，跟本工具已在用的 OSRM 同屬一個開源地圖生態系，
 // 不需要 API key）。⚠️ Nominatim 公開服務有使用政策限制（單一來源每秒最多1次請求，且要求識別
@@ -5904,6 +5841,7 @@ const TRAVEL_SEARCH_MIN_INTERVAL = 1500; // Nominatim政策要求全站合計請
 // 搜尋鈕收進pin-options水滴選單後，點下去要做兩件事——收合水滴選單（跟armTravelRouteMode
 // 選start/via/end時的行為一致）、改開獨立的搜尋泡泡（travel-search-popup，非.expand-control機制）
 function toggleTravelSearchPopup() {
+  travelSearchPurpose = 'end'; // 從原本的opt-search水滴按鈕開啟＝一律是「設終點」用途，重置避免殘留save模式
   const pinControl = document.getElementById('pin-control');
   if (pinControl) pinControl.classList.remove('is-open');
   const popup = document.getElementById('travel-search-popup');
@@ -5985,9 +5923,25 @@ function renderTravelSearchResults(list) {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.textContent = item.display_name;
-    btn.onclick = function() { confirmTravelSearchResult(parseFloat(item.lat), parseFloat(item.lon), item.display_name); };
+    btn.onclick = (travelSearchPurpose === 'save')
+      ? function() { pickTravelSearchResultToSave(parseFloat(item.lat), parseFloat(item.lon), item.display_name); }
+      : function() { confirmTravelSearchResult(parseFloat(item.lat), parseFloat(item.lon), item.display_name); };
     resultsEl.appendChild(btn);
   });
+}
+
+// travelSearchPurpose==='save'時的候選點擊行為：跟confirmTravelSearchResult（設終點）平行，
+// 但目的是存進常用地址清單，不放終點圖釘、不檢查起點/終點前置條件（存地址跟排路線是兩件事）
+function pickTravelSearchResultToSave(lat, lon, label) {
+  travelAddressPendingSave = { lat: lat, lng: lon, defaultName: label };
+  const popupEl = document.getElementById('travel-search-popup');
+  if (popupEl) popupEl.classList.remove('is-open');
+  const input = document.getElementById('travel-search-input');
+  if (input) input.value = '';
+  document.getElementById('travel-search-results').innerHTML = '';
+  // 搜尋結果的display_name通常很長（完整地址），命名輸入框預設帶入的是「取個好記的名字」，
+  // 不預填搜尋結果全名，避免使用者還要自己刪字
+  openTravelAddressNamingPopup('');
 }
 
 // 使用者從候選清單點選其中一筆，才真正確認、放上終點圖釘——這個點擊動作本身就是「確認要不要設為
@@ -6089,6 +6043,8 @@ function handleTravelRouteMapClick() {
   document.querySelectorAll('.expand-control').forEach(function(c) { c.classList.remove('is-open'); });
   const searchPopup = document.getElementById('travel-search-popup');
   if (searchPopup) searchPopup.classList.remove('is-open');
+  hideTravelSavedAddressPopup();
+  cancelSaveTravelAddress(); // 一併收起命名輸入面板並清掉待存暫存值，避免殘留
   travelRoutePendingRemoveIndex = null;
   const popup = document.getElementById('travel-route-remove-popup');
   if (popup) popup.classList.remove('is-visible');
@@ -6297,16 +6253,6 @@ document.addEventListener('visibilitychange', function() {
   if (document.visibilityState === 'visible' && travelTrackRecording) {
     requestTravelWakeLock();
   }
-  // 2026.08新增：App從背景切回前景（或切換模式再切回來）時，travelMap容器的實際像素尺寸
-  // 有機會跟Leaflet內部快取的舊尺寸對不上（例如iOS狀態列/安全區域在背景切換時有微幅調整），
-  // 若不重新invalidateSize()，之後panTo()/setView()算出來的「置中座標」會是根據舊尺寸換算，
-  // 視覺上就會看起來「按了回到定位、但箭頭沒有真的置中」。只在出行訣全螢幕仍開著時才需要處理。
-  if (document.visibilityState === 'visible') {
-    const overlay = document.getElementById('travel-overlay');
-    if (overlay && overlay.classList.contains('is-open') && travelMap) {
-      travelMap.invalidateSize();
-    }
-  }
 });
 
 function openTravelMode() {
@@ -6314,7 +6260,6 @@ function openTravelMode() {
   const boardLayer = document.getElementById('travel-board-layer');
   const board = document.querySelector('#paipan-result .outer');
   if (!overlay || !boardLayer || !board || overlay.classList.contains('is-open')) return;
-  document.body.classList.add('travel-fullscreen-active'); // 隱藏頂部米色遮罩，見該CSS規則說明
   // 階段三：若是從方框地圖模式展開，先暫時隱藏方框內嵌地圖（travel-inline-map-wrap），
   // 避免跟全螢幕背景地圖疊在一起顯示；記住原本的 display 值，關閉全螢幕時還原
   const inlineWrap = document.getElementById('travel-inline-map-wrap');
@@ -6345,7 +6290,6 @@ function closeTravelMode() {
   const board = document.querySelector('#travel-board-layer .outer');
   if (!overlay || !overlay.classList.contains('is-open')) return;
   overlay.classList.remove('is-open', 'board-visible');
-  document.body.classList.remove('travel-fullscreen-active'); // 恢復頂部米色遮罩
   hideTravelOrientationPrompt();
   stopTravelPositionWatch(); // 離開出行訣立刻clearWatch，不背景常駐持續耗電定位
   // 一併移除指北感應器監聽——這個監聽只在requestTravelCompass()裡加上過，離開全螢幕
@@ -6355,16 +6299,6 @@ function closeTravelMode() {
   // 重新加回即可，addEventListener對同一個函式參考本來就會自動去重，不會漏接。
   window.removeEventListener('deviceorientationabsolute', handleTravelOrientation, true);
   window.removeEventListener('deviceorientation', handleTravelOrientation, true);
-  // 2026.08修正：原本這裡漏了重置travelCompassEnabled，導致下次重新進出行訣時
-  // requestTravelCompass()開頭的「已啟用過就不再問一次」guard誤判為仍然啟用，
-  // 監聽器因此永遠不會重新掛回去——箭頭/小羅盤位置仍會動（GPS watch有正常重啟，
-  // 是獨立機制），但朝向角度從此卡在離開前最後一次收到的值不再更新。
-  // 實測回報現象：「離開視窗或切換模式再回來，箭頭指向卡住」，根因在此。
-  travelCompassEnabled = false;
-  // 靶心置中狀態一併重置，避免下次重新進出行訣時，畫面初始瞬間沿用上次離開前的實心/空心狀態
-  // （新進場還沒定位成功前，先回到「未置中」的中性狀態，等locateTravelPosition()跑完再設回實心）
-  setTravelCenteredState(false);
-  travelCenteredLatLng = null;
   resetTravelRoute(); // 路線導航狀態一併重置（含起點，已跟錨定合一，見 resetTravelRoute），下次重新進入是乾淨狀態
   setTimeout(function() {
     if (board && travelBoardPlaceholder) {
@@ -6606,7 +6540,7 @@ function setNow() {
 }
 
 // 頁面載入時自動填入當前時間
-window.addEventListener('DOMContentLoaded', () => { setNow(); updateQuickNav(); refreshEntitlementState(); });
+window.addEventListener('DOMContentLoaded', () => { setNow(); updateQuickNav(); });
 
 const pad = n => String(n).padStart(2, '0');
 
