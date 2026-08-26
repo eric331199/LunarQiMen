@@ -1349,24 +1349,31 @@
   .travel-search-results .no-result { padding: 8px 12px; font: 12px "M PLUS Rounded 1c", sans-serif; color: #888; background: rgba(255,255,255,.92); border-radius: 10px; }
 
   /* 常用地址泡泡（2026.08新增）：長按定位鈕觸發，跟travel-search-popup同一套視覺語言但獨立顯示，
-     疊在定位鈕正上方（定位鈕bottom偏移58px，這裡再往上留間距）。結構：已存清單在上、
-     新增區塊（存目前定位／搜尋地址）在下，DOM順序由上而下即畫面由上而下，不用column-reverse
-     （跟travel-search-popup不同，這裡沒有「邊打字邊往上長」的需求，正常順序即可）
-     2026.08修正：right從14px改成72px——原本跟定位鈕/出發鈕那條右側浮動按鈕欄同一個
-     right:14px，寬度260px會整條蓋過去。72px＝右側按鈕欄的14+44=58px右緣，再留14px間距。 */
-  .travel-saved-address-popup { position: absolute; z-index: 6; right: 72px; bottom: calc(max(14px, env(safe-area-inset-bottom)) + 108px); display: none; flex-direction: column; gap: 6px; width: min(260px, calc(100vw - 86px)); }
+     疊在定位鈕正上方。結構：已存清單在上、新增區塊（存目前定位／搜尋地址）在下，DOM順序
+     由上而下即畫面由上而下，不用column-reverse（跟travel-search-popup不同，這裡沒有
+     「邊打字邊往上長」的需求，正常順序即可）
+     2026.08修正：
+     - right從14px改成72px——原本跟定位鈕/出發鈕那條右側浮動按鈕欄同一個right:14px，
+       寬度260px會整條蓋過去。72px＝右側按鈕欄的14+44=58px右緣，再留14px間距。
+     - bottom從+108px改成+116px——定位鈕(.travel-locate-btn) bottom偏移58px、高44px，
+       頂緣在58+44=102px處，原本108px只留6px間距，跟其他按鈕/泡泡慣用的14px間距不一致，
+       改成102+14=116px對齊。
+     - width從固定min(260px,...)改成max-content（依內容自動撐開，不再強制寬版），
+       內容本來就不長，不需要那麼寬；改用左右各12px的padding製造「半形空白」的留白感，
+       取代原本靠容器寬度硬撐出來的空間。 */
+  .travel-saved-address-popup { position: absolute; z-index: 6; right: 72px; bottom: calc(max(14px, env(safe-area-inset-bottom)) + 116px); display: none; flex-direction: column; gap: 6px; width: max-content; max-width: calc(100vw - 86px); padding: 0 12px; box-sizing: border-box; }
   .travel-saved-address-popup.is-open { display: flex; }
   .travel-saved-address-list { display: flex; flex-direction: column; gap: 4px; max-height: 180px; overflow-y: auto; }
-  .travel-saved-address-list .no-result { padding: 8px 12px; font: 12px "M PLUS Rounded 1c", sans-serif; color: #888; background: rgba(255,255,255,.92); border-radius: 10px; }
+  .travel-saved-address-list .no-result { padding: 8px 12px; font: 12px "M PLUS Rounded 1c", sans-serif; color: #888; background: rgba(255,255,255,.92); border-radius: 10px; white-space: nowrap; }
   .travel-saved-address-row { display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,.98); border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.16); padding: 2px; }
-  .travel-saved-address-row .name-btn { flex: 1; display: flex; align-items: center; gap: 6px; text-align: left; border: none; background: transparent; padding: 8px 10px; font: 12px "M PLUS Rounded 1c", sans-serif; color: #333; }
+  .travel-saved-address-row .name-btn { flex: 1; display: flex; align-items: center; gap: 6px; text-align: left; border: none; background: transparent; padding: 8px 10px; font: 12px "M PLUS Rounded 1c", sans-serif; color: #333; white-space: nowrap; }
   .travel-saved-address-row .name-btn:active { background: #eee; border-radius: 8px; }
   .travel-saved-address-row .name-btn svg { flex: 0 0 auto; } /* 靶心圖示，跟回到定位鈕同一款設計，見開發討論 */
   .travel-saved-address-row .del-btn { flex: 0 0 auto; border: none; background: transparent; width: 28px; height: 28px; border-radius: 50%; font-size: 13px; color: #c0392b; }
   .travel-saved-address-row .del-btn:active { background: #fce4e4; }
   /* 2026.08改為上下排列（原本左右並排）：存目前定位在上、搜尋地址在下 */
   .travel-saved-address-add-row { display: flex; flex-direction: column; gap: 6px; }
-  .travel-saved-address-add-row button { display: flex; align-items: center; justify-content: center; gap: 6px; border: none; border-radius: 10px; padding: 9px 6px; font: 12px "M PLUS Rounded 1c", sans-serif; background: rgba(255,255,255,.98); color: #2471a3; box-shadow: 0 2px 8px rgba(0,0,0,.16); }
+  .travel-saved-address-add-row button { display: flex; align-items: center; justify-content: center; gap: 6px; border: none; border-radius: 10px; padding: 9px 6px; font: 12px "M PLUS Rounded 1c", sans-serif; background: rgba(255,255,255,.98); color: #2471a3; box-shadow: 0 2px 8px rgba(0,0,0,.16); white-space: nowrap; }
   .travel-saved-address-add-row button:active { background: #eee; }
   /* 命名輸入小面板：存目前定位／存搜尋結果共用，跟remove-popup同一套簡潔問答式風格但改直式排列 */
   .travel-address-naming-popup { display: none; position: absolute; z-index: 7; left: 50%; bottom: calc(max(14px, env(safe-area-inset-bottom)) + 108px); transform: translateX(-50%); background: rgba(255,255,255,.98); border-radius: 12px; padding: 10px 12px; box-shadow: 0 4px 14px rgba(0,0,0,.22); text-align: center; font: 12px "M PLUS Rounded 1c", sans-serif; color: #333; width: min(240px, calc(100vw - 28px)); box-sizing: border-box; }
@@ -2768,16 +2775,10 @@
   <div class="travel-saved-address-popup" id="travel-saved-address-popup">
     <div class="travel-saved-address-list" id="travel-saved-address-list"></div>
     <div class="travel-saved-address-add-row">
-      <!-- 2026.08：📍改成靶心圖示，跟回到定位鈕（.travel-locate-btn）同一款設計語言，
-           呼應「這是跟目前定位有關的動作」的語意，不用兩套不同的位置圖示混著用 -->
-      <button type="button" onclick="promptSaveCurrentLocationAsAddress()">
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-          <circle cx="12" cy="12" r="7"/>
-          <line x1="12" y1="3" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="21"/>
-          <line x1="3" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="21" y2="12"/>
-        </svg>
-        存目前定位
-      </button>
+      <!-- 2026.08：改回📍地標圖釘，靶心圖示改用在已存清單每一筆地址前面（見renderTravelSavedAddressList），
+           這顆按鈕本身維持原本的圖釘語意（存一個新地標），跟清單裡「已存地點」的靶心圖示分開，
+           避免整個泡泡通篇都是同一個圖示、失去圖示本身的辨識度 -->
+      <button type="button" onclick="promptSaveCurrentLocationAsAddress()">📍 存目前定位</button>
       <button type="button" onclick="openTravelAddressSearchForSave()">🔍 搜尋地址</button>
     </div>
   </div>
