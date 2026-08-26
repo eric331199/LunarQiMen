@@ -1387,7 +1387,8 @@
   .travel-saved-address-row .del-btn:active { background: #fce4e4; }
   /* 2026.08改為上下排列（原本左右並排）：存目前定位在上、搜尋地址在下 */
   .travel-saved-address-add-row { display: flex; flex-direction: column; gap: 6px; }
-  .travel-saved-address-add-row button { display: flex; align-items: center; justify-content: center; gap: 6px; border: none; border-radius: 10px; padding: 9px 6px; font: 12px "M PLUS Rounded 1c", sans-serif; background: rgba(255,255,255,.98); color: #2471a3; box-shadow: 0 2px 8px rgba(0,0,0,.16); white-space: nowrap; }
+  .travel-saved-address-add-row button { position: relative; display: flex; align-items: center; justify-content: center; gap: 6px; border: none; border-radius: 10px; padding: 9px 10px; font: 12px "M PLUS Rounded 1c", sans-serif; background: rgba(255,255,255,.98); color: #2471a3; box-shadow: 0 2px 8px rgba(0,0,0,.16); white-space: nowrap; }
+  .travel-saved-address-add-row button .icon-ghost { visibility: hidden; } /* 幽靈圖示，只佔位置抵消左邊圖示的寬度，不顯示，見上方HTML註解 */
   .travel-saved-address-add-row button:active { background: #eee; }
   /* 命名輸入小面板：存目前定位／存搜尋結果共用，跟remove-popup同一套簡潔問答式風格但改直式排列 */
   .travel-address-naming-popup { display: none; position: absolute; z-index: 7; left: 50%; bottom: calc(max(14px, env(safe-area-inset-bottom)) + 108px); transform: translateX(-50%); background: rgba(255,255,255,.98); border-radius: 12px; padding: 10px 12px; box-shadow: 0 4px 14px rgba(0,0,0,.22); text-align: center; font: 12px "M PLUS Rounded 1c", sans-serif; color: #333; width: min(240px, calc(100vw - 28px)); box-sizing: border-box; }
@@ -2791,9 +2792,14 @@
     <div class="travel-saved-address-add-row">
       <!-- 2026.08：改回📍地標圖釘，靶心圖示改用在已存清單每一筆地址前面（見renderTravelSavedAddressList），
            這顆按鈕本身維持原本的圖釘語意（存一個新地標），跟清單裡「已存地點」的靶心圖示分開，
-           避免整個泡泡通篇都是同一個圖示、失去圖示本身的辨識度 -->
-      <button type="button" onclick="promptSaveCurrentLocationAsAddress()">📍 存目前定位</button>
-      <button type="button" onclick="openTravelAddressSearchForSave()">🔍 搜尋地址</button>
+           避免整個泡泡通篇都是同一個圖示、失去圖示本身的辨識度。
+           2026.08三修：改用「幽靈圖示」技巧——右邊放一個看不見(visibility:hidden)但佔一樣
+           寬度的圖示副本，讓flex用justify-content:center置中「圖示+文字+隱形圖示」整組，
+           兩側圖示寬度互相抵消，文字視覺位置會落在跟純文字置中完全相同的地方，
+           圖示自然緊貼在文字左邊，兩個目標（文字絕對置中／圖示緊鄰文字）同時達成，
+           不用像前一版那樣二選一。 -->
+      <button type="button" onclick="promptSaveCurrentLocationAsAddress()"><span class="icon">📍</span><span class="label">存目前定位</span><span class="icon icon-ghost" aria-hidden="true">📍</span></button>
+      <button type="button" onclick="openTravelAddressSearchForSave()"><span class="icon">🔍</span><span class="label">搜尋地址</span><span class="icon icon-ghost" aria-hidden="true">🔍</span></button>
     </div>
   </div>
   <!-- 命名輸入小面板：存目前定位／存搜尋結果共用，見promptSaveCurrentLocationAsAddress／
