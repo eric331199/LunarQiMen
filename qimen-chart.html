@@ -1351,18 +1351,22 @@
   /* 常用地址泡泡（2026.08新增）：長按定位鈕觸發，跟travel-search-popup同一套視覺語言但獨立顯示，
      疊在定位鈕正上方（定位鈕bottom偏移58px，這裡再往上留間距）。結構：已存清單在上、
      新增區塊（存目前定位／搜尋地址）在下，DOM順序由上而下即畫面由上而下，不用column-reverse
-     （跟travel-search-popup不同，這裡沒有「邊打字邊往上長」的需求，正常順序即可） */
-  .travel-saved-address-popup { position: absolute; z-index: 6; right: 14px; bottom: calc(max(14px, env(safe-area-inset-bottom)) + 108px); display: none; flex-direction: column; gap: 6px; width: min(260px, calc(100vw - 28px)); }
+     （跟travel-search-popup不同，這裡沒有「邊打字邊往上長」的需求，正常順序即可）
+     2026.08修正：right從14px改成72px——原本跟定位鈕/出發鈕那條右側浮動按鈕欄同一個
+     right:14px，寬度260px會整條蓋過去。72px＝右側按鈕欄的14+44=58px右緣，再留14px間距。 */
+  .travel-saved-address-popup { position: absolute; z-index: 6; right: 72px; bottom: calc(max(14px, env(safe-area-inset-bottom)) + 108px); display: none; flex-direction: column; gap: 6px; width: min(260px, calc(100vw - 86px)); }
   .travel-saved-address-popup.is-open { display: flex; }
   .travel-saved-address-list { display: flex; flex-direction: column; gap: 4px; max-height: 180px; overflow-y: auto; }
   .travel-saved-address-list .no-result { padding: 8px 12px; font: 12px "M PLUS Rounded 1c", sans-serif; color: #888; background: rgba(255,255,255,.92); border-radius: 10px; }
   .travel-saved-address-row { display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,.98); border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.16); padding: 2px; }
-  .travel-saved-address-row .name-btn { flex: 1; text-align: left; border: none; background: transparent; padding: 8px 10px; font: 12px "M PLUS Rounded 1c", sans-serif; color: #333; }
+  .travel-saved-address-row .name-btn { flex: 1; display: flex; align-items: center; gap: 6px; text-align: left; border: none; background: transparent; padding: 8px 10px; font: 12px "M PLUS Rounded 1c", sans-serif; color: #333; }
   .travel-saved-address-row .name-btn:active { background: #eee; border-radius: 8px; }
+  .travel-saved-address-row .name-btn svg { flex: 0 0 auto; } /* 靶心圖示，跟回到定位鈕同一款設計，見開發討論 */
   .travel-saved-address-row .del-btn { flex: 0 0 auto; border: none; background: transparent; width: 28px; height: 28px; border-radius: 50%; font-size: 13px; color: #c0392b; }
   .travel-saved-address-row .del-btn:active { background: #fce4e4; }
-  .travel-saved-address-add-row { display: flex; gap: 6px; }
-  .travel-saved-address-add-row button { flex: 1; border: none; border-radius: 10px; padding: 8px 6px; font: 12px "M PLUS Rounded 1c", sans-serif; background: rgba(255,255,255,.98); color: #2471a3; box-shadow: 0 2px 8px rgba(0,0,0,.16); }
+  /* 2026.08改為上下排列（原本左右並排）：存目前定位在上、搜尋地址在下 */
+  .travel-saved-address-add-row { display: flex; flex-direction: column; gap: 6px; }
+  .travel-saved-address-add-row button { display: flex; align-items: center; justify-content: center; gap: 6px; border: none; border-radius: 10px; padding: 9px 6px; font: 12px "M PLUS Rounded 1c", sans-serif; background: rgba(255,255,255,.98); color: #2471a3; box-shadow: 0 2px 8px rgba(0,0,0,.16); }
   .travel-saved-address-add-row button:active { background: #eee; }
   /* 命名輸入小面板：存目前定位／存搜尋結果共用，跟remove-popup同一套簡潔問答式風格但改直式排列 */
   .travel-address-naming-popup { display: none; position: absolute; z-index: 7; left: 50%; bottom: calc(max(14px, env(safe-area-inset-bottom)) + 108px); transform: translateX(-50%); background: rgba(255,255,255,.98); border-radius: 12px; padding: 10px 12px; box-shadow: 0 4px 14px rgba(0,0,0,.22); text-align: center; font: 12px "M PLUS Rounded 1c", sans-serif; color: #333; width: min(240px, calc(100vw - 28px)); box-sizing: border-box; }
@@ -2764,7 +2768,16 @@
   <div class="travel-saved-address-popup" id="travel-saved-address-popup">
     <div class="travel-saved-address-list" id="travel-saved-address-list"></div>
     <div class="travel-saved-address-add-row">
-      <button type="button" onclick="promptSaveCurrentLocationAsAddress()">📍 存目前定位</button>
+      <!-- 2026.08：📍改成靶心圖示，跟回到定位鈕（.travel-locate-btn）同一款設計語言，
+           呼應「這是跟目前定位有關的動作」的語意，不用兩套不同的位置圖示混著用 -->
+      <button type="button" onclick="promptSaveCurrentLocationAsAddress()">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <circle cx="12" cy="12" r="7"/>
+          <line x1="12" y1="3" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="21"/>
+          <line x1="3" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="21" y2="12"/>
+        </svg>
+        存目前定位
+      </button>
       <button type="button" onclick="openTravelAddressSearchForSave()">🔍 搜尋地址</button>
     </div>
   </div>
@@ -6090,6 +6103,11 @@ function locateTravelPosition(forceZoom, autoAnchor) {
 
 // 「回到目前位置」按鈕專用：只平移地圖，不更動使用者已設置的起點/錨定狀態（autoAnchor不傳＝false）
 function recenterTravelPosition() {
+  // 長按剛觸發過常用地址清單，這次click是長按放開時瀏覽器補發的，不是真正的點擊，吃掉不執行
+  if (travelLocateLongPressFired) {
+    travelLocateLongPressFired = false;
+    return;
+  }
   locateTravelPosition(false);
 }
 
@@ -6266,6 +6284,11 @@ function placeTravelRoutePoint(latlng, type) {
 let travelSavedAddresses = getTravelSavedAddresses(); // 開場即讀取，跟其他localStorage資料一致的初始化時機
 let travelLocatePressTimer = null;
 let travelLocatePressStartXY = null;
+// 2026.08修正：長按觸發後，手指放開時瀏覽器仍會照常補發一次click事件（沒有滑動位移，
+// 單純按住不放再放開，系統一樣視為一次點擊），若不擋下來，recenterTravelPosition()
+// 會在長按彈出常用地址清單的同時被誤觸發，兩件事會一起發生。用這個旗標在長按觸發當下
+// 標記起來，recenterTravelPosition()開頭檢查到旗標為true就直接吃掉這次click、重置旗標、不執行置中。
+let travelLocateLongPressFired = false;
 const TRAVEL_LOCATE_LONGPRESS_MS = 500;
 const TRAVEL_LOCATE_LONGPRESS_MOVE_TOLERANCE = 10; // px，超過視為滑動手勢而非長按，取消計時
 
@@ -6274,6 +6297,7 @@ function handleTravelLocateBtnPointerDown(e) {
   clearTimeout(travelLocatePressTimer);
   travelLocatePressTimer = setTimeout(function() {
     travelLocatePressTimer = null;
+    travelLocateLongPressFired = true;
     toggleTravelSavedAddressPopup(true); // 長按觸發：強制開啟，不是toggle（避免跟後續pointerup的click行為衝突判斷更複雜）
   }, TRAVEL_LOCATE_LONGPRESS_MS);
 }
@@ -6315,13 +6339,29 @@ function renderTravelSavedAddressList() {
     return;
   }
   listEl.innerHTML = '';
+  // 靶心SVG字串，跟回到定位鈕/上方新增按鈕同一款圖示，2026.08統一改成用template插入每筆
+  // 已存地址名稱前面，標示這是「地點」條目，不用innerHTML拼字串是為了避免addr.name裡的
+  // 特殊字元被誤判成HTML（沿用原本createElement/textContent的安全寫法，圖示另外用DOM插入）
+  const crosshairIconSvgNs = 'http://www.w3.org/2000/svg';
   travelSavedAddresses.forEach(function(addr) {
     const row = document.createElement('div');
     row.className = 'travel-saved-address-row';
     const nameBtn = document.createElement('button');
     nameBtn.type = 'button';
     nameBtn.className = 'name-btn';
-    nameBtn.textContent = addr.name;
+    const icon = document.createElementNS(crosshairIconSvgNs, 'svg');
+    icon.setAttribute('viewBox', '0 0 24 24');
+    icon.setAttribute('width', '13');
+    icon.setAttribute('height', '13');
+    icon.setAttribute('fill', 'none');
+    icon.setAttribute('stroke', 'currentColor');
+    icon.setAttribute('stroke-width', '2');
+    icon.setAttribute('stroke-linecap', 'round');
+    icon.innerHTML = '<circle cx="12" cy="12" r="7"/><line x1="12" y1="3" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="21"/><line x1="3" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="21" y2="12"/>';
+    const nameText = document.createElement('span');
+    nameText.textContent = addr.name;
+    nameBtn.appendChild(icon);
+    nameBtn.appendChild(nameText);
     nameBtn.onclick = function() { useTravelSavedAddressAsStart(addr.id); };
     const delBtn = document.createElement('button');
     delBtn.type = 'button';
