@@ -839,6 +839,7 @@
   .settings-btn.is-secondary { background: #eee; color: #444; font-weight: normal; }
   .settings-status-note { text-align: center; font-size: 11px; color: #999; min-height: 14px; }
   .settings-status-note.error { color: #e74c3c; }
+  .settings-version { text-align: center; font-size: 11px; color: #bbb; margin-top: 18px; }
   /* 使用說明面板跟紀錄面板共用同一套overlay/panel骨架，內容改成純閱讀條列文字，
      寬度加大（紀錄面板窄是因為裡面是表單欄位；說明文字要寬一點才不會每行斷太多次） */
   .help-panel { width: min(320px, 88vw); }
@@ -1287,11 +1288,14 @@
   .track-result-detail { display: none; margin-top: 4px; border-top: 1px solid #eee; padding-top: 8px; }
   .track-result-detail.is-open { display: block; }
   .track-detail-empty { color: #999; font-size: 12px; text-align: center; padding: 4px 0; }
-  .track-dir-row { display: flex; align-items: center; gap: 8px; padding: 3px 0; font-size: 12px; }
+  /* 2026.08修正：.track-dir-gate原本用flex:1撐滿剩餘空間，把pct/time推到最右邊，門名短時
+     中間會空出一大截，看起來「分太開」。改成四欄都不撐開、緊靠在一起靠左排列，門名長度
+     不同時彼此距離自然跟著變，不會有大片空白。 */
+  .track-dir-row { display: flex; align-items: center; gap: 10px; padding: 3px 0; font-size: 12px; }
   .track-dir-label { width: 32px; flex: 0 0 auto; color: #666; }
-  .track-dir-gate { flex: 1; }
-  .track-dir-pct { width: 36px; flex: 0 0 auto; text-align: right; color: #999; }
-  .track-dir-time { width: 44px; flex: 0 0 auto; text-align: right; color: #999; } /* 2026.08新增：估計時間欄位，見renderTrackDirectionBreakdown()說明 */
+  .track-dir-gate { flex: 0 0 auto; }
+  .track-dir-pct { flex: 0 0 auto; color: #999; }
+  .track-dir-time { flex: 0 0 auto; color: #999; } /* 2026.08新增：估計時間欄位，見renderTrackDirectionBreakdown()說明 */
   /* 顏色改依「門本身吉凶」決定（休生開景＝綠，傷杜死驚＝黑），不再是單純
      「有沒有被排除就綠/灰」二分——排除的門維持原本設計不變（見track-dir-excluded），
      只有「沒被排除」的情況才细分成吉門(綠)／凶門(黑)兩種，見renderTrackDirectionBreakdown */
@@ -1927,6 +1931,8 @@
         <div class="settings-section-title">說明</div>
         <button type="button" class="settings-btn is-secondary" onclick="closeSettingsPanel(); openHelpPanel();">使用說明</button>
       </div>
+      <!-- 2026.08新增版本號顯示，見APP_VERSION常數說明（script開頭） -->
+      <div class="settings-version" id="settings-version"></div>
     </div>
   </div>
 </div>
@@ -2980,6 +2986,14 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+// ══════════════════════════════════
+// 版本號，2026.08新增。單一事實來源，每次交付新版本時手動更新這一行即可，
+// 設定面板（見openSettingsPanel/renderSettingsStatus周邊HTML）直接讀這個常數顯示，
+// 方便Eric日後比對截圖/對話記錄時辨認是哪個版本。格式沿用開發準則.md同一套
+// 「yyyy.mm.dd vN」慣例（同一天多次修訂就遞增N），不是語意化版號（semver），
+// 純粹對應「今天第幾次交付」，跟開發準則.md的版本號是各自獨立的兩件事，不用同步。
+const APP_VERSION = '2026.08.26 v1';
+
 // 奇門曆模式：輸入區＋盤頭。函式/變數統一加Almanac字首，避免跟單次排盤邏輯（castChart等）撞名。
 const almanacPad2 = n => String(n).padStart(2,'0');
 const almanacIsoOf = d => `${d.getFullYear()}-${almanacPad2(d.getMonth()+1)}-${almanacPad2(d.getDate())}`;
@@ -5055,6 +5069,7 @@ async function openSettingsPanel() {
   document.getElementById('settings-restore-note').textContent = '';
   document.getElementById('settings-status-card').textContent = '查詢中…';
   document.getElementById('settings-overlay').classList.add('open');
+  document.getElementById('settings-version').textContent = '版本 ' + APP_VERSION;
   // 每次打開都重新問一次StoreKit，避免顯示的是舊快取（例如剛在別的裝置上取消訂閱）
   await refreshEntitlementState();
   renderSettingsStatus();
@@ -5928,10 +5943,12 @@ function renderTrackDirectionBreakdown(breakdownData, durationMs) {
     } else {
       cls = TRACK_LUCKY_GATE_SET.has(d.gate) ? 'track-dir-lucky' : 'track-dir-unlucky';
     }
-    // 2026.08新增時間欄位：用總花費時間×這個方位的佔比反推，粗略估計值（非逐秒實際記錄），
-    // 用跟花費時間同一支formatTrackDuration()格式化，維持顯示風格一致。durationMs若未傳入
-    // （理論上不會，但保守處理避免NaN），時間欄位留空不顯示。
-    const timeText = (typeof durationMs === 'number') ? formatTrackDuration(durationMs * d.pct / 100) : '';
+    // 2026.08新增時間欄位：用總花費時間×這個方位的佔比反推，粗略估計值（非逐秒實際記錄，
+    // 且這個佔比本身是「距離占比」不是「時間占比」，等於假設全程走路速度均勻），前面加「約」
+    // 字明確標示是估算值，不做到秒級精度——精確到秒只會讓一個本質上不精確的推算值看起來
+    // 像是真的量出來的數字，反而誤導。用跟花費時間同一支formatTrackDuration()格式化，維持
+    // 顯示風格一致。durationMs若未傳入（理論上不會，但保守處理避免NaN），時間欄位留空不顯示。
+    const timeText = (typeof durationMs === 'number') ? '約' + formatTrackDuration(durationMs * d.pct / 100) : '';
     // 2026.08欄位順序調整：方位／門／比例／時間（原本方位／比例／門，門移到比例前面、新增時間）
     return `<div class="track-dir-row ${cls}"><span class="track-dir-label">${d.label}</span><span class="track-dir-gate">${gateText}</span><span class="track-dir-pct">${d.pct}%</span><span class="track-dir-time">${timeText}</span></div>`;
   }).join('');
