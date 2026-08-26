@@ -1371,11 +1371,19 @@
   .travel-saved-address-popup.is-open { display: flex; }
   .travel-saved-address-list { display: flex; flex-direction: column; gap: 4px; max-height: 180px; overflow-y: auto; }
   .travel-saved-address-list .no-result { padding: 8px 12px; font: 12px "M PLUS Rounded 1c", sans-serif; color: #888; background: rgba(255,255,255,.92); border-radius: 10px; white-space: nowrap; }
-  .travel-saved-address-row { display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,.98); border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.16); padding: 2px; }
-  .travel-saved-address-row .name-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; text-align: center; border: none; background: transparent; padding: 8px 10px; font: 12px "M PLUS Rounded 1c", sans-serif; color: #333; white-space: nowrap; }
+  /* 2026.08修正：.del-btn改用絕對定位疊在右側，不再佔用flex空間——原本del-btn跟name-btn
+     並排，name-btn的justify-content:center是相對「扣掉del-btn後剩下的空間」置中，不是
+     相對整張卡片置中，看起來會偏左。del-btn退出flow後，name-btn寬度撐滿整張卡片，
+     文字才能真正相對卡片整體置中。 */
+  .travel-saved-address-row { position: relative; display: flex; align-items: center; background: rgba(255,255,255,.98); border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.16); padding: 2px; }
+  /* 2026.08再修正：靶心圖示改成絕對定位貼左（不再跟文字一起用flex排），文字獨立置中——
+     這樣圖示固定在按鈕最左邊，文字置中是相對整顆按鈕（扣掉del-btn後的100%寬度）置中，
+     兩者互不影響，不用糾結該用flex比例還是grid三欄，直接讓圖示脫離文件流最單純。 */
+  .travel-saved-address-row .name-btn { position: relative; width: 100%; display: flex; align-items: center; border: none; background: transparent; padding: 8px 34px; font: 12px "M PLUS Rounded 1c", sans-serif; color: #333; white-space: nowrap; }
   .travel-saved-address-row .name-btn:active { background: #eee; border-radius: 8px; }
-  .travel-saved-address-row .name-btn svg { flex: 0 0 auto; } /* 靶心圖示，跟回到定位鈕同一款設計，見開發討論 */
-  .travel-saved-address-row .del-btn { flex: 0 0 auto; border: none; background: transparent; width: 28px; height: 28px; border-radius: 50%; font-size: 15px; font-weight: bold; color: #c0392b; }
+  .travel-saved-address-row .name-btn svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); } /* 靶心圖示固定貼左，跟回到定位鈕同一款設計，見開發討論 */
+  .travel-saved-address-row .name-btn span { width: 100%; text-align: center; }
+  .travel-saved-address-row .del-btn { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); border: none; background: transparent; width: 28px; height: 28px; border-radius: 50%; font-size: 15px; font-weight: bold; color: #c0392b; }
   .travel-saved-address-row .del-btn:active { background: #fce4e4; }
   /* 2026.08改為上下排列（原本左右並排）：存目前定位在上、搜尋地址在下 */
   .travel-saved-address-add-row { display: flex; flex-direction: column; gap: 6px; }
