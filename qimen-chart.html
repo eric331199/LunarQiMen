@@ -47,8 +47,14 @@
   /* ── Reset ── */
   * { box-sizing: border-box; margin: 0; padding: 0; }
   /* 關掉手機瀏覽器「雙擊放大畫面」的預設手勢（有回饋誤觸困擾）。
-     touch-action: manipulation 只關掉雙擊縮放，雙指縮放（pinch-zoom）不受影響、照樣保留。 */
+     touch-action: manipulation 只關掉雙擊縮放，雙指縮放（pinch-zoom）不受影響、照樣保留。
+     2026.08發現：touch-action的限制只能「越往下越嚴格」，子元素沒辦法用自己的touch-action
+     放寬回父層已經關掉的手勢——這導致出行訣全螢幕地圖（Leaflet）的雙擊放大也一併被擋掉，
+     只剩雙指縮放能用。改用:has()偵測body.travel-fullscreen-active（openTravelMode/
+     closeTravelMode切換，見該處），出行訣開著時把html本身的touch-action放寬回auto，
+     離開後自動恢復manipulation，兩邊需求都照顧到。 */
   html { touch-action: manipulation; }
+  html:has(body.travel-fullscreen-active) { touch-action: auto; }
 
   /* 2026.08新增：全域停用文字選取，App常見設定，理由有二：
      (1) 一般排盤/介面文字不是給人複製貼上用的內容，長按選取只會造成畫面上跳出系統選單、
