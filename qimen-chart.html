@@ -1372,10 +1372,10 @@
   .travel-saved-address-list { display: flex; flex-direction: column; gap: 4px; max-height: 180px; overflow-y: auto; }
   .travel-saved-address-list .no-result { padding: 8px 12px; font: 12px "M PLUS Rounded 1c", sans-serif; color: #888; background: rgba(255,255,255,.92); border-radius: 10px; white-space: nowrap; }
   .travel-saved-address-row { display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,.98); border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.16); padding: 2px; }
-  .travel-saved-address-row .name-btn { flex: 1; display: flex; align-items: center; gap: 6px; text-align: left; border: none; background: transparent; padding: 8px 10px; font: 12px "M PLUS Rounded 1c", sans-serif; color: #333; white-space: nowrap; }
+  .travel-saved-address-row .name-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; text-align: center; border: none; background: transparent; padding: 8px 10px; font: 12px "M PLUS Rounded 1c", sans-serif; color: #333; white-space: nowrap; }
   .travel-saved-address-row .name-btn:active { background: #eee; border-radius: 8px; }
   .travel-saved-address-row .name-btn svg { flex: 0 0 auto; } /* 靶心圖示，跟回到定位鈕同一款設計，見開發討論 */
-  .travel-saved-address-row .del-btn { flex: 0 0 auto; border: none; background: transparent; width: 28px; height: 28px; border-radius: 50%; font-size: 13px; color: #c0392b; }
+  .travel-saved-address-row .del-btn { flex: 0 0 auto; border: none; background: transparent; width: 28px; height: 28px; border-radius: 50%; font-size: 15px; font-weight: bold; color: #c0392b; }
   .travel-saved-address-row .del-btn:active { background: #fce4e4; }
   /* 2026.08改為上下排列（原本左右並排）：存目前定位在上、搜尋地址在下 */
   .travel-saved-address-add-row { display: flex; flex-direction: column; gap: 6px; }
@@ -6348,7 +6348,10 @@ function renderTravelSavedAddressList() {
   listEl.innerHTML = '';
   // 靶心SVG字串，跟回到定位鈕/上方新增按鈕同一款圖示，2026.08統一改成用template插入每筆
   // 已存地址名稱前面，標示這是「地點」條目，不用innerHTML拼字串是為了避免addr.name裡的
-  // 特殊字元被誤判成HTML（沿用原本createElement/textContent的安全寫法，圖示另外用DOM插入）
+  // 特殊字元被誤判成HTML（沿用原本createElement/textContent的安全寫法，圖示另外用DOM插入）。
+  // 2026.08新增中心實心點：這裡固定顯示實心（不像回到定位鈕的靶心會依is-centered狀態切換
+  // 空心/實心），因為點這個項目「一定會」把地圖置中到該地點，是動作圖示不是狀態圖示，
+  // 沒有「尚未置中」這個中間狀態需要表示。
   const crosshairIconSvgNs = 'http://www.w3.org/2000/svg';
   travelSavedAddresses.forEach(function(addr) {
     const row = document.createElement('div');
@@ -6364,7 +6367,7 @@ function renderTravelSavedAddressList() {
     icon.setAttribute('stroke', 'currentColor');
     icon.setAttribute('stroke-width', '2');
     icon.setAttribute('stroke-linecap', 'round');
-    icon.innerHTML = '<circle cx="12" cy="12" r="7"/><line x1="12" y1="3" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="21"/><line x1="3" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="21" y2="12"/>';
+    icon.innerHTML = '<circle cx="12" cy="12" r="7"/><line x1="12" y1="3" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="21"/><line x1="3" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="21" y2="12"/><circle cx="12" cy="12" r="2.4" fill="currentColor" stroke="none"/>';
     const nameText = document.createElement('span');
     nameText.textContent = addr.name;
     nameBtn.appendChild(icon);
@@ -6373,7 +6376,7 @@ function renderTravelSavedAddressList() {
     const delBtn = document.createElement('button');
     delBtn.type = 'button';
     delBtn.className = 'del-btn';
-    delBtn.textContent = '🗑';
+    delBtn.textContent = '✕';
     delBtn.onclick = function(ev) { ev.stopPropagation(); deleteTravelSavedAddress(addr.id); };
     row.appendChild(nameBtn);
     row.appendChild(delBtn);
@@ -6406,10 +6409,14 @@ function useTravelSavedAddressAsStart(id) {
   const addr = travelSavedAddresses.find(function(a) { return a.id === id; });
   if (!addr || !travelMap) return;
   if (hasTravelStartPoint()) removeTravelStartPointSilently(); // 快速修正：不管原本有沒有起點，直接覆蓋
+  hideTravelSavedAddressPopup(); // 先關泡泡再置中，避免使用者誤以為「按了沒反應」
   const latlng = L.latLng(addr.lat, addr.lng);
+  // 2026.08修正：panTo前先invalidateSize()重新量測容器實際像素尺寸，跟回到定位鈕同一類
+  // 「容器尺寸快取跟畫面實際不同步」問題（見開發討論），不加這行panTo算出來的置中座標
+  // 可能是根據舊尺寸換算，看起來就會「按了沒真的置中」
+  travelMap.invalidateSize();
   travelMap.panTo(latlng);
   placeTravelRoutePoint(latlng, 'start');
-  hideTravelSavedAddressPopup();
   setTravelStatus('起點已修正為「' + addr.name + '」');
 }
 
