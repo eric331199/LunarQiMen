@@ -448,7 +448,7 @@
   .dz9-cell.align-right { justify-content: flex-end; }
   .dz9-branch { font-size: 26.7cqi; color: #333; display: inline-block; line-height: 1; white-space: nowrap; }
   /* 宮位高亮時，中宮對應地支同步加粗（取代先前的邊框上色，見applyHouseHighlight） */
-  .dz9-branch.dz-branch-highlighted { font-weight: bold; }
+  .dz9-branch.dz-branch-highlighted { font-weight: bold; color: #e67e22; } /* 2026.08試改：加上跟宮位高亮同一個橘色（HIGHLIGHT_COLOR），Eric說不確定合不合適，可能會改回來 */
   .dz9-label { font-size: 26.7cqi; line-height: 1; white-space: nowrap; }
   .dz-center { position: relative; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #bbb; width:100%; height:100%; cursor: pointer; }
   /* 出行訣旋轉：指針左右各一個小箭頭，從獨立的⟳按鈕併入中宮指針（見下方 travel-map-mode 顯示規則） */
@@ -2026,8 +2026,8 @@
             <span class="help-indent">放大鏡：搜尋地點</span>
           </li>
           <li>長按水滴可移動位置，再次點擊可以移除</li>
-          <li>「交通工具鈕」：以步行／腳踏車／開車模式計算路線；紅色驚嘆號代表該交通方式服務可能無法使用</li>
-          <li>「右下箭頭鈕」：回到目前定位</li>
+          <li>「交通工具鈕」：以步行／腳踏車／開車模式計算路線</li>
+          <li>「右下靶心鈕」：回到目前定位，實心代表已置中、空心代表已離開目前位置；長按可開啟常用地址清單</li>
           <li>「右上小羅盤」：點擊啟動顯示手機朝向</li>
           <li>「以現時重起時盤」：用現在時間重新排盤，連盤面與吉凶標記一併更新</li>
           <li>「出發」／「停止」：記錄走過的路徑並畫成紫色路徑線，跟藍色的起點→終點規劃路線分開顯示；
@@ -2992,7 +2992,7 @@
 // 方便Eric日後比對截圖/對話記錄時辨認是哪個版本。格式沿用開發準則.md同一套
 // 「yyyy.mm.dd vN」慣例（同一天多次修訂就遞增N），不是語意化版號（semver），
 // 純粹對應「今天第幾次交付」，跟開發準則.md的版本號是各自獨立的兩件事，不用同步。
-const APP_VERSION = '2026.08.26 v1';
+const APP_VERSION = '2026.08.26 v6';
 
 // 奇門曆模式：輸入區＋盤頭。函式/變數統一加Almanac字首，避免跟單次排盤邏輯（castChart等）撞名。
 const almanacPad2 = n => String(n).padStart(2,'0');
@@ -4005,6 +4005,22 @@ function applyYongshenEcho(stemChar) {
   });
 }
 
+// 2026.08新增：選定用神時，地盤天干裡字面相同的字也一併加粗（.gc-di跟.gc-tian用同一支
+// renderStemHTML()產生DOM結構，見該函式，寫法直接比照getHouseChangshengCandidates解析
+// .gc-tian的方式，只是掃描範圍換成全部.gc-di容器而非單一宮位）。跟天盤天干共用同一個
+// stem-active class，清除時機也共用（見四處清除stem-active的地方，已一併加上.gc-di）。
+function applyDiganMatch(stemChar) {
+  if (!stemChar) return;
+  document.querySelectorAll('.gc-di [id^="di-"]').forEach(diEl => {
+    const wrapperSpans = [...diEl.querySelectorAll(':scope > span')];
+    wrapperSpans.forEach(w => {
+      const span = w.classList.contains('stem-mu') ? (w.querySelector('.stem-char') || w) : w;
+      if (!span || span.classList.contains('tag')) return;
+      if ((span.textContent || '').trim() === stemChar) span.classList.add('stem-active');
+    });
+  });
+}
+
 // 出行訣（標記模式／方框地圖／全螢幕羅盤）只適用陽盤；切到陰盤或命盤時，三層一起收掉，不留在背景
 // 簡化：travelMarkingActive 變數已移除（標記狀態現在完全跟著 travel-map-mode 走，見
 // travelMarkEditable／changshengClickDisabled 說明），這裡不用再另外處理標記收尾，
@@ -4647,7 +4663,7 @@ function enterTravelMarkingMode() {
   // 已移除（見上方travelMarkEditable說明）；此函式現在只有confirmTravelAsk一個呼叫來源，
   // 且該路徑本身已經被compassCell點擊處理擋掉「已在地圖模式中」的重複觸發，不會重入，故不需要另外防呆
   // 進入出行訣標記：宮位點擊改切換吉凶用途，先清掉十二長生原本可能留著的高亮／內容，避免混在一起
-  document.querySelectorAll('.gc-tian .stem-active, .gc-shen .stem-active').forEach(s => s.classList.remove('stem-active'));
+  document.querySelectorAll('.gc-tian .stem-active, .gc-shen .stem-active, .gc-di .stem-active').forEach(s => s.classList.remove('stem-active'));
   clearHighlight();
   clearChangsheng();
   clearYongshenEcho();
@@ -6804,6 +6820,8 @@ function getOrderedTravelRoutePoints() {
   return ordered;
 }
 
+let travelRouteRequestSeq = 0; // 2026.08新增：路線請求序號，配合calculateTravelRoute()解決孤兒圖層問題
+
 function calculateTravelRoute() {
   if (travelRouteLine) { travelMap.removeLayer(travelRouteLine); travelRouteLine = null; }
   const points = getOrderedTravelRoutePoints();
@@ -6821,12 +6839,21 @@ function calculateTravelRoute() {
     : 'https://api.mapbox.com/directions/v5/mapbox/' + travelRouteProfile + '/' + coordStr +
       '?overview=full&geometries=geojson&steps=true&access_token=' + MAPBOX_ACCESS_TOKEN;
   setTravelStatus('計算路線中…');
+  // 2026.08修正：travelRouteLine的清除是同步執行、新線是fetch resolve後才非同步畫上去的，
+  // 如果這個函式在前一次fetch還沒回應完就被連續呼叫（例如放置點位後緊接著又觸發一次重算），
+  // 舊的removeLayer時機點會抓不到「還在飛」的那次請求最終畫出來的線，變成孤兒圖層永遠留在
+  // 地圖上，累積出「怎麼有兩條路線」的現象（實測回報案例）。用請求序號解決：每次呼叫遞增
+  // seq，只有fetch resolve時seq仍是「當下最新一次」才真的畫線，較舊的請求即使晚回來也直接
+  // 丟棄結果，不會畫出孤兒圖層。
+  const requestSeq = ++travelRouteRequestSeq;
   fetch(url).then(function(r) { return r.json(); }).then(function(data) {
+    if (requestSeq !== travelRouteRequestSeq) return; // 已經有更新的請求蓋過這次，這次結果作廢
     const route = useTrip ? (data.trips && data.trips[0]) : (data.routes && data.routes[0]);
     // 找不到路線時，把Mapbox實際回傳的code/message顯示出來，而不是只顯示「找不到路線」四個字——
     // 方便判斷是Mapbox本身回報NoRoute，還是我們解析邏輯有問題（若route真的存在但抓不到，
     // data.code應該是"Ok"；若Mapbox本身找不到，data.code會是"NoRoute"等其他值）
     if (!route) { setTravelStatus('找不到路線 [' + (data.code || '無code') + '] ' + (data.message || '')); return; }
+    if (travelRouteLine) { travelMap.removeLayer(travelRouteLine); travelRouteLine = null; } // 保險：萬一這期間已經有另一條殘留，先清掉再畫新的
     travelRouteLine = L.geoJSON(route.geometry, { style: { color: '#2471a3', weight: 5, opacity: .85 } }).addTo(travelMap);
     // 2026.08修正：Leaflet的向量圖層（Polyline/geoJSON）疊放順序是「後加入的蓋在先加入的上面」，
     // 不是誰重要誰在上面。規劃路線（travelRouteLine）常會在路徑記錄（travelTrackLine）已經在畫
@@ -6839,6 +6866,7 @@ function calculateTravelRoute() {
     const min = Math.round(route.duration / 60);
     setTravelStatus('約 ' + km + ' 公里・' + min + ' 分鐘' + (useTrip ? '（中途點已自動排序）' : ''));
   }).catch(function(err) {
+    if (requestSeq !== travelRouteRequestSeq) return; // 同上，舊請求失敗也不用顯示錯誤蓋過新結果
     // 暫時性除錯：把fetch本身失敗的錯誤訊息也顯示出來（例如CORS阻擋時，錯誤訊息通常會是
     // "Failed to fetch"或"Load failed"這類字眼），比單純「請確認網路連線」更能定位問題
     setTravelStatus('路線計算失敗：' + (err && err.message ? err.message : '未知錯誤'));
@@ -7426,7 +7454,7 @@ document.querySelectorAll('.cell[data-gong]').forEach(cell => {
       nextIndex = _activeChangshengIndex + 1;
     }
 
-    document.querySelectorAll('.gc-tian .stem-active, .gc-shen .stem-active').forEach(s => s.classList.remove('stem-active'));
+    document.querySelectorAll('.gc-tian .stem-active, .gc-shen .stem-active, .gc-di .stem-active').forEach(s => s.classList.remove('stem-active'));
     clearHighlight();
     clearChangsheng();
     clearYongshenEcho();
@@ -7442,12 +7470,56 @@ document.querySelectorAll('.cell[data-gong]').forEach(cell => {
 
     const chosen = candidates[nextIndex];
     chosen.span.classList.add('stem-active');
+    applyDiganMatch(chosen.stem); // 2026.08新增：地盤天干字面相同的字一併加粗
     renderChangsheng(chosen.stem);
     applyHouseHighlight(this);
     _activeChangshengHouse = this;
     _activeChangshengIndex = nextIndex;
     if (yongshenEl) yongshenEl.textContent = chosen.stem;
     applyYongshenEcho(chosen.stem); // 須在 hb-yongshen 文字寫入之後才呼叫，回顯比對時才抓得到最新的用神字
+  });
+});
+
+// 2026.08新增：點四柱天干（年/月/日/時柱），反向定位到九宮格裡對應的宮位並套用同一套
+// 用神高亮機制——奇門遁甲的用神本來就是從四柱去找，這是點宮位選候選用神的「反向入口」，
+// 兩種點法共用同一份_activeChangshengHouse/_activeChangshengIndex狀態，不是另立一套平行邏輯，
+// 這樣點過四柱之後再去點宮位，仍然能正常銜接原本「同宮再點換下一候選、循環後取消」的邏輯。
+// 只比對天盤天干（getHouseChangshengCandidates只收.gc-tian跟值符候選），跟點宮位時能選到的
+// 候選集合完全一致，語意上是同一件事的兩種觸發方式。
+document.querySelectorAll('#gz-y-gan, #gz-m-gan, #gz-d-gan, #gz-h-gan').forEach(pillarEl => {
+  pillarEl.style.cursor = 'pointer';
+  pillarEl.addEventListener('click', function() {
+    if (changshengClickDisabled()) return;
+    const stem = (this.textContent || '').trim();
+    if (!stem || stem === '—') return;
+
+    // 找出九宮格裡哪個宮位的天盤天干（或值符候選）跟這個字相同；正常情況下最多只會有一個
+    // 宮位符合（寄干宮雖然一格兩個天干，但getHouseChangshengCandidates已經分別列成兩個候選，
+    // 這裡只取第一個字面相同的，不會有一次點擊要同時高亮兩個宮位的情況）
+    let foundCell = null, foundCandidates = null, foundIndex = -1;
+    document.querySelectorAll('.cell[data-gong]').forEach(cell => {
+      if (foundCell) return;
+      const candidates = getHouseChangshengCandidates(cell);
+      const idx = candidates.findIndex(c => c.stem === stem);
+      if (idx !== -1) { foundCell = cell; foundCandidates = candidates; foundIndex = idx; }
+    });
+    if (!foundCell) return; // 理論上不會找不到（六儀三奇九字＋甲走值符判斷，涵蓋所有可能天干），保守處理避免報錯
+
+    document.querySelectorAll('.gc-tian .stem-active, .gc-shen .stem-active, .gc-di .stem-active').forEach(s => s.classList.remove('stem-active'));
+    clearHighlight();
+    clearChangsheng();
+    clearYongshenEcho();
+
+    const chosen = foundCandidates[foundIndex];
+    chosen.span.classList.add('stem-active');
+    applyDiganMatch(chosen.stem); // 2026.08新增：地盤天干字面相同的字一併加粗
+    renderChangsheng(chosen.stem);
+    applyHouseHighlight(foundCell);
+    _activeChangshengHouse = foundCell;
+    _activeChangshengIndex = foundIndex;
+    const yongshenEl = document.getElementById('hb-yongshen');
+    if (yongshenEl) yongshenEl.textContent = chosen.stem;
+    applyYongshenEcho(chosen.stem);
   });
 });
 
@@ -8199,7 +8271,7 @@ function castChart() {
   clearChangsheng();
   clearHighlight();
   clearYongshenEcho();
-  document.querySelectorAll('.gc-tian .stem-active, .gc-shen .stem-active').forEach(s => s.classList.remove('stem-active'));
+  document.querySelectorAll('.gc-tian .stem-active, .gc-shen .stem-active, .gc-di .stem-active').forEach(s => s.classList.remove('stem-active'));
   const yongshenResetEl = document.getElementById('hb-yongshen');
   if (yongshenResetEl) yongshenResetEl.textContent = '—';
 
