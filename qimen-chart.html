@@ -1986,6 +1986,7 @@
         <div class="help-section-title">用神／十二長生</div>
         <ul class="help-list">
           <li>點擊宮位：選定並高亮，同時標記天盤天干為用神，顯示十二長生階段；同宮再點換下一候選，循環後取消</li>
+          <li>點擊四柱天干（年/月/日/時柱）：反向定位到對應宮位並套用同一套高亮，奇門遁甲的用神本來就是從四柱去找，這是點宮位選候選用神的另一種入口，地盤天干字面相同的字也會一併加粗</li>
         </ul>
 
         <div class="help-section-title">羅盤指針</div>
@@ -2039,7 +2040,13 @@
           </li>
           <li>長按水滴可移動位置，再次點擊可以移除</li>
           <li>「交通工具鈕」：以步行／腳踏車／開車模式計算路線</li>
-          <li>「右下靶心鈕」：回到目前定位，實心代表已置中、空心代表已離開目前位置；長按可開啟常用地址清單</li>
+          <li>「右下靶心鈕」：回到目前定位，實心代表已置中、空心代表已離開目前位置；
+            長按開啟常用地址清單：
+            <span class="help-indent">點清單裡的地址：直接覆蓋設為起點（不論原本有沒有起點）</span>
+            <span class="help-indent">「存目前定位」：用目前GPS位置存一筆常用地址</span>
+            <span class="help-indent">「搜尋地址」：搜尋並存一筆常用地址</span>
+            <span class="help-indent">地址右側「✕」：刪除該筆常用地址</span>
+          </li>
           <li>「右上小羅盤」：點擊啟動顯示手機朝向</li>
           <li>「以現時重起時盤」：用現在時間重新排盤，連盤面與吉凶標記一併更新</li>
           <li>「出發」／「停止」：記錄走過的路徑並畫成紫色路徑線，跟藍色的起點→終點規劃路線分開顯示；
@@ -2063,6 +2070,19 @@
           <li>「測法」：面測／遠測／代測，協助判斷用神</li>
           <li>「匯出」：匯出全部或勾選項目的JSON備份</li>
           <li>「匯入」：讀取JSON備份檔，附加進現有紀錄</li>
+        </ul>
+      </div>
+
+      <div class="help-section" data-help-section="settings">
+        <div class="help-section-title">設定</div>
+        <ul class="help-list">
+          <li>標題列左上角齒輪圖示：開啟設定面板</li>
+          <li>「訂閱狀態」：顯示目前方案（未訂閱／月繳／年繳／終身）</li>
+          <li>「管理訂閱」：僅訂閱類方案（月繳／年繳）顯示，導去 App Store 系統畫面處理取消／變更；
+            終身買斷沒有訂閱可管理，不會顯示這顆按鈕</li>
+          <li>「恢復購買」：換機或重灌後，主動比對這台裝置已購買的紀錄</li>
+          <li>「使用說明」：開啟本面板</li>
+          <li>面板底部顯示目前版本號</li>
         </ul>
       </div>
 
@@ -3015,7 +3035,7 @@
 // 方便Eric日後比對截圖/對話記錄時辨認是哪個版本。格式沿用開發準則.md同一套
 // 「yyyy.mm.dd vN」慣例（同一天多次修訂就遞增N），不是語意化版號（semver），
 // 純粹對應「今天第幾次交付」，跟開發準則.md的版本號是各自獨立的兩件事，不用同步。
-const APP_VERSION = '2026.08.28 v1';
+const APP_VERSION = '2026.08.28 v4';
 
 // 奇門曆模式：輸入區＋盤頭。函式/變數統一加Almanac字首，避免跟單次排盤邏輯（castChart等）撞名。
 const almanacPad2 = n => String(n).padStart(2,'0');
@@ -8722,8 +8742,11 @@ function openHelpPanel() {
     const key = el.getAttribute('data-help-section');
     // 原本「records」不分模式永遠顯示，但紀錄鈕本身只在一般排盤畫面（plate）才看得到、
     // 奇門曆／出行訣模式下都被隱藏（見toggleAlmanacMode／出行訣全螢幕疊層），說明面板卻還是照樣
-    // 顯示紀錄那段，變成在講一個當下用不到的功能——改成只有activeSection==='plate'時才一併顯示
-    el.style.display = (key === activeSection || (key === 'records' && activeSection === 'plate')) ? '' : 'none';
+    // 顯示紀錄那段，變成在講一個當下用不到的功能——改成只有activeSection==='plate'時才一併顯示。
+    // 2026.08新增：「settings」（設定齒輪）跟「records」是同一個title-row，顯示條件完全一樣，
+    // 一併納入同一組判斷——原本漏了這行，導致新加的設定說明區塊永遠不會顯示（key跟四種
+    // activeSection都對不上，卡在else分支變成永遠display:none的死區塊）。
+    el.style.display = (key === activeSection || ((key === 'records' || key === 'settings') && activeSection === 'plate')) ? '' : 'none';
   });
   document.getElementById('help-overlay').classList.add('open');
 }
