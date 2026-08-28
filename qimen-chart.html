@@ -1284,6 +1284,13 @@
 
   .travel-track-result-popup { display: none; position: absolute; z-index: 6; left: 14px; right: 14px; top: calc(max(14px, env(safe-area-inset-top)) + 50px); max-width: 300px; margin: 0 auto; background: rgba(255,255,255,.98); border-radius: 14px; padding: 14px 16px; box-shadow: 0 4px 16px rgba(0,0,0,.24); font: 13px "M PLUS Rounded 1c", sans-serif; color: #333; pointer-events: auto; }
   .travel-track-result-popup.is-visible { display: block; }
+  /* 2026.08暫時新增：除錯面板，簡單堪用即可，不追求精緻，問題排除後整段刪除 */
+  .travel-debug-panel { display: none; position: fixed; inset: 0; z-index: 200; background: rgba(255,255,255,.98); flex-direction: column; padding: max(14px, env(safe-area-inset-top)) 14px 14px; box-sizing: border-box; }
+  .travel-debug-panel.is-visible { display: flex; }
+  .travel-debug-head { display: flex; align-items: center; justify-content: space-between; font: bold 14px "M PLUS Rounded 1c", sans-serif; margin-bottom: 10px; }
+  .travel-debug-head button { border: none; background: none; font-size: 18px; color: #999; }
+  #travel-debug-content { flex: 1; overflow-y: auto; font: 10px/1.5 "MPLUS1Code", monospace; white-space: pre-wrap; word-break: break-all; background: #f5f5f5; border-radius: 8px; padding: 10px; margin: 0 0 10px; }
+  .travel-debug-copy { border: none; border-radius: 10px; padding: 10px; background: #2471a3; color: #fff; font: bold 13px "M PLUS Rounded 1c", sans-serif; }
   .track-result-close { position: absolute; top: 6px; right: 8px; border: none; background: none; color: #999; font-size: 15px; padding: 6px; line-height: 1; }
   .track-result-head { display: flex; align-items: center; gap: 8px; font-weight: bold; font-size: 15px; margin-bottom: 8px; padding-right: 20px; }
   .track-result-dot { width: 11px; height: 11px; border-radius: 50%; background: #27ae60; flex: 0 0 auto; }
@@ -2915,6 +2922,17 @@
        內容為JS動態產生（見該函式），這裡只放容器。 -->
   <div class="travel-track-result-popup" id="travel-track-result-popup"></div>
 
+  <!-- 2026.08暫時新增：路徑方位統計除錯面板，供實測比對用，見appendTravelTrackPoint /
+       travelTrackDebugLog 說明。問題排除後這個面板連同對應CSS/JS整段刪除即可。 -->
+  <div class="travel-debug-panel" id="travel-debug-panel">
+    <div class="travel-debug-head">
+      <span>路徑除錯資料</span>
+      <button type="button" onclick="hideTravelTrackDebugLog()">✕</button>
+    </div>
+    <pre id="travel-debug-content"></pre>
+    <button type="button" class="travel-debug-copy" onclick="copyTravelTrackDebugLog()">複製全部</button>
+  </div>
+
   <!-- 試驗性功能：跳外部地圖App導航，跟站內Mapbox算路線並存、互不影響，先兩套都留著比較好不好用。
        只有設了終點才顯示；點下去先跳確認泡泡選Google Maps／Apple Maps，不是按一下就直接跳出去——
        離開分頁去外部App，站內路徑記錄會因分頁被背景化而停止，泡泡裡順便提醒這件事。
@@ -2997,7 +3015,7 @@
 // 方便Eric日後比對截圖/對話記錄時辨認是哪個版本。格式沿用開發準則.md同一套
 // 「yyyy.mm.dd vN」慣例（同一天多次修訂就遞增N），不是語意化版號（semver），
 // 純粹對應「今天第幾次交付」，跟開發準則.md的版本號是各自獨立的兩件事，不用同步。
-const APP_VERSION = '2026.08.27 v1';
+const APP_VERSION = '2026.08.27 v3';
 
 // 奇門曆模式：輸入區＋盤頭。函式/變數統一加Almanac字首，避免跟單次排盤邏輯（castChart等）撞名。
 const almanacPad2 = n => String(n).padStart(2,'0');
@@ -5592,6 +5610,7 @@ let travelTrackSegmentStartTime = null; // 本次「出發」的時間戳，停�
 // 改版，這裡這樣才會跟畫面上實際看到的彩色扇形一致，且不受指北感應器精度/權限影響，
 // 見bearingBetween／compassAngleToHouse／appendTravelTrackPoint
 let travelTrackDirectionDistance = { 1:0, 2:0, 3:0, 4:0, 6:0, 7:0, 8:0, 9:0 };
+let travelTrackDebugLog = []; // 2026.08暫時新增，見appendTravelTrackPoint內的說明，除錯完可整段刪除
 // 同一趟行程（出發→停止→接續出發→再停止…，中途沒按清除路徑）的歷史記錄識別碼。
 // 全新一趟（travelTrackPoints為空）才重置為null，見startTravelTrackRecording／clearTravelTrack；
 // 每次停止存歷史時，這個id若已存在就更新舊的那一筆，不存在才新增一筆，確保「接續記錄」的行程
@@ -5612,6 +5631,7 @@ function startTravelTrackRecording() {
     // 全新一趟記錄的起點，才重新快取盤面與方位統計；暫停後接續記錄則沿用原本快取（見上方變數註解）
     travelTrackChartSnapshot = _currentCastChart || null;
     travelTrackDirectionDistance = { 1:0, 2:0, 3:0, 4:0, 6:0, 7:0, 8:0, 9:0 };
+    travelTrackDebugLog = [];
     travelTrackCurrentTripId = null; // 全新一趟才重置，讓下次停止時存成新的一筆歷史（見showTravelTrackResultPopup）
   }
   travelTrackRecording = true;
@@ -5722,6 +5742,19 @@ function appendTravelTrackPoint(latLng) {
     const bearing = bearingBetween(travelCompassAnchorLatLng, latLng);
     const house = compassAngleToHouse(bearing);
     travelTrackDirectionDistance[house] = (travelTrackDirectionDistance[house] || 0) + segDist;
+    // 2026.08暫時新增除錯用：記下這個點的原始座標、相對錨點的距離/方位角/判定宮位，
+    // 供實測比對「為什麼算出來的方位跟實際走的路對不上」（見exportTravelTrackDebugLog）。
+    // 純記錄用途，不影響任何排盤/統計邏輯，之後確認問題排除後可以整段刪掉。
+    travelTrackDebugLog.push({
+      t: new Date().toISOString().slice(11, 19),
+      lat: latLng.lat.toFixed(6), lng: latLng.lng.toFixed(6),
+      anchorLat: travelCompassAnchorLatLng.lat.toFixed(6), anchorLng: travelCompassAnchorLatLng.lng.toFixed(6),
+      distFromAnchor: Math.round(travelCompassAnchorLatLng.distanceTo(latLng)),
+      segDist: Math.round(segDist),
+      bearing: Math.round(bearing),
+      house: house,
+      houseLabel: HOUSE_DIRECTION[house]
+    });
   }
   travelTrackPoints.push(latLng);
   if (!travelMap) return;
@@ -5766,6 +5799,7 @@ function clearTravelTrack() {
   travelTrackElapsedMs = 0;
   travelTrackSegmentStartTime = null;
   travelTrackDirectionDistance = { 1:0, 2:0, 3:0, 4:0, 6:0, 7:0, 8:0, 9:0 };
+  travelTrackDebugLog = [];
   travelTrackCurrentTripId = null; // 一併重置，下次出發視為全新一趟，存成新的一筆歷史
   hideTravelTrackResultPopup();
   if (travelTrackLine && travelMap) {
@@ -5910,6 +5944,7 @@ function showTravelTrackResultPopup() {
     <div class="track-result-line">${summaryLine}</div>
     <button type="button" class="track-result-toggle" onclick="toggleTrackDirectionDetail()">詳細方位分佈 ▾</button>
     <div class="track-result-detail" id="track-result-detail">${detailHTML}</div>
+    <button type="button" class="track-result-toggle" onclick="showTravelTrackDebugLog()" style="color:#999;">查看除錯資料（暫時功能）</button>
   `;
   popup.classList.add('is-visible');
 }
@@ -5917,6 +5952,40 @@ function showTravelTrackResultPopup() {
 function hideTravelTrackResultPopup() {
   const popup = document.getElementById('travel-track-result-popup');
   if (popup) popup.classList.remove('is-visible');
+}
+
+// 2026.08暫時新增：把travelTrackDebugLog格式化成純文字表格，問題排除後這三個函式可整段刪除
+function formatTravelTrackDebugLog() {
+  if (travelTrackDebugLog.length === 0) return '（這趟沒有累積到除錯資料，可能是全程都沒有設定起點/錨點）';
+  const header = '時間 | 座標 | 錨點 | 距錨點(m) | 本段距離(m) | 方位角 | 宮位 | 方位';
+  const rows = travelTrackDebugLog.map(e =>
+    `${e.t} | ${e.lat},${e.lng} | ${e.anchorLat},${e.anchorLng} | ${e.distFromAnchor} | ${e.segDist} | ${e.bearing}° | ${e.house} | ${e.houseLabel}`
+  );
+  return header + '\n' + '-'.repeat(40) + '\n' + rows.join('\n');
+}
+
+function showTravelTrackDebugLog() {
+  const content = document.getElementById('travel-debug-content');
+  if (content) content.textContent = formatTravelTrackDebugLog();
+  const panel = document.getElementById('travel-debug-panel');
+  if (panel) panel.classList.add('is-visible');
+  console.table(travelTrackDebugLog); // 開發者工具連線時，這裡看格式化表格更方便比對
+}
+
+function hideTravelTrackDebugLog() {
+  const panel = document.getElementById('travel-debug-panel');
+  if (panel) panel.classList.remove('is-visible');
+}
+
+async function copyTravelTrackDebugLog() {
+  const text = formatTravelTrackDebugLog();
+  try {
+    await navigator.clipboard.writeText(text);
+    setTravelStatus('除錯資料已複製，可以貼給開發者');
+  } catch (err) {
+    console.error('複製失敗:', err);
+    setTravelStatus('複製失敗，請手動截圖');
+  }
 }
 
 function toggleTrackDirectionDetail() {
@@ -6601,9 +6670,11 @@ function toggleTravelSearchPopup() {
   if (!popup) return;
   const opening = !popup.classList.contains('is-open');
   popup.classList.toggle('is-open', opening);
+  const input = document.getElementById('travel-search-input');
   if (opening) {
-    const input = document.getElementById('travel-search-input');
     if (input) setTimeout(function() { input.focus(); }, 50); // 面板展開動畫跑完再focus，避免鍵盤跳出時面板還沒定位好
+  } else if (input) {
+    input.blur(); // 2026.08修正：再點一次同一顆按鈕收起面板時，原本沒有blur，同一組shake-to-undo bug
   }
 }
 
@@ -6796,6 +6867,9 @@ function handleTravelRouteMapClick() {
   document.querySelectorAll('.expand-control').forEach(function(c) { c.classList.remove('is-open'); });
   const searchPopup = document.getElementById('travel-search-popup');
   if (searchPopup) searchPopup.classList.remove('is-open');
+  const searchInput = document.getElementById('travel-search-input');
+  if (searchInput) searchInput.blur(); // 2026.08修正：這裡原本沒有blur，點地圖空白處收起搜尋泡泡時
+  // input焦點沒釋放，是shake-to-undo那組bug漏掉的其中一條路徑，見cancelSaveTravelAddress()說明
   hideTravelSavedAddressPopup();
   cancelSaveTravelAddress(); // 一併收起命名輸入面板並清掉待存暫存值，避免殘留
   travelRoutePendingRemoveIndex = null;
@@ -7097,6 +7171,12 @@ function closeTravelMode() {
   const overlay = document.getElementById('travel-overlay');
   const board = document.querySelector('#travel-board-layer .outer');
   if (!overlay || !overlay.classList.contains('is-open')) return;
+  // 2026.08新增保險：不管前面有沒有漏掉哪個輸入框的blur()（這類遺漏後來又抓到過幾次，
+  // 見handleTravelRouteMapClick／toggleTravelSearchPopup的修正說明），離開整個出行訣全螢幕時
+  // 一律強制釋放目前的輸入焦點，避免shake-to-undo系統提示誤觸這個bug再冒出新的漏網路徑
+  if (document.activeElement && typeof document.activeElement.blur === 'function') {
+    document.activeElement.blur();
+  }
   overlay.classList.remove('is-open', 'board-visible', 'locked-preview'); // 防呆：確保未解鎖預覽的class不會殘留
   document.body.classList.remove('travel-fullscreen-active'); // 恢復頂部米色遮罩
   hideTravelOrientationPrompt();
