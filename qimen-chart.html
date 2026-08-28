@@ -137,7 +137,7 @@
     flex-direction: column;
     align-items: center;
     font-family: "M PLUS Rounded 1c", sans-serif;
-    font-size: 11px;
+    font-size: 12px;
     color: #aaa;
     line-height: 1.3;
   }
@@ -146,7 +146,7 @@
     flex-direction: column;
     align-items: center;
     font-family: "M PLUS Rounded 1c", sans-serif;
-    font-size: 11px;
+    font-size: 12px;
     color: #333;
     line-height: 1.3;
   }
@@ -161,7 +161,7 @@
   .h-table tr { line-height: 1.85; }
   .h-table td {
     font-family: "M PLUS Rounded 1c", sans-serif;
-    font-size: 11px;
+    font-size: 12px;
     color: #333;
     white-space: nowrap;
     overflow: hidden;
@@ -178,6 +178,11 @@
     padding-left: 0;
     padding-right: 0;
   }
+  /* 2026.08新增：西元/農曆列，月份左邊、日期右邊各加一點留白，數字之間不要黏在一起 */
+  #sm, #lm { padding-left: 4px; }
+  #sd, #ld { padding-right: 4px; }
+  /* 標記欄維持粗體（原本跟其他欄位一樣不粗），字級現在已跟隨.h-table td統一改成12px，這裡不用再重複設定 */
+  #hb-marker { font-weight: bold; }
 
   /* ══════════════════════════════════
      九宮格外層 + 引干
@@ -2992,7 +2997,7 @@
 // 方便Eric日後比對截圖/對話記錄時辨認是哪個版本。格式沿用開發準則.md同一套
 // 「yyyy.mm.dd vN」慣例（同一天多次修訂就遞增N），不是語意化版號（semver），
 // 純粹對應「今天第幾次交付」，跟開發準則.md的版本號是各自獨立的兩件事，不用同步。
-const APP_VERSION = '2026.08.26 v6';
+const APP_VERSION = '2026.08.27 v1';
 
 // 奇門曆模式：輸入區＋盤頭。函式/變數統一加Almanac字首，避免跟單次排盤邏輯（castChart等）撞名。
 const almanacPad2 = n => String(n).padStart(2,'0');
