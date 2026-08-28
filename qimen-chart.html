@@ -3015,7 +3015,7 @@
 // 方便Eric日後比對截圖/對話記錄時辨認是哪個版本。格式沿用開發準則.md同一套
 // 「yyyy.mm.dd vN」慣例（同一天多次修訂就遞增N），不是語意化版號（semver），
 // 純粹對應「今天第幾次交付」，跟開發準則.md的版本號是各自獨立的兩件事，不用同步。
-const APP_VERSION = '2026.08.27 v3';
+const APP_VERSION = '2026.08.28 v1';
 
 // 奇門曆模式：輸入區＋盤頭。函式/變數統一加Almanac字首，避免跟單次排盤邏輯（castChart等）撞名。
 const almanacPad2 = n => String(n).padStart(2,'0');
@@ -4679,6 +4679,15 @@ function reCastTravelNow() {
   clearHighlight();
   castChart();
   autoMarkTravelLucky();
+  // 2026.08修正：路徑記錄的盤面快照（travelTrackChartSnapshot）設計上固定在「出發當下」那一刻，
+  // 中途重新排盤不該去動它——但這個設計沒考慮到「出發當下根本沒有任何盤面」的情況（例如
+  // 沒先在首頁排盤、直接從輸入區跳出行訣）：這種情況下快照會被存成null，之後不管重排幾次
+  // 都不會回頭補上，導致整趟記錄的方位分佈永遠沒有門的資料。這裡只補這個特定缺口：
+  // 快照目前是空的、且已經在記錄中（有意義的正在進行的旅程）才補上，不影響「已有正常快照時
+  // 中途重排不覆蓋」這條原本的規則。
+  if (!travelTrackChartSnapshot && (travelTrackRecording || travelTrackPoints.length > 0)) {
+    travelTrackChartSnapshot = _currentCastChart || null;
+  }
 }
 
 function enterTravelMarkingMode() {
