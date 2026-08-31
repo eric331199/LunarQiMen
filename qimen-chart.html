@@ -3035,7 +3035,7 @@
 // 方便Eric日後比對截圖/對話記錄時辨認是哪個版本。格式沿用開發準則.md同一套
 // 「yyyy.mm.dd vN」慣例（同一天多次修訂就遞增N），不是語意化版號（semver），
 // 純粹對應「今天第幾次交付」，跟開發準則.md的版本號是各自獨立的兩件事，不用同步。
-const APP_VERSION = '2026.08.28 v4';
+const APP_VERSION = '2026.08.29 v3';
 
 // 奇門曆模式：輸入區＋盤頭。函式/變數統一加Almanac字首，避免跟單次排盤邏輯（castChart等）撞名。
 const almanacPad2 = n => String(n).padStart(2,'0');
@@ -5647,6 +5647,88 @@ let travelTrackDebugLog = []; // 2026.08暫時新增，見appendTravelTrackPoint
 // 不會像修正前那樣，同一趟行程因為中途停過幾次就被存成好幾筆累加的重複記錄。
 let travelTrackCurrentTripId = null;
 
+// ── 停滯提醒（2026.08新增）──
+// 背景：出行訣路徑記錄仰賴使用者自己按「停止」，實測發現WKWebView/分頁背景時不一定會被系統砍掉
+// （曾觀察到背景近2小時仍持續記錄），使用者忘記結束會導致整段停留時間被誤算進方位統計。
+// 解法：偵測「連續N分鐘沒有有效移動」就跳一個通知提醒。App版用@capacitor/local-notifications
+// 預約本地通知（即使JS之後被系統暫停也會準時觸發）；網頁版用瀏覽器原生Notification API+
+// setTimeout（僅PWA加入主畫面且已授權時才生效，見ensureTravelStallWebNotificationPermission）。
+const TRAVEL_STALL_REMINDER_MINUTES = 15; // 幾分鐘沒有效移動就提醒，2026.08與Eric確認定案
+const TRAVEL_STALL_MOVE_THRESHOLD_METERS = 30; // 「有效移動」門檻；GPS高精度模式飄移常見到20公尺內，
+                                                // 30公尺可過濾原地飄移雜訊，同時真的走路約20秒內就能達到，反應夠快
+const TRAVEL_STALL_NOTIFICATION_ID = 8801; // 固定ID，方便覆蓋/取消同一個排程中的通知（App版用）
+let travelStallLastSignificantPos = null; // 上一次判定為「有效移動」的座標，供appendTravelTrackPoint比對
+let travelStallWebTimeoutId = null; // 網頁版setTimeout控制代碼，取消排程用
+
+function isPWAStandalone() {
+  return window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+}
+
+// App版：確認/請求本地通知權限。isNativeApp()判斷沿用專案既有慣例（見MAPBOX_ACCESS_TOKEN/geoHasSupport同類寫法）。
+async function ensureTravelStallNotificationPermission() {
+  if (!isNativeApp() || !(window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications)) return false;
+  try {
+    const cur = await window.Capacitor.Plugins.LocalNotifications.checkPermissions();
+    if (cur.display === 'granted') return true;
+    const req = await window.Capacitor.Plugins.LocalNotifications.requestPermissions();
+    return req.display === 'granted';
+  } catch { return false; } // 靜默失敗，跟出行訣其他GPS/通知類邏輯一致，不跳錯誤訊息洗版
+}
+
+// 網頁版：確認/請求瀏覽器通知權限。僅PWA已加入主畫面才有意義（iOS Safari一般分頁無法使用
+// Notification API），非standalone模式直接回傳false、靜默跳過，不主動提示使用者加入主畫面。
+async function ensureTravelStallWebNotificationPermission() {
+  if (isNativeApp()) return false; // App版走另一套，見上方
+  if (!('Notification' in window)) return false;
+  if (!isPWAStandalone()) return false;
+  if (Notification.permission === 'granted') return true;
+  if (Notification.permission === 'denied') return false;
+  try {
+    const perm = await Notification.requestPermission();
+    return perm === 'granted';
+  } catch { return false; }
+}
+
+// 排一個「TRAVEL_STALL_REMINDER_MINUTES分鐘後」觸發的提醒；呼叫前一律先取消舊排程，
+// 避免同時疊出多個通知。App版跟網頁版各自處理，權限沒有拿到就靜默不排程。
+async function scheduleTravelStallReminder() {
+  await cancelTravelStallReminder();
+  const bodyText = `出行訣已經 ${TRAVEL_STALL_REMINDER_MINUTES} 分鐘沒有偵測到移動，是否忘記按下結束？`;
+  if (isNativeApp()) {
+    const ok = await ensureTravelStallNotificationPermission();
+    if (!ok) return;
+    try {
+      await window.Capacitor.Plugins.LocalNotifications.schedule({
+        notifications: [{
+          id: TRAVEL_STALL_NOTIFICATION_ID,
+          title: '出行訣提醒',
+          body: bodyText,
+          schedule: { at: new Date(Date.now() + TRAVEL_STALL_REMINDER_MINUTES * 60000) }
+        }]
+      });
+    } catch { /* 靜默失敗 */ }
+  } else {
+    const ok = await ensureTravelStallWebNotificationPermission();
+    if (!ok) return;
+    travelStallWebTimeoutId = setTimeout(() => {
+      try { new Notification('出行訣提醒', { body: bodyText }); } catch { /* 靜默失敗 */ }
+    }, TRAVEL_STALL_REMINDER_MINUTES * 60000);
+  }
+}
+
+// 取消目前排程中的提醒；App版與網頁版都清，呼叫端不用自己判斷平台
+async function cancelTravelStallReminder() {
+  if (isNativeApp() && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) {
+    try {
+      await window.Capacitor.Plugins.LocalNotifications.cancel({ notifications: [{ id: TRAVEL_STALL_NOTIFICATION_ID }] });
+    } catch { /* 靜默失敗 */ }
+  }
+  if (travelStallWebTimeoutId) {
+    clearTimeout(travelStallWebTimeoutId);
+    travelStallWebTimeoutId = null;
+  }
+}
+
 function toggleTravelTrackRecording() {
   if (travelTrackRecording) stopTravelTrackRecording();
   else startTravelTrackRecording();
@@ -5662,12 +5744,18 @@ function startTravelTrackRecording() {
     travelTrackDirectionDistance = { 1:0, 2:0, 3:0, 4:0, 6:0, 7:0, 8:0, 9:0 };
     travelTrackDebugLog = [];
     travelTrackCurrentTripId = null; // 全新一趟才重置，讓下次停止時存成新的一筆歷史（見showTravelTrackResultPopup）
+    travelStallLastSignificantPos = null; // 全新一趟才重置停滯提醒比對基準（見下方scheduleTravelStallReminder呼叫處）
   }
   travelTrackRecording = true;
   travelTrackSegmentStartTime = Date.now();
   updateTravelTrackButtons();
   startTravelTrackTimerDisplay(); // 出發當下開始每秒更新即時計時器
   requestTravelWakeLock();
+  if (travelStallLastSignificantPos === null) {
+    // 全新一趟才重置比對基準；暫停後接續記錄則沿用原本位置，避免一接續就立刻被判定「又動了」
+    travelStallLastSignificantPos = travelTrackPoints[travelTrackPoints.length - 1] || null;
+  }
+  scheduleTravelStallReminder(); // 每次（重新）出發都排一次，涵蓋「暫停後接續」的情況
   travelTrackWatchId = geoWatchPosition(function(position) {
     const latLng = L.latLng(position.coords.latitude, position.coords.longitude);
     appendTravelTrackPoint(latLng);
@@ -5679,6 +5767,7 @@ function startTravelTrackRecording() {
 function stopTravelTrackRecording() {
   travelTrackRecording = false;
   releaseTravelWakeLock();
+  cancelTravelStallReminder(); // 不論是中途暫停還是真的結束，按下停止就先取消排程，避免之後誤跳通知
   if (travelTrackSegmentStartTime !== null) {
     travelTrackElapsedMs += Date.now() - travelTrackSegmentStartTime;
     travelTrackSegmentStartTime = null;
@@ -5761,6 +5850,12 @@ function compassAngleToHouse(angle) {
 function appendTravelTrackPoint(latLng) {
   const last = travelTrackPoints[travelTrackPoints.length - 1];
   if (last && last.distanceTo(latLng) < TRAVEL_TRACK_MIN_DISTANCE) return;
+  // 停滯提醒：跟「上次判定有效移動」的位置比對，超過門檻才算真的在動、重新排程延後提醒時間；
+  // 沒超過門檻（原地飄移）就讓現有排程繼續倒數，不去打斷它。
+  if (travelTrackRecording && (!travelStallLastSignificantPos || travelStallLastSignificantPos.distanceTo(latLng) >= TRAVEL_STALL_MOVE_THRESHOLD_METERS)) {
+    travelStallLastSignificantPos = latLng;
+    scheduleTravelStallReminder();
+  }
   // 不用GPS朝向(heading)，改用「這個點相對於錨點(起點)的地理方位角」判斷落在
   // 彩色扇形羅盤哪一色——這樣才會跟畫面上實際顯示的彩色扇形一致，
   // 且純粹是經緯度運算，不依賴裝置指北感應器，不受感應器精度/授權問題影響。沒有錨點
@@ -5830,6 +5925,8 @@ function clearTravelTrack() {
   travelTrackDirectionDistance = { 1:0, 2:0, 3:0, 4:0, 6:0, 7:0, 8:0, 9:0 };
   travelTrackDebugLog = [];
   travelTrackCurrentTripId = null; // 一併重置，下次出發視為全新一趟，存成新的一筆歷史
+  travelStallLastSignificantPos = null;
+  cancelTravelStallReminder(); // 理論上清除路徑前應已經是停止狀態、排程已取消，這裡是保險
   hideTravelTrackResultPopup();
   if (travelTrackLine && travelMap) {
     travelMap.removeLayer(travelTrackLine);
@@ -7299,6 +7396,44 @@ document.getElementById('travel-size-range').addEventListener('input', function(
 function toggleTravelSizePopover() {
   const wrap = document.getElementById('travel-size-expand');
   if (wrap) wrap.classList.toggle('is-open');
+}
+
+// ── shake-to-undo追加修正（2026.08.29）──
+// 背景：先前已在4個關閉入口（cancelSaveTravelAddress／confirmSaveTravelAddress／
+// toggleTravelSearchPopup／pickTravelSearchResultToSave／confirmTravelSearchResult／
+// handleTravelRouteMapClick）補上input.blur()，但Eric回報網頁版仍會跳出。研判至少
+// 兩種原因會繞過這些「明確關閉時才blur」的寫法：
+// (1) 未來或目前若還有漏掉的關閉路徑，逐一補blur()容易掛一漏萬（結構性問題，不是找到
+//     哪個入口忘記補而已）；
+// (2) iOS已知平台怪癖：使用者用「手指下滑收起鍵盤」這個系統手勢時，鍵盤UI會消失，
+//     但DOM層面的focus不一定會觸發blur事件（WebKit在這個互動下不保證同步blur），
+//     此時使用者若沒有再點頁面其他地方（單純收鍵盤後繼續走路），前面那些「點擊時才blur」
+//     的入口完全不會被觸發到，因為使用者根本沒有再做任何點擊動作。
+// 解法改成結構性防呆，不再靠一個個入口自己記得補：
+//   (a) MutationObserver盯著兩個輸入泡泡的class變化，只要is-open被拿掉、且目前
+//       焦點還在對應輸入框上，就自動blur，涵蓋現有及未來任何關閉路徑；
+//   (b) visualViewport高度回彈偵測，處理鍵盤被手勢收起、但popup本身還開著、
+//       DOM焦點卻沒釋放的情形。
+function setupTravelInputAutoBlur(popupId, inputId) {
+  const popup = document.getElementById(popupId);
+  const input = document.getElementById(inputId);
+  if (!popup || !input) return;
+  new MutationObserver(function() {
+    if (!popup.classList.contains('is-open') && document.activeElement === input) input.blur();
+  }).observe(popup, { attributes: true, attributeFilter: ['class'] });
+}
+setupTravelInputAutoBlur('travel-search-popup', 'travel-search-input');
+setupTravelInputAutoBlur('travel-address-naming-popup', 'travel-address-naming-input');
+
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', function() {
+    const active = document.activeElement;
+    if (!active || (active.id !== 'travel-search-input' && active.id !== 'travel-address-naming-input')) return;
+    // viewport高度回到接近全螢幕（跟window.innerHeight相差不多）代表鍵盤已收起，
+    // 不論是怎麼收起的（含手勢下滑那種不會觸發blur事件的情形），此時焦點還留在
+    // 我們的輸入框上就沒有意義了，直接釋放
+    if (window.visualViewport.height > window.innerHeight * 0.85) active.blur();
+  });
 }
 
 const GATE_CONSTRAINT_TABLE = {
@@ -9110,7 +9245,7 @@ function deleteRecord(id) {
   <!-- margin-top:6px疊加在flex gap之上，讓「快捷按鈕→咖啡按鈕」這組間距對齊到32px
        （18px gap + 8px咖啡按鈕自己的padding-top + 6px = 32px），跟九宮上下間距統一 -->
   <div style="font-family:'M PLUS Rounded 1c',sans-serif;margin-top:6px">
-    <a href="https://buy.stripe.com/7sY8wQe1NdhXbkV98G8Vi01" target="_blank" style="display:inline-block;padding:4px 14px;border:1px solid #ddd;border-radius:14px;font-size:12px;color:#888;text-decoration:none;letter-spacing:.08em;transition:all .15s" onmouseover="this.style.borderColor='#bbb';this.style.color='#555'" onmouseout="this.style.borderColor='#ddd';this.style.color='#888'">☕ 請我喝杯咖啡</a>
+    <a href="https://buy.stripe.com/9B6cN63n93Hn0Ghfx48Vi02" target="_blank" style="display:inline-block;padding:4px 14px;border:1px solid #ddd;border-radius:14px;font-size:12px;color:#888;text-decoration:none;letter-spacing:.08em;transition:all .15s" onmouseover="this.style.borderColor='#bbb';this.style.color='#555'" onmouseout="this.style.borderColor='#ddd';this.style.color='#888'">☕ 請我喝杯咖啡</a>
   </div>
   <!-- margin-top:6px同理，讓「咖啡按鈕→版權文字」這組間距也對齊到32px
        （18px gap + 8px咖啡按鈕自己的padding-bottom + 6px = 32px） -->
