@@ -1998,7 +1998,7 @@
         <div class="help-section-title">羅盤指針</div>
         <ul class="help-list">
           <li>陰盤：點擊授權後啟動指南針，供方位參考</li>
-          <li>陽盤：點擊授權後詢問是否進入出行訣；選「是」同步顯示地圖與盤面（南上北下），可點宮位標記吉凶；右上角「⟳」可轉正（北上南下），亦可展開全螢幕或切換盤面顯示</li>
+          <li>陽盤：點擊授權後啟動指南針，供方位參考；再點一次詢問是否進入出行訣，選「是」同步顯示地圖與盤面（南上北下），可點宮位標記吉凶；右上角「⟳」可轉正（北上南下），亦可展開全螢幕或切換盤面顯示</li>
         </ul>
       </div>
 
@@ -4380,17 +4380,13 @@ function requestCompassPermission(startFn, onReady) {
     window.addEventListener('deviceorientation', handleOrientation, true);
   }
 
-  // 陽盤下，第一次點擊中宮（啟用指南針的同一次點擊）直接一併詢問是否進入出行訣，
-  // 不用像過去那樣分兩次點（第一次純啟用指南針、第二次才問）。僅限陽盤——陰盤／命盤本來就不會問這件事，
-  // 維持原樣：第一次點擊只單純啟用指南針，不觸發任何後續動作。
-  function afterCompassEnabled() {
-    if (typeof PLATE_MODE !== 'undefined' && PLATE_MODE === 'yang' && !(typeof MING_PAN_MODE !== 'undefined' && MING_PAN_MODE)) {
-      showTravelAskPanel();
-    }
-  }
+  // 2026.09改回兩次點：第一次點擊中宮只單純啟用指南針（跟陰盤／命盤行為一致，可用來對方位），
+  // 不再一併跳出行訣詢問泡泡；要進出行訣需要再點第二次（見下方click handler裡compassActive為true
+  // 且非地圖模式時的判斷式，那段本來就處理「第二次點擊詢問是否進入出行訣」，不需要另外新增）
+  function afterCompassEnabled() {}
 
   compassCell.addEventListener('click', function() {
-    // 羅盤已啟用 → 這次點擊不是要開權限，而是詢問是否進入出行訣吉凶標記模式
+    // 羅盤已啟用 → 這次點擊不是要開權限，而是詢問是否進入出行訣吉凶標記模式（陽盤）或單純無動作（陰盤／命盤）
     if (compassActive) {
       // 2026.09：旋轉改由獨立的.travel-inline-rotate鈕負責（見HTML/JS該按鈕的click listener），
       // 指針恢復成單純的羅盤授權/啟動，地圖模式下再點指針不再有動作，跟陰盤/命盤指針行為一致
