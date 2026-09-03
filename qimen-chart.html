@@ -1478,7 +1478,7 @@
   /* 2b 旋轉狀態：地圖轉正（北上南下）。宮位內容對調（4↔6、9↔1、2↔8、7↔3）由 JS 直接搬動 DOM 節點完成，不靠 CSS。 */
   .outer.travel-map-mode.travel-map-rotated .travel-inline-map { transform: rotate(0deg); }
   /* 工具列（原本放方框上方置中的「盤」按鈕，已改移到右上角、疊在全螢幕鈕正下方，見下方角落按鈕樣式）*/
-  .travel-inline-exit, .travel-inline-locate, .travel-inline-board-toggle, .travel-inline-fullscreen, .travel-inline-lucky-toggle {
+  .travel-inline-exit, .travel-inline-locate, .travel-inline-board-toggle, .travel-inline-fullscreen, .travel-inline-lucky-toggle, .travel-inline-rotate {
     width: 30px; height: 30px; border-radius: 50%;
     border: none; background: rgba(255,255,255,.92); color: #333;
     font-size: 15px; display: flex; align-items: center; justify-content: center;
@@ -1502,6 +1502,14 @@
   /* 階段三：全螢幕展開鈕，方框右上角，只在地圖模式（.travel-map-mode）常駐顯示，跟旋轉/盤面狀態無關 */
   .travel-inline-fullscreen { display: none; position: absolute; z-index: 5; top: -8px; right: -8px; font-size: 13px; }
   .outer.travel-map-mode .travel-inline-fullscreen { display: flex; }
+  /* 2026.09新增：旋轉九宮鈕，原本併在中宮指針的第二次點擊裡（見compassCell click handler），
+     改回獨立按鈕——指針只負責羅盤授權/啟動，跟陰盤指針行為一致，不再兼職旋轉。
+     位置緊貼全螢幕展開鈕左邊，同一列（top對齊），右移距離＝按鈕寬30px＋間距8px＝38px，
+     跟右側直排（展開/眼睛/吉）的38px間距慣例一致。 */
+  .travel-inline-rotate { display: none; position: absolute; z-index: 5; top: -8px; right: 30px; font-size: 14px; }
+  .outer.travel-map-mode .travel-inline-rotate { display: flex; }
+  /* 已轉正（北上南下）時變色，呼應原本.compass-rotate-bracket的變色提示，讓使用者看得出目前狀態 */
+  .outer.travel-map-mode.travel-map-rotated .travel-inline-rotate { background: #2471a3; color: #fff; }
   /* 眼睛鈕（顯示/隱藏盤面）：跟←、⛶同一種「疊在方框邊框上、獨立浮動」做法，z-index:5，不能放進
      travel-inline-map-wrap（z-index:0，整體低於九宮格的z-index:1）內部，否則會被盤面點擊層蓋住點不到 */
   .outer.travel-map-mode .travel-inline-board-toggle { display: flex; }
@@ -1517,7 +1525,7 @@
   /* 返回鈕：本質是「跳出地圖模式」，移到方框左上角，與右上角的全螢幕展開鈕對稱 */
   .travel-inline-exit { display: none; position: absolute; z-index: 5; top: -8px; left: -8px; font-size: 13px; }
   .outer.travel-map-mode .travel-inline-exit { display: flex; }
-  .travel-inline-exit:active, .travel-inline-locate:active, .travel-inline-board-toggle:active, .travel-inline-fullscreen:active { opacity: .85; }
+  .travel-inline-exit:active, .travel-inline-locate:active, .travel-inline-board-toggle:active, .travel-inline-fullscreen:active, .travel-inline-rotate:active { opacity: .85; }
 
   /* 地圖模式：九宮格線（.cell 邊框）與 r1c1 宮位標籤留在畫面上，其餘內容透明化／隱藏，讓地圖從縫間透出 */
   .outer.travel-map-mode .grid { position: relative; z-index: 1; pointer-events: none; }
@@ -1558,11 +1566,9 @@
      一起：指針固定跟九宮同步，不跟裝置朝向連動，只有點中宮才一起翻轉（見setTravelCompassOrientation）。
      過渡時間拉長跟地圖的0.5s同步，翻轉手感一致。 */
   .outer.travel-map-mode .compass-ring { transition: transform .5s ease; }
-  /* 旋轉箭頭：只在方框內嵌地圖模式顯示（不含全螢幕扇形羅盤）；用#paipan-result限定原始位置，
-     出行訣全螢幕會把.outer節點暫時搬進#travel-board-layer，搬過去後這條規則自然不再命中，
-     順便讓中宮在全螢幕快照期間維持不可點擊，不用另外加JS判斷 */
-  #paipan-result .outer.travel-map-mode .compass-rotate-bracket { opacity: .8; }
-  #paipan-result .outer.travel-map-mode.travel-map-rotated .compass-rotate-bracket { color: #2471a3; }
+  /* 2026.09：旋轉改由獨立的.travel-inline-rotate鈕負責（見上方），指針不再兼職旋轉，
+     這兩條原本讓指針左右括弧箭頭在地圖模式下顯示、提示「點我可旋轉」的規則已失去意義，故拿掉；
+     .compass-rotate-bracket維持基底的opacity:0，不再於此模式下顯示 */
   /* 中宮點擊：地圖模式下 .grid 整體 pointer-events:none（見上方規則），這裡單獨救回中宮指針，讓點擊可以觸發旋轉 */
   #paipan-result .outer.travel-map-mode .dz-center { pointer-events: auto; }
   /* 三個標記/確認泡泡都掛在中宮.cell.center底下，但中宮沒有data-gong屬性，不會被上面
@@ -1992,7 +1998,7 @@
         <div class="help-section-title">羅盤指針</div>
         <ul class="help-list">
           <li>陰盤：點擊授權後啟動指南針，供方位參考</li>
-          <li>陽盤：點擊授權後詢問是否進入出行訣；選「是」同步顯示地圖與盤面（南上北下），可點宮位標記吉凶；再點指針轉正（北上南下）；右上角可展開全螢幕或切換盤面顯示</li>
+          <li>陽盤：點擊授權後詢問是否進入出行訣；選「是」同步顯示地圖與盤面（南上北下），可點宮位標記吉凶；右上角「⟳」可轉正（北上南下），亦可展開全螢幕或切換盤面顯示</li>
         </ul>
       </div>
 
@@ -2017,9 +2023,9 @@
         <div class="help-section-title">出行訣・九宮框地圖</div>
         <ul class="help-list">
           <li>「⛶」：展開全螢幕羅盤</li>
+          <li>「⟳」：切換地圖朝向（南上北下／北上南下）</li>
           <li>眼睛鈕：顯示／隱藏盤面</li>
           <li>「吉」：自動標記可用吉門，宮位仍可手動調整；再按一次可清空標記</li>
-          <li>點擊中宮：切換地圖朝向（南上北下／北上南下）</li>
           <li>右下定位鈕：拉回目前位置</li>
           <li>「←」：離開出行訣模式</li>
         </ul>
@@ -2394,6 +2400,9 @@
 
   <!-- 返回鈕：本質是「跳出地圖模式」，移到方框左上角，與右上角的全螢幕展開鈕對稱 -->
   <button type="button" class="travel-inline-exit" id="travel-inline-exit" aria-label="返回盤面">←</button>
+  <!-- 2026.09新增：旋轉九宮鈕，緊鄰全螢幕展開鈕左邊——原本旋轉功能併在中宮指針的第二次點擊裡，
+       現在拆開成獨立按鈕，指針恢復成單純的羅盤授權/啟動用途（跟陰盤指針行為一致），見compassCell click handler -->
+  <button type="button" class="travel-inline-rotate" id="travel-inline-rotate" aria-label="旋轉九宮">⟳</button>
   <!-- 出行訣 階段三：全螢幕展開鈕，方框右上角，點擊後進入既有的全螢幕扇形羅盤（travel-overlay） -->
   <button type="button" class="travel-inline-fullscreen" id="travel-inline-fullscreen" aria-label="展開全螢幕羅盤">⛶</button>
   <!-- 眼睛圖示：張開＝盤面顯示中，閉眼＝盤面隱藏（只看地圖），預設閉眼。位置在方框右上角、
@@ -3035,7 +3044,7 @@
 // 方便Eric日後比對截圖/對話記錄時辨認是哪個版本。格式沿用開發準則.md同一套
 // 「yyyy.mm.dd vN」慣例（同一天多次修訂就遞增N），不是語意化版號（semver），
 // 純粹對應「今天第幾次交付」，跟開發準則.md的版本號是各自獨立的兩件事，不用同步。
-const APP_VERSION = '2026.08.29 v3';
+const APP_VERSION = '2026.09.02 v2';
 
 // 奇門曆模式：輸入區＋盤頭。函式/變數統一加Almanac字首，避免跟單次排盤邏輯（castChart等）撞名。
 const almanacPad2 = n => String(n).padStart(2,'0');
@@ -4383,11 +4392,10 @@ function requestCompassPermission(startFn, onReady) {
   compassCell.addEventListener('click', function() {
     // 羅盤已啟用 → 這次點擊不是要開權限，而是詢問是否進入出行訣吉凶標記模式
     if (compassActive) {
-      // 已經在方框內嵌地圖模式中：點中宮＝旋轉（併入指針，取代原本獨立的⟳按鈕）；
-      // pointer-events 只在 #paipan-result 底下的原始位置開放（見 CSS），搬進全螢幕快照層後這裡不會被觸發，不需另外判斷
+      // 2026.09：旋轉改由獨立的.travel-inline-rotate鈕負責（見HTML/JS該按鈕的click listener），
+      // 指針恢復成單純的羅盤授權/啟動，地圖模式下再點指針不再有動作，跟陰盤/命盤指針行為一致
       const outerEl = document.getElementById('outer-board');
       if (outerEl && outerEl.classList.contains('travel-map-mode')) {
-        toggleTravelMapRotate();
         return;
       }
       // 移除：原本這裡還有「if (travelMarkingActive) return;」，但標記狀態現在跟travel-map-mode
@@ -5391,6 +5399,7 @@ document.getElementById('travel-inline-exit').addEventListener('click', exitTrav
 document.getElementById('travel-inline-locate').addEventListener('click', function() { recenterInlineTravelPosition(); });
 document.getElementById('travel-inline-board-toggle').addEventListener('click', toggleTravelBoardOverlay);
 document.getElementById('travel-inline-fullscreen').addEventListener('click', openTravelMode); // 階段三：方框地圖 → 全螢幕扇形羅盤
+document.getElementById('travel-inline-rotate').addEventListener('click', toggleTravelMapRotate); // 2026.09：旋轉獨立成按鈕，不再併在指針點擊裡
 
 // ── 門迫判定 ──
 // ══════════════════════════════════
@@ -7902,6 +7911,30 @@ function _yangFindRowIndexForDate(targetDate){
 // 2026/8/22 23:51處暑上元→中元邊界案例），此函式本身跟時分無關的假設沒錯，
 // 但呼叫端沒做子時調整就是bug，已修正）
 // 回傳 { solsticeType:'陽'|'陰', chartNum:1-9, jieqi, zhiRun, isZhiRunRepeat, row } 供 castChart() 使用
+// 陽盤時盤專用：真實節氣交節時刻倒數/已過多久（時分級精度，2026.08.31新增）。
+// 跟「超神/接氣」是兩件不同顆粒度的事——超神接氣是整個節氣段（15/30天）共用同一個值，
+// 這裡算的是查詢時間點距離真實交節時刻的實際時間差，逐分鐘在變動。用途：回答「真實
+// 理氣到了沒」這種即時性問題（Eric提出的個人推論用途，「超神可晚出門、接氣可早出門」
+// 這個判斷邏輯本身未經子奇老師確認，尚未寫入排盤規則.md，工具僅如實顯示真實交節時刻
+// 的時間差，不代入任何吉凶或行動建議）。
+// 陽盤時盤專用：奇門標的節氣（日期級）跟太陽真實節氣（分鐘級）名稱比對，
+// 一致代表已對應真實理氣、不標記；不一致代表落在超神/接氣的偏差區間（2026.09.02定案）。
+// 判斷方向用YANG_CYCLE_TRAD的24節氣固定環狀順序：太陽的節氣在奇門節氣「後一步」＝太陽已走到、
+// 奇門局還沒切過去＝奇門落後＝接氣（標記掛在奇門目前顯示的節氣名稱後面，如「處暑接」）；
+// 太陽的節氣在奇門節氣「前一步」＝奇門已先切過去、太陽還沒到＝奇門超前＝超神（如「白露超」）。
+// 保險：實測1899-2200共300年、7306個節氣段，落差從未達到15天（等同跨兩個節氣），故正常情況下
+// 兩個節氣名稱最多只會差一步；若異常差距超過一步（理論上不該發生），不強行標方向，維持不標記。
+function getYangJieqiMismatchMark(qimenJieqi, realJieqi) {
+  if (!qimenJieqi || !realJieqi || qimenJieqi === realJieqi) return '';
+  const qi = YANG_CYCLE_TRAD.indexOf(qimenJieqi);
+  const ri = YANG_CYCLE_TRAD.indexOf(realJieqi);
+  if (qi === -1 || ri === -1) return '';
+  const diff = (ri - qi + 24) % 24;
+  if (diff === 1) return '接';
+  if (diff === 23) return '超';
+  return ''; // 差距超過一步的異常情況，不亂標方向
+}
+
 function getYangChartNumber(y, m, d) {
   const target = new Date(Date.UTC(y, m - 1, d));
   if (target.getTime() < YANG_ANCHOR.getTime()) return null; // 早於已驗證錨點範圍
@@ -8611,13 +8644,22 @@ function castChart() {
   document.getElementById('hb-qiju').textContent = solsticeType + chartNum + '局';
 
   // 節氣欄位：陽盤時盤（時家置閏）顯示鏈式模擬的名目節氣，若當前是超神≥9天觸發置閏後被追加出來的
-  // 重複期段，顯示「閏XX」（如「閏大雪」「閏芒種」，見排盤規則.md 9.1、9.3節）；
+  // 重複期段，顯示「閏XX」（如「閏大雪」「閏芒種」，見排盤規則.md 9.1、9.3節）；後面再附加超/接標記
+  // （比對真實節氣名稱是否一致，見getYangJieqiMismatchMark，2026.09.02新增）。
+  // 2026.09.02：原本這裡還有一個時分級倒數/已過多久的顯示（formatJieqiTimeDiff），已拿掉——
+  // 一來語意上算的是「距目前節氣段自己起點」而非「距最近一次真實交節」，多數時間只會顯示大而
+  // 無意義的天數，真正有用的頭尾窗口反而被超/接標記取代了；二來這個欄位是<td class="hv">，
+  // CSS為white-space:nowrap+overflow:hidden固定寬度（約可容納3個國字，見.h-table td.hv樣式），
+  // 倒數那種長文字（如「（已交節3天5小時）」）根本塞不進去，會被裁切看不到，做了也沒用。
   // 其餘模式（陰盤、陽盤日/月/年盤）改顯示當下實際節氣（真實交節時刻判定，見 getRealJieqiName()），
   // 純報時性質，不影響該模式本身的排盤與局數計算
   const jieqiEl = document.getElementById('hb-jieqi');
   if (jieqiEl) {
     if (PLATE_MODE === 'yang' && PLATE_SUBMODE === 'time' && yangInfo && yangInfo.jieqi) {
-      jieqiEl.textContent = yangInfo.isZhiRunRepeat ? ('閏' + yangInfo.jieqi) : yangInfo.jieqi;
+      const jieqiName = yangInfo.isZhiRunRepeat ? ('閏' + yangInfo.jieqi) : yangInfo.jieqi;
+      const realJieqiName = getRealJieqiName(y, m, d, h, min);
+      const mismatchMark = getYangJieqiMismatchMark(yangInfo.jieqi, realJieqiName); // 用基準節氣名比對，閏期段一樣沿用同一個基準名
+      jieqiEl.textContent = jieqiName + mismatchMark;
     } else {
       const realJieqi = getRealJieqiName(y, m, d, h, min);
       jieqiEl.textContent = realJieqi || '—';
